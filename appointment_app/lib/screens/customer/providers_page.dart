@@ -407,7 +407,11 @@ class _ProvidersPageState extends State<ProvidersPage> {
                                          child: ElevatedButton.icon(
                        onPressed: provider['isAvailable'] ? () {
                          Navigator.of(context).pop();
-                         context.go('/customer/create-appointment');
+                         // Sağlayıcı bilgilerini parametre olarak geç
+                         context.go('/customer/create-appointment?'
+                             'providerId=${provider['id']}&'
+                             'providerName=${Uri.encodeComponent(provider['name'])}&'
+                             'serviceCategory=${Uri.encodeComponent(provider['category'])}');
                        } : null,
                        icon: const Icon(Icons.calendar_today),
                        label: const Text('Randevu Al'),

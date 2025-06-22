@@ -148,7 +148,18 @@ final GoRouter router = GoRouter(
         ),
         GoRoute(
           path: 'create-appointment',
-          builder: (context, state) => const CreateAppointmentPage(),
+          builder: (context, state) {
+            // Query parametrelerini al
+            final providerId = state.uri.queryParameters['providerId'];
+            final providerName = state.uri.queryParameters['providerName'];
+            final serviceCategory = state.uri.queryParameters['serviceCategory'];
+            
+            return CreateAppointmentPage(
+              preSelectedProviderId: providerId,
+              preSelectedProviderName: providerName,
+              preSelectedServiceCategory: serviceCategory,
+            );
+          },
         ),
         GoRoute(
           path: 'my-appointments',
@@ -276,8 +287,20 @@ class AppNavigation {
     context.go('/customer/dashboard');
   }
   
-  static void goToCreateAppointment(BuildContext context) {
-    context.go('/customer/create-appointment');
+  static void goToCreateAppointment(BuildContext context, {
+    String? providerId,
+    String? providerName,
+    String? serviceCategory,
+  }) {
+    String path = '/customer/create-appointment';
+    
+    if (providerId != null && providerName != null && serviceCategory != null) {
+      path += '?providerId=$providerId&'
+              'providerName=${Uri.encodeComponent(providerName)}&'
+              'serviceCategory=${Uri.encodeComponent(serviceCategory)}';
+    }
+    
+    context.go(path);
   }
   
   static void goToMyAppointments(BuildContext context) {

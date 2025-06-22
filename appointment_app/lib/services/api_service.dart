@@ -75,6 +75,66 @@ class ApiService {
     }
   }
   
+  // Randevu güncelle
+  static Future<Map<String, dynamic>> updateAppointment({
+    required int appointmentId,
+    String? title,
+    String? description,
+    DateTime? dateTime,
+    String? status,
+  }) async {
+    try {
+      final Map<String, dynamic> updateData = {};
+      
+      if (title != null) updateData['title'] = title;
+      if (description != null) updateData['description'] = description;
+      if (dateTime != null) updateData['date_time'] = dateTime.toIso8601String();
+      if (status != null) updateData['status'] = status;
+      
+      final response = await http.put(
+        Uri.parse('$baseUrl/appointments/$appointmentId'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(updateData),
+      );
+      
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['error'] ?? 'Randevu güncellenemedi');
+      }
+    } catch (e) {
+      throw Exception('Bağlantı hatası: $e');
+    }
+  }
+  
+  // Randevu sil/iptal et
+  static Future<Map<String, dynamic>> deleteAppointment(int appointmentId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/appointments/$appointmentId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['error'] ?? 'Randevu silinemedi');
+      }
+    } catch (e) {
+      throw Exception('Bağlantı hatası: $e');
+    }
+  }
+  
+  // Randevu durumunu güncelle (iptal et)
+  static Future<Map<String, dynamic>> cancelAppointment(int appointmentId) async {
+    return updateAppointment(
+      appointmentId: appointmentId,
+      status: 'cancelled',
+    );
+  }
+
   // API durumunu kontrol et
   static Future<bool> checkApiStatus() async {
     try {

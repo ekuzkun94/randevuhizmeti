@@ -146,8 +146,10 @@ class _MyAppointmentsPageState extends State<MyAppointmentsPage> {
       setState(() => _isLoading = true);
 
       try {
-        // Simulated API call
-        await Future.delayed(const Duration(seconds: 1));
+        if (_isApiOnline) {
+          // Gerçek API çağrısı
+          await ApiService.cancelAppointment(int.parse(appointmentId));
+        }
 
         setState(() {
           final index = _appointments.indexWhere((app) => app['id'] == appointmentId);
@@ -161,6 +163,115 @@ class _MyAppointmentsPageState extends State<MyAppointmentsPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Randevu başarıyla iptal edildi'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        setState(() => _isLoading = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Hata: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _editAppointment(Map<String, dynamic> appointment) async {
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => _EditAppointmentDialog(appointment: appointment),
+    );
+
+    if (result != null) {
+      setState(() => _isLoading = true);
+
+      try {
+        if (_isApiOnline) {
+          // Gerçek API çağrısı
+          await ApiService.updateAppointment(
+            appointmentId: int.parse(appointment['id']),
+            title: result['title'],
+            description: result['notes'],
+            dateTime: result['dateTime'],
+          );
+        }
+
+        setState(() {
+          final index = _appointments.indexWhere((app) => app['id'] == appointment['id']);
+          if (index != -1) {
+            _appointments[index]['serviceName'] = result['title'];
+            _appointments[index]['notes'] = result['notes'];
+            _appointments[index]['date'] = result['dateTime'];
+            _appointments[index]['time'] = DateFormat.Hm().format(result['dateTime']);
+          }
+          _isLoading = false;
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Randevu başarıyla güncellendi'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        setState(() => _isLoading = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Hata: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _deleteAppointment(String appointmentId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Randevu Silme'),
+        content: const Text('Bu randevuyu kalıcı olarak silmek istediğinizden emin misiniz?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Vazgeç'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Sil'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      setState(() => _isLoading = true);
+
+      try {
+        if (_isApiOnline) {
+          // Gerçek API çağrısı
+          await ApiService.deleteAppointment(int.parse(appointmentId));
+        }
+
+        setState(() {
+          _appointments.removeWhere((app) => app['id'] == appointmentId);
+          _isLoading = false;
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Randevu başarıyla silindi'),
               backgroundColor: Colors.green,
             ),
           );
@@ -592,20 +703,46 @@ class _MyAppointmentsPageState extends State<MyAppointmentsPage> {
                 ],
               ),
 
-              // Actions for upcoming appointments
-              if (isUpcoming && (status == 'pending' || status == 'confirmed')) ...[
+              // Actions for appointments
+              if (status != 'cancelled' && status != 'completed') ...[
                 const SizedBox(height: 12),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    TextButton.icon(
-                      onPressed: () => _cancelAppointment(appointment['id']),
-                      icon: const Icon(Icons.cancel_outlined, size: 16),
-                      label: const Text('İptal Et'),
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.red,
-                      ),
+                    // Düzenleme ve Silme butonları
+                    Row(
+                      children: [
+                        if (isUpcoming) ...[
+                          TextButton.icon(
+                            onPressed: () => _editAppointment(appointment),
+                            icon: const Icon(Icons.edit_outlined, size: 16),
+                            label: const Text('Düzenle'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.blue,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        TextButton.icon(
+                          onPressed: () => _deleteAppointment(appointment['id']),
+                          icon: const Icon(Icons.delete_outline, size: 16),
+                          label: const Text('Sil'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.grey,
+                          ),
+                        ),
+                      ],
                     ),
+                    // İptal etme butonu
+                    if (isUpcoming) 
+                      TextButton.icon(
+                        onPressed: () => _cancelAppointment(appointment['id']),
+                        icon: const Icon(Icons.cancel_outlined, size: 16),
+                        label: const Text('İptal Et'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.red,
+                        ),
+                      ),
                   ],
                 ),
               ],
@@ -615,4 +752,264 @@ class _MyAppointmentsPageState extends State<MyAppointmentsPage> {
       ),
     );
   }
-} 
+}
+
+class _EditAppointmentDialog extends StatefulWidget {
+  final Map<String, dynamic> appointment;
+
+  const _EditAppointmentDialog({required this.appointment});
+
+  @override
+  State<_EditAppointmentDialog> createState() => _EditAppointmentDialogState();
+}
+
+class _EditAppointmentDialogState extends State<_EditAppointmentDialog> {
+  late TextEditingController _titleController;
+  late TextEditingController _notesController;
+  late DateTime _selectedDate;
+  late TimeOfDay _selectedTime;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.appointment['serviceName']);
+    _notesController = TextEditingController(text: widget.appointment['notes']);
+    _selectedDate = widget.appointment['date'];
+    
+    // Time string'i parse et (örn: "14:30")
+    final timeParts = widget.appointment['time'].split(':');
+    _selectedTime = TimeOfDay(
+      hour: int.parse(timeParts[0]),
+      minute: int.parse(timeParts[1]),
+    );
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _selectDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      locale: const Locale('tr', 'TR'),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+              primary: const Color(0xFF667eea),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
+  }
+
+  Future<void> _selectTime() async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: _selectedTime,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+              primary: const Color(0xFF667eea),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null && picked != _selectedTime) {
+      setState(() {
+        _selectedTime = picked;
+      });
+    }
+  }
+
+  void _saveChanges() {
+    if (_titleController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Randevu başlığı boş olamaz'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final combinedDateTime = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _selectedTime.hour,
+      _selectedTime.minute,
+    );
+
+    Navigator.of(context).pop({
+      'title': _titleController.text.trim(),
+      'notes': _notesController.text.trim(),
+      'dateTime': combinedDateTime,
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text(
+        'Randevu Düzenle',
+        style: TextStyle(
+          color: Color(0xFF667eea),
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Başlık
+              const Text(
+                'Hizmet Adı',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _titleController,
+                decoration: InputDecoration(
+                  hintText: 'Randevu başlığı',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFF667eea)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Tarih seçimi
+              const Text(
+                'Tarih',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 8),
+              InkWell(
+                onTap: _selectDate,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade400),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.calendar_today, color: Color(0xFF667eea)),
+                      const SizedBox(width: 12),
+                      Text(
+                        DateFormat('dd MMMM yyyy', 'tr').format(_selectedDate),
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Saat seçimi
+              const Text(
+                'Saat',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 8),
+              InkWell(
+                onTap: _selectTime,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade400),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.access_time, color: Color(0xFF667eea)),
+                      const SizedBox(width: 12),
+                      Text(
+                        _selectedTime.format(context),
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Notlar
+              const Text(
+                'Notlar',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _notesController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'Randevu notları (opsiyonel)',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFF667eea)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('İptal'),
+        ),
+        ElevatedButton(
+          onPressed: _saveChanges,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF667eea),
+            foregroundColor: Colors.white,
+          ),
+          child: const Text('Kaydet'),
+        ),
+      ],
+    );
+  }
+}
