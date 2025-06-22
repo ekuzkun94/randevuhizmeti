@@ -29,6 +29,9 @@ class ApiService {
     required String description,
     required DateTime dateTime,
     required String userName,
+    String? providerName,
+    String? venueName,
+    String? serviceName,
   }) async {
     try {
       final response = await http.post(
@@ -39,6 +42,9 @@ class ApiService {
           'description': description,
           'date_time': dateTime.toIso8601String(),
           'user_name': userName,
+          'provider_name': providerName,
+          'venue_name': venueName,
+          'service_name': serviceName,
         }),
       );
       

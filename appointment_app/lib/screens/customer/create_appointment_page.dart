@@ -602,6 +602,9 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
             : _notesController.text.trim(),
         dateTime: appointmentDateTime,
         userName: _userNameController.text.trim(),
+        providerName: selectedProviderData['name'],
+        venueName: selectedVenueData['name'],
+        serviceName: selectedServiceData['name'],
       );
 
       if (mounted) {

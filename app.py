@@ -44,6 +44,9 @@ class Appointment(db.Model):
     description = db.Column(db.Text)
     date_time = db.Column(db.DateTime, nullable=False)
     user_name = db.Column(db.String(100), nullable=False)
+    provider_name = db.Column(db.String(100), nullable=True)
+    venue_name = db.Column(db.String(100), nullable=True)
+    service_name = db.Column(db.String(100), nullable=True)
     status = db.Column(db.String(20), default='pending')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     ai_summary = db.Column(db.Text)
@@ -61,6 +64,9 @@ def create_appointment():
             description=data['description'],
             date_time=datetime.fromisoformat(data['date_time']),
             user_name=data['user_name'],
+            provider_name=data.get('provider_name'),
+            venue_name=data.get('venue_name'),
+            service_name=data.get('service_name'),
             ai_summary=ai_analysis
         )
         
@@ -84,6 +90,9 @@ def get_appointments():
         'description': a.description,
         'date_time': a.date_time.isoformat(),
         'user_name': a.user_name,
+        'provider_name': a.provider_name,
+        'venue_name': a.venue_name,
+        'service_name': a.service_name,
         'status': a.status,
         'ai_summary': a.ai_summary
     } for a in appointments])

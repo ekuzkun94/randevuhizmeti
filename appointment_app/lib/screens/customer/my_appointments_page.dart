@@ -36,8 +36,9 @@ class _MyAppointmentsPageState extends State<MyAppointmentsPage> {
           _appointments = appointments.map((appointment) {
             return {
               'id': appointment['id'].toString(),
-              'serviceName': appointment['title'] ?? 'Bilinmeyen Hizmet',
-              'providerName': 'Hizmet Sağlayıcısı', // API'de provider bilgisi yoksa default
+              'serviceName': appointment['service_name'] ?? appointment['title'] ?? 'Bilinmeyen Hizmet',
+              'providerName': appointment['provider_name'] ?? 'Bilinmeyen Sağlayıcı',
+              'venueName': appointment['venue_name'] ?? 'Bilinmeyen Mekan',
               'date': DateTime.parse(appointment['date_time']),
               'time': DateFormat.Hm().format(DateTime.parse(appointment['date_time'])),
               'status': appointment['status'] ?? 'pending',
@@ -340,6 +341,8 @@ class _MyAppointmentsPageState extends State<MyAppointmentsPage> {
                     children: [
                       _buildDetailRow('Hizmet', appointment['serviceName']),
                       _buildDetailRow('Hizmet Sağlayıcı', appointment['providerName']),
+                      if (appointment['venueName'] != null)
+                        _buildDetailRow('Hizmet Yeri', appointment['venueName']),
                       _buildDetailRow('Tarih', DateFormat('dd MMMM yyyy', 'tr').format(appointment['date'])),
                       _buildDetailRow('Saat', appointment['time']),
                       _buildDetailRow('Süre', appointment['duration']),
@@ -712,37 +715,26 @@ class _MyAppointmentsPageState extends State<MyAppointmentsPage> {
                     // Düzenleme ve Silme butonları
                     Row(
                       children: [
-                        if (isUpcoming) ...[
-                          TextButton.icon(
-                            onPressed: () => _editAppointment(appointment),
-                            icon: const Icon(Icons.edit_outlined, size: 16),
-                            label: const Text('Düzenle'),
-                            style: TextButton.styleFrom(
-                              foregroundColor: Colors.blue,
-                            ),
+                        TextButton.icon(
+                          onPressed: () => _editAppointment(appointment),
+                          icon: const Icon(Icons.edit_outlined, size: 16),
+                          label: const Text('Düzenle'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.blue,
                           ),
-                          const SizedBox(width: 8),
-                        ],
+                        ),
+                        const SizedBox(width: 8),
                         TextButton.icon(
                           onPressed: () => _deleteAppointment(appointment['id']),
-                          icon: const Icon(Icons.delete_outline, size: 16),
-                          label: const Text('Sil'),
+                          icon: const Icon(Icons.delete, size: 16),
+                          label: const Text('İptal'),
                           style: TextButton.styleFrom(
-                            foregroundColor: Colors.grey,
+                            foregroundColor: Colors.red,
                           ),
                         ),
                       ],
                     ),
-                    // İptal etme butonu
-                    if (isUpcoming) 
-                      TextButton.icon(
-                        onPressed: () => _cancelAppointment(appointment['id']),
-                        icon: const Icon(Icons.cancel_outlined, size: 16),
-                        label: const Text('İptal Et'),
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.red,
-                        ),
-                      ),
+
                   ],
                 ),
               ],
