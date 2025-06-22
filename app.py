@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-from ai_helper import AIHelper
+# from ai_helper import AIHelper  # Geçici olarak devre dışı
 from dotenv import load_dotenv
 from flask_cors import CORS
 import os
@@ -13,11 +13,11 @@ app = Flask(__name__)
 CORS(app)  # CORS desteği eklendi
 
 # Database configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql://{os.getenv('MYSQL_USER')}:{os.getenv('MYSQL_PASSWORD')}@{os.getenv('MYSQL_HOST')}/{os.getenv('MYSQL_DATABASE')}"
+app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql://{os.getenv('MYSQL_USER')}:{os.getenv('MYSQL_PASSWORD')}@{os.getenv('MYSQL_HOST')}/appointment_system"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
-ai_helper = AIHelper()
+# ai_helper = AIHelper()  # Geçici olarak devre dışı
 
 # Ana sayfa route'u
 @app.route('/', methods=['GET'])
@@ -53,8 +53,8 @@ class Appointment(db.Model):
 def create_appointment():
     data = request.json
     try:
-        # AI ile randevu analizi
-        ai_analysis = ai_helper.analyze_appointment(f"{data['title']} - {data['description']}")
+        # AI ile randevu analizi - Geçici olarak devre dışı
+        ai_analysis = "AI analizi geçici olarak devre dışı"
         
         appointment = Appointment(
             title=data['title'],
@@ -91,7 +91,7 @@ def get_appointments():
 @app.route('/appointments/suggest', methods=['POST'])
 def suggest_appointment_times():
     data = request.json
-    suggestions = ai_helper.suggest_time_slots(data['preferences'])
+    suggestions = ["AI önerileri geçici olarak devre dışı"]
     return jsonify({'suggestions': suggestions})
 
 @app.route('/appointments/<int:id>', methods=['PUT'])
@@ -109,14 +109,13 @@ def update_appointment(id):
         if 'status' in data:
             appointment.status = data['status']
             
-        # Güncellenen randevu için yeni AI analizi
-        ai_analysis = ai_helper.analyze_appointment(f"{appointment.title} - {appointment.description}")
-        appointment.ai_summary = ai_analysis
+        # Güncellenen randevu için yeni AI analizi - Geçici olarak devre dışı
+        appointment.ai_summary = "AI analizi geçici olarak devre dışı"
         
         db.session.commit()
         return jsonify({
             'message': 'Randevu güncellendi',
-            'ai_analysis': ai_analysis
+            'ai_analysis': 'AI analizi geçici olarak devre dışı'
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 400
@@ -134,4 +133,4 @@ def delete_appointment(id):
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(debug=True) 
+    app.run(debug=True, port=5001) 
