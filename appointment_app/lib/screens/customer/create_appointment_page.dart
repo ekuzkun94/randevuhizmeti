@@ -181,17 +181,17 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
 
   // Belirli bir bölüme scroll yapma fonksiyonu
   void _scrollToSection(GlobalKey key) {
-    final context = key.currentContext;
-    if (context != null) {
-      // Kısa bir gecikme ekleyerek setState'in tamamlanmasını bekliyoruz
-      Future.delayed(const Duration(milliseconds: 100), () {
+    // Widget güncellemelerinin tamamlanmasını bekle
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final context = key.currentContext;
+      if (context != null) {
         Scrollable.ensureVisible(
           context,
           duration: const Duration(milliseconds: 800),
           curve: Curves.easeInOut,
         );
-      });
-    }
+      }
+    });
   }
 
   // Belirli bir tarih ve saatte randevu var mı kontrol et
