@@ -32,12 +32,13 @@ class _ProviderAppointmentsPageState extends State<ProviderAppointmentsPage> {
       final currentUser = authProvider.currentUser;
       
       if (currentUser != null) {
-        final allAppointments = await ApiService.getAppointments();
+        final response = await ApiService.getAppointments();
+        final List<dynamic> allAppointments = response['appointments'] ?? [];
         
-        // Provider'a ait randevuları filtrele
+        // Provider'a ait randevuları filtrele (provider_id ile)
         final providerAppointments = allAppointments.where((appointment) {
-          return appointment['provider_name'] == currentUser.name;
-        }).toList();
+          return appointment['provider_id'] == currentUser.id;
+        }).toList().cast<Map<String, dynamic>>();
         
         setState(() {
           _appointments = providerAppointments;
@@ -56,12 +57,9 @@ class _ProviderAppointmentsPageState extends State<ProviderAppointmentsPage> {
     }
   }
 
-  Future<void> _updateAppointmentStatus(int appointmentId, String newStatus) async {
+  Future<void> _updateAppointmentStatus(String appointmentId, String newStatus) async {
     try {
-      await ApiService.updateAppointment(
-        appointmentId: appointmentId,
-        status: newStatus,
-      );
+      await ApiService.updateAppointmentStatus(appointmentId, newStatus);
       
       // Listeyi güncelle
       setState(() {
@@ -269,7 +267,7 @@ class _ProviderAppointmentsPageState extends State<ProviderAppointmentsPage> {
               children: [
                 Expanded(
                   child: Text(
-                    appointment['title'] ?? 'Randevu',
+                    appointment['service_name'] ?? 'Randevu',
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -297,18 +295,22 @@ class _ProviderAppointmentsPageState extends State<ProviderAppointmentsPage> {
             const SizedBox(height: 12),
             
             // Randevu bilgileri
-            _buildInfoRow(Icons.person, 'Hasta', appointment['user_name'] ?? 'N/A'),
-            _buildInfoRow(Icons.local_hospital, 'Mekan', appointment['venue_name'] ?? 'N/A'),
+            _buildInfoRow(Icons.person, 'Hasta', appointment['customer_name'] ?? 'N/A'),
+            _buildInfoRow(Icons.local_hospital, 'Mekan', appointment['location'] ?? 'N/A'),
             _buildInfoRow(Icons.medical_services, 'Hizmet', appointment['service_name'] ?? 'N/A'),
             _buildInfoRow(Icons.access_time, 'Tarih/Saat', 
-              appointment['date_time'] != null 
-                ? DateTime.parse(appointment['date_time']).toString().substring(0, 16)
-                : 'N/A'
+              '${appointment['appointment_date'] ?? 'N/A'} ${appointment['appointment_time'] ?? ''}'
             ),
+            if (appointment['customer_phone'] != null && appointment['customer_phone'].isNotEmpty) ...[
+              _buildInfoRow(Icons.phone, 'Telefon', appointment['customer_phone']),
+            ],
+            if (appointment['price'] != null && appointment['price'] > 0) ...[
+              _buildInfoRow(Icons.money, 'Ücret', '${appointment['price']} ₺'),
+            ],
             
-            if (appointment['description'] != null && appointment['description'].isNotEmpty) ...[
+            if (appointment['notes'] != null && appointment['notes'].isNotEmpty) ...[
               const SizedBox(height: 8),
-              _buildInfoRow(Icons.description, 'Açıklama', appointment['description']),
+              _buildInfoRow(Icons.description, 'Notlar', appointment['notes']),
             ],
             
             // Aksiyon butonları (sadece bekleyen randevular için)

@@ -459,10 +459,11 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
     setState(() => _isLoadingAppointments = true);
     
     try {
-      final appointments = await ApiService.getAppointments();
+      final response = await ApiService.getAppointments();
+      final appointments = response['appointments'] as List<dynamic>? ?? [];
       if (mounted) {
         setState(() {
-          _existingAppointments = appointments;
+          _existingAppointments = appointments.cast<Map<String, dynamic>>();
         });
       }
     } catch (e) {

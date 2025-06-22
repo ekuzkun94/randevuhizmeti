@@ -126,9 +126,7 @@ class ProviderHomePage extends StatelessWidget {
                         icon: Icons.calendar_today,
                         color: Colors.green,
                         onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Randevu yönetimi sayfası yakında!')),
-                          );
+                          context.go('/provider/appointments');
                         },
                       ),
                       _buildDashboardCard(
@@ -137,9 +135,7 @@ class ProviderHomePage extends StatelessWidget {
                         icon: Icons.medical_services,
                         color: Colors.blue,
                         onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Hizmet yönetimi sayfası yakında!')),
-                          );
+                          context.go('/provider/services');
                         },
                       ),
                       _buildDashboardCard(
@@ -148,9 +144,7 @@ class ProviderHomePage extends StatelessWidget {
                         icon: Icons.schedule,
                         color: Colors.orange,
                         onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Çalışma saatleri sayfası yakında!')),
-                          );
+                          context.go('/provider/schedule');
                         },
                       ),
                       _buildDashboardCard(
@@ -159,9 +153,7 @@ class ProviderHomePage extends StatelessWidget {
                         icon: Icons.analytics,
                         color: Colors.purple,
                         onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('İstatistikler sayfası yakında!')),
-                          );
+                          context.go('/provider/dashboard');
                         },
                       ),
                     ],
