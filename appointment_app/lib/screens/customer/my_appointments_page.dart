@@ -241,31 +241,7 @@ class _MyAppointmentsPageState extends State<MyAppointmentsPage> {
                 ),
               ),
 
-              // Actions
-              if (appointment['status'] == 'pending' || appointment['status'] == 'confirmed') ...[
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      _cancelAppointment(appointment['id']);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                                         child: const Text(
-                       'Randevuyu İptal Et',
-                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-              ],
+              // Actions - İptal butonu kart üzerinde bulunduğu için modal'da gösterilmiyor
             ],
           ),
         ),

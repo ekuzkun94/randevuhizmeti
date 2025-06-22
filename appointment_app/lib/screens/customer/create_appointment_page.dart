@@ -558,8 +558,15 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
 
                       // Saat Seçimi
                       if (_selectedService != null && _selectedProvider != null) ...[
-                        _buildSectionCard(
-                          title: 'Saat Seçin',
+                        _buildCollapsibleSection(
+                          title: 'Saat Seç',
+                          isExpanded: _selectedTime == null,
+                          selectedSummary: _selectedTime,
+                          onEditPressed: _selectedTime != null ? () {
+                            setState(() {
+                              _selectedTime = null;
+                            });
+                          } : null,
                           child: Column(
                             children: [
                               if (_isLoadingAppointments)
@@ -812,6 +819,72 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
             ),
             const SizedBox(height: 12),
             child,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCollapsibleSection({
+    required String title,
+    required bool isExpanded,
+    required Widget child,
+    String? selectedSummary,
+    VoidCallback? onEditPressed,
+  }) {
+    return Card(
+      elevation: 8,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF667eea),
+                  ),
+                ),
+                const Spacer(),
+                if (!isExpanded && selectedSummary != null) ...[
+                  Expanded(
+                    child: Text(
+                      selectedSummary,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade700,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      textAlign: TextAlign.right,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: onEditPressed,
+                    icon: const Icon(
+                      Icons.edit,
+                      color: Color(0xFF667eea),
+                      size: 20,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
+                    padding: EdgeInsets.zero,
+                  ),
+                ],
+              ],
+            ),
+            if (isExpanded) ...[
+              const SizedBox(height: 12),
+              child,
+            ],
           ],
         ),
       ),
