@@ -366,9 +366,20 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
                       _buildApiStatusCard(),
                       const SizedBox(height: 16),
 
-                      // Hizmet Arama ve Seçimi
-                      _buildSectionCard(
-                        title: 'Hizmet Ara ve Seç',
+                      // Hizmet Seçimi
+                      _buildCollapsibleSection(
+                        title: 'Hizmet Seç',
+                        isExpanded: _selectedService == null,
+                        selectedSummary: _selectedService != null 
+                            ? _allServices.firstWhere((s) => s['id'] == _selectedService)['name']
+                            : null,
+                        onEditPressed: _selectedService != null ? () {
+                          setState(() {
+                            _selectedService = null;
+                            _selectedProvider = null;
+                            _selectedTime = null;
+                          });
+                        } : null,
                         child: Column(
                           children: [
                             // Arama çubuğu
@@ -425,9 +436,19 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
                       // Sağlayıcı Seçimi
                       if (_selectedService != null) ...[
                         Container(
-                          key: _providerSectionKey, // Key eklendi
-                          child: _buildSectionCard(
-                            title: 'Sağlayıcı Ara ve Seç',
+                          key: _providerSectionKey,
+                          child: _buildCollapsibleSection(
+                            title: 'Sağlayıcı Seç',
+                            isExpanded: _selectedProvider == null,
+                            selectedSummary: _selectedProvider != null 
+                                ? _availableProviders.firstWhere((p) => p['id'] == _selectedProvider)['name']
+                                : null,
+                            onEditPressed: _selectedProvider != null ? () {
+                              setState(() {
+                                _selectedProvider = null;
+                                _selectedTime = null;
+                              });
+                            } : null,
                             child: Column(
                               children: [
                                 // Sağlayıcı arama çubuğu
@@ -485,8 +506,17 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
 
                       // Tarih Seçimi
                       if (_selectedService != null && _selectedProvider != null) ...[
-                        _buildSectionCard(
-                          title: 'Tarih Seçin',
+                        _buildCollapsibleSection(
+                          title: 'Tarih Seç',
+                          isExpanded: _selectedTime == null,
+                          selectedSummary: _selectedTime != null 
+                              ? '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}'
+                              : null,
+                          onEditPressed: _selectedTime != null ? () {
+                            setState(() {
+                              _selectedTime = null;
+                            });
+                          } : null,
                           child: TableCalendar<String>(
                             locale: 'tr',
                             firstDay: DateTime.now(),
