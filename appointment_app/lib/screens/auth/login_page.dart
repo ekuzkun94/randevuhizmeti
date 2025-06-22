@@ -34,23 +34,19 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
       
-      // Test kullanıcıları - Prodüksiyon için gerçek authentication yapılacak
-      final testUsers = {
-        'admin@example.com': {'password': 'admin123', 'roleId': '1'},
-        'ahmet@example.com': {'password': 'provider123', 'roleId': '2'},
-        'mehmet@example.com': {'password': 'customer123', 'roleId': '3'},
-      };
-
       final email = _emailController.text.trim();
       final password = _passwordController.text.trim();
 
-      if (testUsers.containsKey(email) && testUsers[email]!['password'] == password) {
-        await authProvider.login(email, password, testUsers[email]!['roleId']!);
-        
-        if (mounted) {
-          // Role-based navigation with GoRouter
-          switch (testUsers[email]!['roleId']) {
+      // AuthProvider'dan giriş yap (API çağrısı yapacak)
+      final success = await authProvider.login(email, password, ''); // Role ID boş, API'den gelecek
+      
+      if (success && mounted) {
+        // Başarılı giriş - role'e göre yönlendir
+        final user = authProvider.currentUser;
+        if (user != null) {
+          switch (user.roleId) {
             case '1': // Admin
               context.go('/admin');
               break;
@@ -60,20 +56,23 @@ class _LoginPageState extends State<LoginPage> {
             case '3': // Customer
               context.go('/customer');
               break;
+            default:
+              context.go('/customer'); // Varsayılan olarak customer'a yönlendir
           }
         }
-      } else {
-        if (mounted) {
-          final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(languageProvider.translate('invalid_credentials', fallback: 'Geçersiz email veya şifre')),
-              backgroundColor: Colors.red,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-          );
-        }
+      } else if (mounted) {
+        // Giriş başarısız
+        final errorMessage = authProvider.errorMessage ?? 
+            languageProvider.translate('invalid_credentials', fallback: 'Geçersiz email veya şifre');
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {

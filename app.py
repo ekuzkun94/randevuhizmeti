@@ -5,6 +5,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 from flask_cors import CORS
 import os
+import hashlib
 
 # Load environment variables
 load_dotenv()
@@ -27,6 +28,7 @@ def home():
             'status': 'success',
             'message': 'Randevu API çalışıyor',
             'endpoints': {
+                'POST /auth/login': 'Kullanıcı girişi',
                 'GET /appointments': 'Tüm randevuları listele',
                 'POST /appointments': 'Yeni randevu oluştur',
                 'PUT /appointments/<id>': 'Randevu güncelle',
@@ -38,6 +40,27 @@ def home():
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 # Model tanımlamaları
+class User(db.Model):
+    __tablename__ = 'users'
+    
+    id = db.Column(db.String(36), primary_key=True)
+    name = db.Column(db.String(255), nullable=False)
+    email = db.Column(db.String(255), unique=True, nullable=False)
+    password = db.Column(db.String(255), nullable=False)
+    role_id = db.Column(db.String(36), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'email': self.email,
+            'role_id': self.role_id,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
 class Appointment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
@@ -50,6 +73,41 @@ class Appointment(db.Model):
     status = db.Column(db.String(20), default='pending')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     ai_summary = db.Column(db.Text)
+
+# Auth Routes
+@app.route('/auth/login', methods=['POST'])
+def login():
+    try:
+        data = request.json
+        email = data.get('email')
+        password = data.get('password')
+        role_id = data.get('role_id')  # Opsiyonel - frontend'den gönderilen role_id
+        
+        if not email or not password:
+            return jsonify({'error': 'Email ve şifre gerekli'}), 400
+        
+        # Kullanıcıyı veritabanından bul
+        user = User.query.filter_by(email=email).first()
+        
+        if not user:
+            return jsonify({'error': 'Kullanıcı bulunamadı'}), 401
+        
+        # Şifre kontrolü (basit string karşılaştırması - gerçek uygulamada hash kullanılmalı)
+        if user.password != password:
+            return jsonify({'error': 'Geçersiz şifre'}), 401
+        
+        # Role kontrolü (eğer role_id belirtilmişse)
+        if role_id and user.role_id != role_id:
+            return jsonify({'error': 'Bu role ile giriş yetkiniz yok'}), 403
+        
+        # Başarılı giriş
+        return jsonify({
+            'message': 'Giriş başarılı',
+            'user': user.to_dict()
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Giriş hatası: {str(e)}'}), 500
 
 # API Routes
 @app.route('/appointments', methods=['POST'])

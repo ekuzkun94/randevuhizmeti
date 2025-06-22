@@ -16,6 +16,7 @@ import 'package:appointment_app/screens/provider/provider_dashboard_page.dart';
 import 'package:appointment_app/screens/customer/customer_home_page.dart';
 import 'package:appointment_app/screens/customer/customer_dashboard_page.dart';
 import 'package:appointment_app/screens/customer/create_appointment_page.dart';
+import 'package:appointment_app/screens/customer/profile_page.dart';
 import 'package:appointment_app/screens/customer/my_appointments_page.dart';
 import 'package:appointment_app/screens/customer/providers_page.dart';
 import 'package:appointment_app/screens/guest/guest_booking_page.dart';
@@ -162,6 +163,10 @@ final GoRouter router = GoRouter(
           },
         ),
         GoRoute(
+          path: 'profile',
+          builder: (context, state) => const ProfilePage(),
+        ),
+        GoRoute(
           path: 'my-appointments',
           builder: (context, state) => const MyAppointmentsPage(),
         ),
@@ -301,6 +306,10 @@ class AppNavigation {
     }
     
     context.go(path);
+  }
+  
+  static void goToProfile(BuildContext context) {
+    context.go('/customer/profile');
   }
   
   static void goToMyAppointments(BuildContext context) {

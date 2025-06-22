@@ -4,6 +4,31 @@ import 'package:http/http.dart' as http;
 class ApiService {
   static const String baseUrl = 'http://127.0.0.1:5001';
   
+  // Kullanıcı girişi
+  static Future<Map<String, dynamic>> login(String email, String password, String roleId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'email': email,
+          'password': password,
+          'role_id': roleId,
+        }),
+      );
+      
+      final responseData = json.decode(response.body);
+      
+      if (response.statusCode == 200) {
+        return responseData;
+      } else {
+        return {'error': responseData['error'] ?? 'Giriş başarısız'};
+      }
+    } catch (e) {
+      return {'error': 'Bağlantı hatası: $e'};
+    }
+  }
+  
   // Tüm randevuları getir
   static Future<List<Map<String, dynamic>>> getAppointments() async {
     try {

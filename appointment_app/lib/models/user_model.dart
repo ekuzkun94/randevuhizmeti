@@ -4,6 +4,8 @@ class UserModel {
   final String email;
   final String roleId;
   final String? password;
+  final String? phone;
+  final String? address;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -13,6 +15,8 @@ class UserModel {
     required this.email,
     required this.roleId,
     this.password,
+    this.phone,
+    this.address,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -24,6 +28,8 @@ class UserModel {
       email: json['email'] ?? '',
       roleId: json['role_id']?.toString() ?? '',
       password: json['password'],
+      phone: json['phone'],
+      address: json['address'],
       createdAt: DateTime.parse(json['created_at'] ?? DateTime.now().toIso8601String()),
       updatedAt: DateTime.parse(json['updated_at'] ?? DateTime.now().toIso8601String()),
     );
@@ -36,6 +42,8 @@ class UserModel {
       'email': email,
       'role_id': roleId,
       'password': password,
+      'phone': phone,
+      'address': address,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -47,6 +55,8 @@ class UserModel {
     String? email,
     String? roleId,
     String? password,
+    String? phone,
+    String? address,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -56,6 +66,8 @@ class UserModel {
       email: email ?? this.email,
       roleId: roleId ?? this.roleId,
       password: password ?? this.password,
+      phone: phone ?? this.phone,
+      address: address ?? this.address,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

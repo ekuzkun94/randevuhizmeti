@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import 'create_appointment_page.dart';
-import 'my_appointments_page.dart';
+import 'profile_page.dart';
 import 'providers_page.dart';
 
 class CustomerHomePage extends StatelessWidget {
@@ -143,12 +143,7 @@ class CustomerHomePage extends StatelessWidget {
                         icon: Icons.calendar_today,
                         color: Colors.blue,
                         onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const MyAppointmentsPage(),
-                            ),
-                          );
+                          context.go('/customer/my-appointments');
                         },
                       ),
                       _buildDashboardCard(
@@ -166,15 +161,15 @@ class CustomerHomePage extends StatelessWidget {
                         },
                       ),
                       _buildDashboardCard(
-                        title: 'Geçmiş',
-                        subtitle: 'Randevu geçmişi',
-                        icon: Icons.history,
+                        title: 'Profil',
+                        subtitle: 'Hesap bilgileri',
+                        icon: Icons.person_outline,
                         color: Colors.purple,
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const MyAppointmentsPage(),
+                              builder: (context) => const ProfilePage(),
                             ),
                           );
                         },

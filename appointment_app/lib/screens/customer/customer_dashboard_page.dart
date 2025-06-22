@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:appointment_app/providers/language_provider.dart';
 import 'create_appointment_page.dart';
-import 'my_appointments_page.dart';
+import 'profile_page.dart';
 import 'providers_page.dart';
 
 class CustomerDashboardPage extends StatelessWidget {
@@ -114,7 +114,7 @@ class CustomerDashboardPage extends StatelessWidget {
                         crossAxisCount: 2,
                         mainAxisSpacing: 16,
                         crossAxisSpacing: 16,
-                        childAspectRatio: 1.1,
+                        childAspectRatio: 1.0,
                         children: [
                           _buildDashboardCard(
                             context,
@@ -133,12 +133,7 @@ class CustomerDashboardPage extends StatelessWidget {
                             languageProvider.translate('my_appointments', fallback: 'Randevularım'),
                             Icons.calendar_today,
                             Colors.blue,
-                            () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const MyAppointmentsPage(),
-                              ),
-                            ),
+                            () => context.go('/customer/my-appointments'),
                           ),
                           _buildDashboardCard(
                             context,
@@ -157,14 +152,12 @@ class CustomerDashboardPage extends StatelessWidget {
                             languageProvider.translate('profile', fallback: 'Profil'),
                             Icons.person_outline,
                             Colors.purple,
-                            () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(languageProvider.translate('coming_soon', fallback: 'Yakında!')),
-                                  backgroundColor: Colors.blue,
-                                ),
-                              );
-                            },
+                            () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const ProfilePage(),
+                              ),
+                            ),
                           ),
                         ],
                       ),
