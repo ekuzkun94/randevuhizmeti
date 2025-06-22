@@ -33,18 +33,20 @@ class _MyAppointmentsPageState extends State<MyAppointmentsPage> {
       if (isOnline) {
         final appointments = await ApiService.getAppointments();
         setState(() {
-          _appointments = appointments.map((appointment) {
+          final appointmentsList = appointments['appointments'] as List<dynamic>? ?? [];
+          _appointments = appointmentsList.map<Map<String, dynamic>>((appointment) {
+            final appointmentMap = appointment as Map<String, dynamic>;
             return {
-              'id': appointment['id'].toString(),
-              'serviceName': appointment['service_name'] ?? appointment['title'] ?? 'Bilinmeyen Hizmet',
-              'providerName': appointment['provider_name'] ?? 'Bilinmeyen Sağlayıcı',
-              'venueName': appointment['venue_name'] ?? 'Bilinmeyen Mekan',
-              'date': DateTime.parse(appointment['date_time']),
-              'time': DateFormat.Hm().format(DateTime.parse(appointment['date_time'])),
-              'status': appointment['status'] ?? 'pending',
-              'notes': appointment['description'] ?? '',
-              'price': '0 ₺', // API'de fiyat bilgisi yoksa default
-              'duration': '30 dk', // API'de süre bilgisi yoksa default
+              'id': appointmentMap['id']?.toString() ?? '',
+              'serviceName': appointmentMap['service_name'] ?? appointmentMap['title'] ?? 'Bilinmeyen Hizmet',
+              'providerName': appointmentMap['provider_name'] ?? 'Bilinmeyen Sağlayıcı',
+              'venueName': appointmentMap['venue_name'] ?? appointmentMap['location'] ?? 'Bilinmeyen Mekan',
+              'date': DateTime.parse(appointmentMap['appointment_date'] + ' ' + appointmentMap['appointment_time']),
+              'time': appointmentMap['appointment_time'] ?? '00:00',
+              'status': appointmentMap['status'] ?? 'pending',
+              'notes': appointmentMap['notes'] ?? '',
+              'price': '${appointmentMap['price'] ?? 0} ₺',
+              'duration': '${appointmentMap['duration'] ?? 30} dk',
             };
           }).toList();
         });
@@ -149,7 +151,10 @@ class _MyAppointmentsPageState extends State<MyAppointmentsPage> {
       try {
         if (_isApiOnline) {
           // Gerçek API çağrısı
-          await ApiService.cancelAppointment(int.parse(appointmentId));
+          await ApiService.updateAppointment(
+            appointmentId: appointmentId,
+            status: 'cancelled',
+          );
         }
 
         setState(() {
@@ -195,10 +200,8 @@ class _MyAppointmentsPageState extends State<MyAppointmentsPage> {
         if (_isApiOnline) {
           // Gerçek API çağrısı
           await ApiService.updateAppointment(
-            appointmentId: int.parse(appointment['id']),
-            title: result['title'],
-            description: result['notes'],
-            dateTime: result['dateTime'],
+            appointmentId: appointment['id'],
+            notes: result['notes'],
           );
         }
 
@@ -261,7 +264,7 @@ class _MyAppointmentsPageState extends State<MyAppointmentsPage> {
       try {
         if (_isApiOnline) {
           // Gerçek API çağrısı
-          await ApiService.deleteAppointment(int.parse(appointmentId));
+          await ApiService.deleteAppointment(appointmentId);
         }
 
         setState(() {

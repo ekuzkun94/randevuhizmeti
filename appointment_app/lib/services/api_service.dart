@@ -428,4 +428,22 @@ class ApiService {
       return false;
     }
   }
+
+  // Bağlantı durumunu kontrol et (checkApiStatus ile aynı)
+  static Future<Map<String, dynamic>> checkConnection() async {
+    try {
+      final response = await http.get(
+        Uri.parse(baseUrl),
+        headers: {'Content-Type': 'application/json'},
+      );
+      
+      if (response.statusCode == 200) {
+        return {'status': 'online', 'message': 'API bağlantısı başarılı'};
+      } else {
+        return {'status': 'offline', 'message': 'API erişilemez'};
+      }
+    } catch (e) {
+      return {'status': 'offline', 'message': 'Bağlantı hatası: $e'};
+    }
+  }
 } 

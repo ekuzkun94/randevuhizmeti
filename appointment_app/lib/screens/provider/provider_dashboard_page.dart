@@ -51,7 +51,8 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage> {
         // Provider'a ait randevuları filtrele
         final appointmentsList = allAppointments['appointments'] as List<dynamic>? ?? [];
         final providerAppointments = appointmentsList.where((appointment) {
-          return appointment['provider_name'] == currentUser.name;
+          final appointmentMap = appointment as Map<String, dynamic>;
+          return appointmentMap['provider_name'] == currentUser.name;
         }).toList().cast<Map<String, dynamic>>();
         
         // İstatistikleri hesapla
