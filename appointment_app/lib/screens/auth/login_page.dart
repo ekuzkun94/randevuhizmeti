@@ -53,7 +53,7 @@ class _LoginPageState extends State<LoginPage> {
               context.go('/admin');
               break;
             case '2': // Provider
-              context.go('/provider');
+              context.go('/provider/dashboard');
               break;
             case '3': // Customer
               context.go('/customer');
@@ -626,8 +626,16 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                   const SizedBox(height: 8),
                                   _buildTestUserInfo(
+                                    role: 'Yönetici',
+                                    email: 'manager@example.com',
+                                    password: 'manager123',
+                                    icon: Icons.supervisor_account,
+                                    color: Colors.purple,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  _buildTestUserInfo(
                                     role: 'Hizmet Sağlayıcı',
-                                    email: 'ahmet@example.com',
+                                    email: 'provider@example.com',
                                     password: 'provider123',
                                     icon: Icons.business_center,
                                     color: Colors.orange,
@@ -635,7 +643,7 @@ class _LoginPageState extends State<LoginPage> {
                                   const SizedBox(height: 8),
                                   _buildTestUserInfo(
                                     role: 'Müşteri',
-                                    email: 'mehmet@example.com',
+                                    email: 'customer@example.com',
                                     password: 'customer123',
                                     icon: Icons.person,
                                     color: Colors.green,
