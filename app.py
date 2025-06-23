@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+from datetime import datetime, timedelta
 # from ai_helper import AIHelper  # Geçici olarak devre dışı
 from dotenv import load_dotenv
 from flask_cors import CORS
@@ -8,6 +8,12 @@ import os
 import hashlib
 import uuid
 import pymysql
+import qrcode
+import io
+import base64
+import random
+import string
+from sqlalchemy import func
 
 # PyMySQL kullanımı için
 pymysql.install_as_MySQLdb()
@@ -204,6 +210,106 @@ class Appointment(db.Model):
             'payment_status': self.payment_status,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
+class Staff(db.Model):
+    __tablename__ = 'staff'
+    
+    id = db.Column(db.String(36), primary_key=True)
+    provider_id = db.Column(db.String(36), nullable=False)
+    user_id = db.Column(db.String(36), nullable=False)  # Reference to User table
+    position = db.Column(db.String(100))  # Pozisyon: Doktor, Hemşire, Asistan vb.
+    department = db.Column(db.String(100))  # Bölüm
+    hire_date = db.Column(db.Date)
+    salary = db.Column(db.Numeric(10, 2))
+    is_active = db.Column(db.Boolean, default=True)
+    permissions = db.Column(db.Text)  # JSON format permissions
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'provider_id': self.provider_id,
+            'user_id': self.user_id,
+            'position': self.position,
+            'department': self.department,
+            'hire_date': self.hire_date.isoformat() if self.hire_date else None,
+            'salary': float(self.salary) if self.salary else 0.0,
+            'is_active': self.is_active,
+            'permissions': self.permissions,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
+class Shift(db.Model):
+    __tablename__ = 'shifts'
+    
+    id = db.Column(db.String(36), primary_key=True)
+    staff_id = db.Column(db.String(36), nullable=False)
+    shift_date = db.Column(db.Date, nullable=False)
+    start_time = db.Column(db.String(10), nullable=False)  # HH:MM
+    end_time = db.Column(db.String(10), nullable=False)    # HH:MM
+    shift_type = db.Column(db.String(20), default='regular')  # regular, overtime, holiday
+    status = db.Column(db.String(20), default='scheduled')  # scheduled, started, completed, cancelled
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'staff_id': self.staff_id,
+            'shift_date': self.shift_date.isoformat() if self.shift_date else None,
+            'start_time': self.start_time,
+            'end_time': self.end_time,
+            'shift_type': self.shift_type,
+            'status': self.status,
+            'notes': self.notes,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
+class PasswordReset(db.Model):
+    __tablename__ = 'password_resets'
+    
+    id = db.Column(db.String(36), primary_key=True)
+    email = db.Column(db.String(255), nullable=False)
+    token = db.Column(db.String(100), nullable=False, unique=True)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    used = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'email': self.email,
+            'token': self.token,
+            'expires_at': self.expires_at.isoformat() if self.expires_at else None,
+            'used': self.used,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+class QRCode(db.Model):
+    __tablename__ = 'qr_codes'
+    
+    id = db.Column(db.String(36), primary_key=True)
+    appointment_id = db.Column(db.String(36), nullable=False)
+    qr_code_data = db.Column(db.Text, nullable=False)  # Base64 encoded QR code
+    expires_at = db.Column(db.DateTime, nullable=False)
+    used = db.Column(db.Boolean, default=False)
+    used_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'appointment_id': self.appointment_id,
+            'qr_code_data': self.qr_code_data,
+            'expires_at': self.expires_at.isoformat() if self.expires_at else None,
+            'used': self.used,
+            'used_at': self.used_at.isoformat() if self.used_at else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
 # Auth Routes
