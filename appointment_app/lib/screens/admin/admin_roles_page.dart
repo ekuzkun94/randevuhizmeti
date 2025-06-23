@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:appointment_app/services/api_service.dart';
+import 'package:go_router/go_router.dart';
 import 'dart:async';
 
 class AdminRolesPage extends StatefulWidget {
@@ -173,6 +174,45 @@ class _AdminRolesPageState extends State<AdminRolesPage>
     }
   }
 
+  void _logout() async {
+    // Çıkış onay dialogu göster
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1a1a2e),
+        title: const Text(
+          'Çıkış Yap',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: const Text(
+          'Oturumu kapatmak istediğinizden emin misiniz?',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('İptal', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Çıkış Yap'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLogout == true) {
+      // Kullanıcı oturumunu kapat
+      if (context.mounted) {
+        context.go('/login');
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -269,6 +309,19 @@ class _AdminRolesPageState extends State<AdminRolesPage>
               size: 24,
             ),
           ),
+          const SizedBox(width: 12),
+          IconButton(
+            onPressed: _logout,
+            icon: const Icon(Icons.logout_rounded),
+            color: Colors.redAccent,
+            tooltip: 'Çıkış Yap',
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.white.withOpacity(0.1),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -307,12 +360,22 @@ class _AdminRolesPageState extends State<AdminRolesPage>
                     Text(
                       'Roller',
                       style: TextStyle(
+                        fontSize: 18,
                         color: selectedTabIndex == 0
                             ? Colors.white
                             : Colors.white70,
                         fontWeight: selectedTabIndex == 0
-                            ? FontWeight.bold
-                            : FontWeight.normal,
+                            ? FontWeight.w900
+                            : FontWeight.w600,
+                        shadows: selectedTabIndex == 0
+                            ? [
+                                Shadow(
+                                  offset: const Offset(0, 1),
+                                  blurRadius: 2,
+                                  color: Colors.black.withOpacity(0.5),
+                                ),
+                              ]
+                            : null,
                       ),
                     ),
                   ],
@@ -344,12 +407,22 @@ class _AdminRolesPageState extends State<AdminRolesPage>
                     Text(
                       'Kullanıcılar',
                       style: TextStyle(
+                        fontSize: 18,
                         color: selectedTabIndex == 1
                             ? Colors.white
                             : Colors.white70,
                         fontWeight: selectedTabIndex == 1
-                            ? FontWeight.bold
-                            : FontWeight.normal,
+                            ? FontWeight.w900
+                            : FontWeight.w600,
+                        shadows: selectedTabIndex == 1
+                            ? [
+                                Shadow(
+                                  offset: const Offset(0, 1),
+                                  blurRadius: 2,
+                                  color: Colors.black.withOpacity(0.5),
+                                ),
+                              ]
+                            : null,
                       ),
                     ),
                   ],

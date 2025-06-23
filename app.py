@@ -23,7 +23,9 @@ pymysql.install_as_MySQLdb()
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)  # CORS desteği eklendi
+CORS(app, origins=['http://localhost:8080', 'http://127.0.0.1:8080', 'http://localhost:3000'], 
+     allow_headers=['Content-Type', 'Authorization'],
+     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])  # CORS desteği eklendi
 
 # Database configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql://{os.getenv('MYSQL_USER')}:{os.getenv('MYSQL_PASSWORD')}@{os.getenv('MYSQL_HOST')}/appointment_system"
@@ -79,8 +81,8 @@ class User(db.Model):
     email = db.Column(db.String(255), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     role_id = db.Column(db.String(36), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     def to_dict(self):
         return {
@@ -101,8 +103,8 @@ class Service(db.Model):
     duration = db.Column(db.Integer, default=60)  # Dakika cinsinden
     price = db.Column(db.Numeric(10, 2), default=0.00)
     provider_id = db.Column(db.String(36), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     def to_dict(self):
         return {
@@ -125,8 +127,8 @@ class WorkingHour(db.Model):
     start_time = db.Column(db.String(10), nullable=False)  # HH:MM formatında
     end_time = db.Column(db.String(10), nullable=False)  # HH:MM formatında
     is_available = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     def to_dict(self):
         return {
@@ -156,8 +158,8 @@ class Provider(db.Model):
     total_reviews = db.Column(db.Integer, default=0)
     is_verified = db.Column(db.Boolean, default=False)
     is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     def to_dict(self):
         return {
@@ -201,8 +203,8 @@ class Appointment(db.Model):
     approval_level = db.Column(db.Integer, default=0)  # 0: onay gerektirmez, 1-3: onay seviyesi
     approval_status = db.Column(db.String(20), default='none')  # none, pending, approved, rejected
     approvers = db.Column(db.Text)  # JSON format: onaycıların listesi
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     def to_dict(self):
         return {
@@ -241,8 +243,8 @@ class Staff(db.Model):
     salary = db.Column(db.Numeric(10, 2))
     is_active = db.Column(db.Boolean, default=True)
     permissions = db.Column(db.Text)  # JSON format permissions
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     def to_dict(self):
         return {
@@ -270,8 +272,8 @@ class Shift(db.Model):
     shift_type = db.Column(db.String(20), default='regular')  # regular, overtime, holiday
     status = db.Column(db.String(20), default='scheduled')  # scheduled, started, completed, cancelled
     notes = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     def to_dict(self):
         return {
@@ -295,7 +297,7 @@ class PasswordReset(db.Model):
     token = db.Column(db.String(100), nullable=False, unique=True)
     expires_at = db.Column(db.DateTime, nullable=False)
     used = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
     def to_dict(self):
         return {
@@ -316,7 +318,7 @@ class QRCode(db.Model):
     expires_at = db.Column(db.DateTime, nullable=False)
     used = db.Column(db.Boolean, default=False)
     used_at = db.Column(db.DateTime)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     def to_dict(self):
         return {
@@ -339,8 +341,8 @@ class Approval(db.Model):
     status = db.Column(db.String(20), default='pending')  # pending, approved, rejected
     created_by = db.Column(db.String(36), nullable=False)  # Onay sürecini başlatan kullanıcı
     completed_at = db.Column(db.DateTime)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     def to_dict(self):
         return {
@@ -366,8 +368,8 @@ class ApprovalStep(db.Model):
     status = db.Column(db.String(20), default='pending')  # pending, approved, rejected
     approved_at = db.Column(db.DateTime)
     comments = db.Column(db.Text)  # Onay yorumları
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     def to_dict(self):
         return {
@@ -550,7 +552,7 @@ def update_service(service_id):
         if 'price' in data:
             service.price = data['price']
             
-        service.updated_at = datetime.utcnow()
+        service.updated_at = datetime.now(timezone.utc)
         
         db.session.commit()
         
@@ -716,7 +718,7 @@ def update_provider(provider_id):
         if 'is_active' in data:
             provider.is_active = data['is_active']
             
-        provider.updated_at = datetime.utcnow()
+        provider.updated_at = datetime.now(timezone.utc)
         
         db.session.commit()
         
@@ -930,10 +932,10 @@ def qr_checkin():
         appointment = Appointment.query.get(qr_code.appointment_id)
         if appointment:
             appointment.status = 'checked_in'
-            appointment.updated_at = datetime.utcnow()
+            appointment.updated_at = datetime.now(timezone.utc)
         
         qr_code.used = True
-        qr_code.used_at = datetime.utcnow()
+        qr_code.used_at = datetime.now(timezone.utc)
         
         db.session.commit()
         
@@ -1241,13 +1243,13 @@ def approve_step(approval_id):
         
         # Adımı güncelle
         current_step.status = action
-        current_step.approved_at = datetime.utcnow()
+        current_step.approved_at = datetime.now(timezone.utc)
         current_step.comments = comments
         
         if action == 'reject':
             # Reddedildi - tüm süreci durdur
             approval.status = 'rejected'
-            approval.completed_at = datetime.utcnow()
+            approval.completed_at = datetime.now(timezone.utc)
             
             # Appointment'ı güncelle
             appointment = Appointment.query.get(approval.appointment_id)
@@ -1259,7 +1261,7 @@ def approve_step(approval_id):
             if approval.current_step == approval.approval_level:
                 # Son adım onaylandı - süreç tamamlandı
                 approval.status = 'approved'
-                approval.completed_at = datetime.utcnow()
+                approval.completed_at = datetime.now(timezone.utc)
                 
                 # Appointment'ı güncelle
                 appointment = Appointment.query.get(approval.appointment_id)
@@ -1356,7 +1358,7 @@ def reset_password():
         
         # Şifreyi güncelle (gerçek uygulamada hash'lenmeli)
         user.password = new_password
-        user.updated_at = datetime.utcnow()
+        user.updated_at = datetime.now(timezone.utc)
         
         # Token'ı kullanılmış olarak işaretle
         reset_record.used = True

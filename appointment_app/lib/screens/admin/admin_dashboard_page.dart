@@ -62,6 +62,45 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
     });
   }
 
+  void _logout() async {
+    // Çıkış onay dialogu göster
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1a1a2e),
+        title: const Text(
+          'Çıkış Yap',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: const Text(
+          'Oturumu kapatmak istediğinizden emin misiniz?',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('İptal', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Çıkış Yap'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLogout == true) {
+      // Kullanıcı oturumunu kapat
+      if (context.mounted) {
+        context.go('/login');
+      }
+    }
+  }
+
   @override
   void dispose() {
     _animationController.dispose();
@@ -136,6 +175,21 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
                         icon: const Icon(Icons.settings),
                         onPressed: () {},
                         color: Colors.white,
+                      ),
+                      Container(
+                        margin: const EdgeInsets.only(right: 8),
+                        child: IconButton(
+                          icon: const Icon(Icons.logout_rounded),
+                          onPressed: _logout,
+                          color: Colors.redAccent,
+                          tooltip: 'Çıkış Yap',
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.white.withOpacity(0.1),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
