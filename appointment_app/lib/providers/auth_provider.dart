@@ -3,7 +3,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
-import '../services/api_service.dart';
+import '../services/hybrid_api_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   UserModel? _currentUser;
@@ -92,7 +92,8 @@ class AuthProvider extends ChangeNotifier {
       _clearError();
 
       // API'ye giriş isteği gönder
-      final response = await ApiService.login(email, password, roleId);
+      final hybridApi = HybridApiService();
+      final response = await hybridApi.login(email, password);
       
       if (response['user'] != null) {
         final userData = response['user'];

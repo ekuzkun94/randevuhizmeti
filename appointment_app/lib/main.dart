@@ -5,6 +5,7 @@ import 'package:appointment_app/providers/auth_provider.dart';
 import 'package:appointment_app/providers/language_provider.dart';
 import 'package:appointment_app/router.dart';
 import 'package:appointment_app/services/translation_service.dart';
+import 'package:appointment_app/services/hybrid_api_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,6 +13,10 @@ void main() async {
   // TranslationService'i başlat
   final translationService = TranslationService();
   await translationService.initialize();
+  
+  // HybridApiService'i başlat (SQLite + Connectivity)
+  final hybridApiService = HybridApiService();
+  await hybridApiService.initialize();
   
   runApp(const MyApp());
 }

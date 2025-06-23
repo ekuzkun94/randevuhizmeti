@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'package:appointment_app/services/api_service.dart';
+import 'package:appointment_app/services/hybrid_api_service.dart';
 import 'package:go_router/go_router.dart';
 
 class GuestBookingPage extends StatefulWidget {
@@ -61,9 +61,10 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
 
   Future<void> _checkApiStatus() async {
     try {
-      final response = await ApiService.checkConnection();
+      final hybridApi = HybridApiService();
+      final isOnline = await hybridApi.checkApiStatus();
       setState(() {
-        _isApiOnline = response['success'] == true;
+        _isApiOnline = isOnline;
       });
     } catch (e) {
       setState(() {
@@ -76,46 +77,23 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
     setState(() => _isLoadingServices = true);
 
     try {
-      if (_isApiOnline) {
-        final response = await ApiService.getServices();
-        final services = response['services'] as List<dynamic>? ?? [];
+      final hybridApi = HybridApiService();
+      final response = await hybridApi.getServices();
+      final services = response['services'] as List<dynamic>? ?? [];
 
-        setState(() {
-          _allServices = services.map<Map<String, dynamic>>((service) {
-            final serviceMap = service as Map<String, dynamic>;
-            return {
-              'id': serviceMap['id']?.toString() ?? '',
-              'name': serviceMap['name'] ?? 'Bilinmeyen Hizmet',
-              'description': serviceMap['description'] ?? '',
-              'duration': '${serviceMap['duration'] ?? 30} dk',
-              'price': '${serviceMap['price'] ?? 0} ₺',
-              'provider_id': serviceMap['provider_id'] ?? '',
-            };
-          }).toList();
-        });
-      } else {
-        // Demo services for offline mode
-        setState(() {
-          _allServices = [
-            {
-              'id': 'service-001',
-              'name': 'Saç Kesimi',
-              'description': 'Profesyonel saç kesimi hizmeti',
-              'duration': '30 dk',
-              'price': '50 ₺',
-              'provider_id': 'prov-001',
-            },
-            {
-              'id': 'service-002',
-              'name': 'Saç Boyama',
-              'description': 'Saç boyama ve bakım hizmeti',
-              'duration': '120 dk',
-              'price': '150 ₺',
-              'provider_id': 'prov-001',
-            },
-          ];
-        });
-      }
+      setState(() {
+        _allServices = services.map<Map<String, dynamic>>((service) {
+          final serviceMap = service as Map<String, dynamic>;
+          return {
+            'id': serviceMap['server_id']?.toString() ?? serviceMap['id']?.toString() ?? '',
+            'name': serviceMap['name'] ?? 'Bilinmeyen Hizmet',
+            'description': serviceMap['description'] ?? '',
+            'duration': '${serviceMap['duration'] ?? 30} dk',
+            'price': '${serviceMap['price'] ?? 0} ₺',
+            'provider_id': serviceMap['provider_id'] ?? '',
+          };
+        }).toList();
+      });
     } catch (e) {
       print('Hizmetler yüklenirken hata: $e');
     } finally {
@@ -127,38 +105,23 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
     setState(() => _isLoadingProviders = true);
 
     try {
-      if (_isApiOnline) {
-        final response = await ApiService.getProviders();
-        final providers = response['providers'] as List<dynamic>? ?? [];
+      final hybridApi = HybridApiService();
+      final response = await hybridApi.getProviders();
+      final providers = response['providers'] as List<dynamic>? ?? [];
 
-        setState(() {
-          _allProviders = providers.map<Map<String, dynamic>>((provider) {
-            final providerMap = provider as Map<String, dynamic>;
-            return {
-              'id': providerMap['id']?.toString() ?? '',
-              'name': providerMap['user_name'] ?? 'Bilinmeyen Provider',
-              'business_name': providerMap['business_name'] ?? '',
-              'specialization': providerMap['specialization'] ?? '',
-              'phone': providerMap['phone'] ?? '',
-              'address': providerMap['address'] ?? '',
-            };
-          }).toList();
-        });
-      } else {
-        // Demo providers for offline mode
-        setState(() {
-          _allProviders = [
-            {
-              'id': 'prov-001',
-              'name': 'Dr. Ahmet Yılmaz',
-              'business_name': 'Ahmet\'s Kuaför Salonu',
-              'specialization': 'Saç Kesimi ve Bakımı',
-              'phone': '+90 555 123 4567',
-              'address': 'Atatürk Cad. No:123 Kadıköy',
-            },
-          ];
-        });
-      }
+      setState(() {
+        _allProviders = providers.map<Map<String, dynamic>>((provider) {
+          final providerMap = provider as Map<String, dynamic>;
+          return {
+            'id': providerMap['server_id']?.toString() ?? providerMap['id']?.toString() ?? '',
+            'name': providerMap['user_name'] ?? 'Bilinmeyen Provider',
+            'business_name': providerMap['business_name'] ?? '',
+            'specialization': providerMap['specialization'] ?? '',
+            'phone': providerMap['phone'] ?? '',
+            'address': providerMap['address'] ?? '',
+          };
+        }).toList();
+      });
     } catch (e) {
       print('Providers yüklenirken hata: $e');
     } finally {
@@ -186,10 +149,9 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
   }
 
   Future<void> _loadExistingAppointments() async {
-    if (!_isApiOnline) return;
-    
     try {
-      final response = await ApiService.getAppointments();
+      final hybridApi = HybridApiService();
+      final response = await hybridApi.getAppointments();
       if (response.containsKey('appointments')) {
         final appointments = response['appointments'] as List<dynamic>? ?? [];
         setState(() {
@@ -221,7 +183,8 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
     setState(() => _isLoading = true);
 
     try {
-      final result = await ApiService.createAppointment(
+      final hybridApi = HybridApiService();
+      final result = await hybridApi.createAppointment(
         customerName: _nameController.text.trim(),
         customerEmail: _emailController.text.trim(),
         customerPhone: _phoneController.text.trim(),

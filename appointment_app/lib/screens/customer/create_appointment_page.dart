@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'package:appointment_app/services/api_service.dart';
+import 'package:appointment_app/services/hybrid_api_service.dart';
 import 'package:intl/intl.dart';
 
 class CreateAppointmentPage extends StatefulWidget {
@@ -156,9 +156,10 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
 
   Future<void> _checkApiStatus() async {
     try {
-      final response = await ApiService.checkConnection();
+      final hybridApi = HybridApiService();
+      final isOnline = await hybridApi.checkApiStatus();
       setState(() {
-        _isApiOnline = response['success'] == true;
+        _isApiOnline = isOnline;
       });
     } catch (e) {
       setState(() {
@@ -171,25 +172,24 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
     setState(() => _isLoadingServices = true);
     
     try {
-      if (_isApiOnline) {
-        final response = await ApiService.getServices();
-        final services = response['services'] as List<dynamic>? ?? [];
-        
-        setState(() {
-          _allServices = services.map<Map<String, dynamic>>((service) {
-            final serviceMap = service as Map<String, dynamic>;
-            return {
-              'id': serviceMap['id']?.toString() ?? '',
-              'name': serviceMap['name'] ?? 'Bilinmeyen Hizmet',
-              'description': serviceMap['description'] ?? '',
-              'duration': '${serviceMap['duration'] ?? 30} dk',
-              'price': '${serviceMap['price'] ?? 0} ₺',
-              'category': serviceMap['category'] ?? 'Genel',
-              'provider_id': serviceMap['provider_id'] ?? '',
-            };
-          }).toList();
-        });
-      }
+      final hybridApi = HybridApiService();
+      final response = await hybridApi.getServices();
+      final services = response['services'] as List<dynamic>? ?? [];
+      
+      setState(() {
+        _allServices = services.map<Map<String, dynamic>>((service) {
+          final serviceMap = service as Map<String, dynamic>;
+          return {
+            'id': serviceMap['server_id']?.toString() ?? serviceMap['id']?.toString() ?? '',
+            'name': serviceMap['name'] ?? 'Bilinmeyen Hizmet',
+            'description': serviceMap['description'] ?? '',
+            'duration': '${serviceMap['duration'] ?? 30} dk',
+            'price': '${serviceMap['price'] ?? 0} ₺',
+            'category': serviceMap['category'] ?? 'Genel',
+            'provider_id': serviceMap['provider_id'] ?? '',
+          };
+        }).toList();
+      });
     } catch (e) {
       print('Hizmetler yüklenirken hata: $e');
       setState(() {
@@ -204,108 +204,35 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
     setState(() => _isLoadingProviders = true);
     
     try {
-      if (_isApiOnline) {
-        final response = await ApiService.getProviders();
-        final providers = response['providers'] as List<dynamic>? ?? [];
-        
-        setState(() {
-          _allProviders = providers.map<Map<String, dynamic>>((provider) {
-            final providerMap = provider as Map<String, dynamic>;
-            return {
-              'id': providerMap['id']?.toString() ?? '',
-              'user_id': providerMap['user_id']?.toString() ?? '',
-              'name': providerMap['user_name'] ?? 'Bilinmeyen Provider',
-              'business_name': providerMap['business_name'] ?? '',
-              'description': providerMap['description'] ?? '',
-              'specialization': providerMap['specialization'] ?? '',
-              'experience_years': providerMap['experience_years'] ?? 0,
-              'rating': (providerMap['rating'] ?? 4.0).toDouble(),
-              'total_reviews': providerMap['total_reviews'] ?? 0,
-              'phone': providerMap['phone'] ?? '',
-              'address': providerMap['address'] ?? '',
-              'city': providerMap['city'] ?? '',
-              'is_active': providerMap['is_active'] ?? true,
-              'is_verified': providerMap['is_verified'] ?? false,
-            };
-          }).toList();
-        });
-      } else {
-        // API offline durumunda demo provider'lar
-        setState(() {
-          _allProviders = [
-            {
-              'id': 'prov-001',
-              'user_id': 'provider-001',
-              'name': 'Dr. Ahmet Yılmaz',
-              'business_name': 'Ahmet\'s Kuaför Salonu',
-              'description': 'Profesyonel saç kesimi ve bakım hizmetleri',
-              'specialization': 'Saç Kesimi ve Bakımı',
-              'experience_years': 15,
-              'rating': 4.8,
-              'total_reviews': 127,
-              'phone': '+90 555 123 4567',
-              'address': 'Atatürk Cad. No:123 Kadıköy',
-              'city': 'İstanbul',
-              'is_active': true,
-              'is_verified': true,
-            },
-            {
-              'id': 'prov-002',
-              'user_id': 'provider-002',
-              'name': 'Dr. Elif Demir',
-              'business_name': 'Dr. Elif Demir Kliniği',
-              'description': 'Estetik ve güzellik hizmetleri',
-              'specialization': 'Estetik ve Güzellik',
-              'experience_years': 8,
-              'rating': 4.9,
-              'total_reviews': 89,
-              'phone': '+90 555 234 5678',
-              'address': 'Bağdat Cad. No:456 Üsküdar',
-              'city': 'İstanbul',
-              'is_active': true,
-              'is_verified': true,
-            },
-            {
-              'id': 'prov-003',
-              'user_id': 'provider-003',
-              'name': 'Mehmet Özkan',
-              'business_name': 'Özkan Fitness Center',
-              'description': 'Kişisel antrenörlük ve fitness koçluğu',
-              'specialization': 'Fitness ve Spor',
-              'experience_years': 12,
-              'rating': 4.6,
-              'total_reviews': 156,
-              'phone': '+90 555 345 6789',
-              'address': 'Nişantaşı Mah. Spor Sok. No:78',
-              'city': 'İstanbul',
-              'is_active': true,
-              'is_verified': true,
-            },
-          ];
-        });
-      }
+      final hybridApi = HybridApiService();
+      final response = await hybridApi.getProviders();
+      final providers = response['providers'] as List<dynamic>? ?? [];
+      
+      setState(() {
+        _allProviders = providers.map<Map<String, dynamic>>((provider) {
+          final providerMap = provider as Map<String, dynamic>;
+          return {
+            'id': providerMap['server_id']?.toString() ?? providerMap['id']?.toString() ?? '',
+            'user_id': providerMap['user_id']?.toString() ?? '',
+            'name': providerMap['user_name'] ?? 'Bilinmeyen Provider',
+            'business_name': providerMap['business_name'] ?? '',
+            'description': providerMap['description'] ?? '',
+            'specialization': providerMap['specialization'] ?? '',
+            'experience_years': providerMap['experience_years'] ?? 0,
+            'rating': (providerMap['rating'] ?? 4.0).toDouble(),
+            'total_reviews': providerMap['total_reviews'] ?? 0,
+            'phone': providerMap['phone'] ?? '',
+            'address': providerMap['address'] ?? '',
+            'city': providerMap['city'] ?? '',
+            'is_active': providerMap['is_active'] ?? true,
+            'is_verified': providerMap['is_verified'] ?? false,
+          };
+        }).toList();
+      });
     } catch (e) {
       print('Providers yüklenirken hata: $e');
-      // Hata durumunda da demo provider'ları göster
       setState(() {
-        _allProviders = [
-          {
-            'id': 'prov-001',
-            'user_id': 'provider-001',
-            'name': 'Dr. Ahmet Yılmaz',
-            'business_name': 'Ahmet\'s Kuaför Salonu',
-            'description': 'Profesyonel saç kesimi ve bakım hizmetleri',
-            'specialization': 'Saç Kesimi ve Bakımı',
-            'experience_years': 15,
-            'rating': 4.8,
-            'total_reviews': 127,
-            'phone': '+90 555 123 4567',
-            'address': 'Atatürk Cad. No:123 Kadıköy',
-            'city': 'İstanbul',
-            'is_active': true,
-            'is_verified': true,
-          },
-        ];
+        _allProviders = [];
       });
     } finally {
       setState(() => _isLoadingProviders = false);
@@ -313,10 +240,9 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
   }
 
   Future<void> _loadExistingAppointments() async {
-    if (!_isApiOnline) return;
-    
     try {
-      final response = await ApiService.getAppointments();
+      final hybridApi = HybridApiService();
+      final response = await hybridApi.getAppointments();
       if (response.containsKey('appointments')) {
         final appointments = response['appointments'] as List<dynamic>? ?? [];
         setState(() {
@@ -430,7 +356,8 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
         orElse: () => <String, dynamic>{},
       );
 
-      final result = await ApiService.createAppointment(
+      final hybridApi = HybridApiService();
+      final result = await hybridApi.createAppointment(
         customerName: _userNameController.text.trim(),
         customerEmail: _emailController.text.trim(),
         customerPhone: _phoneController.text.trim(),
