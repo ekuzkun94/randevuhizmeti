@@ -1890,6 +1890,7 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
         const SizedBox(height: 16),
         TextFormField(
           controller: _userNameController,
+          onChanged: (value) => setState(() {}), // State güncellemesi
           decoration: InputDecoration(
             labelText: 'Adınız Soyadınız *',
             prefixIcon: const Icon(Icons.person_outline),
@@ -1908,6 +1909,7 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
         TextFormField(
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
+          onChanged: (value) => setState(() {}), // State güncellemesi
           decoration: InputDecoration(
             labelText: 'E-posta *',
             prefixIcon: const Icon(Icons.email_outlined),
@@ -1929,6 +1931,7 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
         TextFormField(
           controller: _phoneController,
           keyboardType: TextInputType.phone,
+          onChanged: (value) => setState(() {}), // State güncellemesi
           decoration: InputDecoration(
             labelText: 'Telefon *',
             prefixIcon: const Icon(Icons.phone_outlined),

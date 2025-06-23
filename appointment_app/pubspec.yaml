@@ -24,6 +24,12 @@ dependencies:
   uuid: ^4.0.0
   http: ^1.1.0
   
+  # Local Database
+  sqflite: ^2.3.0
+  path: ^1.8.3
+  connectivity_plus: ^5.0.1
+  crypto: ^3.0.3
+  
   # State Management
   provider: ^6.0.5
   
