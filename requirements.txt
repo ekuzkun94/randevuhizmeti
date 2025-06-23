@@ -5,4 +5,6 @@ python-dotenv==0.19.0
 PyMySQL==1.0.2
 Werkzeug==2.0.3
 SQLAlchemy==1.4.52
-cryptography 
+cryptography
+qrcode==7.4.2
+Pillow==10.2.0 

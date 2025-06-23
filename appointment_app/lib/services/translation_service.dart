@@ -9,7 +9,7 @@ class TranslationService {
   TranslationService._internal();
 
   final MySQLService _mysqlService = MySQLService.instance;
-  
+
   // Cache
   final Map<String, Map<String, String>> _translations = {};
   List<LanguageModel> _languages = [];
@@ -36,7 +36,8 @@ class TranslationService {
       'book_now': 'Şimdi Rezervasyon Yap',
       'login': 'Giriş Yap',
       'welcome_back': 'Tekrar Hoş Geldiniz',
-      'login_subtitle': 'Hesabınıza giriş yapın ve randevu yönetiminin keyfini çıkarın',
+      'login_subtitle':
+          'Hesabınıza giriş yapın ve randevu yönetiminin keyfini çıkarın',
       'email': 'E-posta',
       'password': 'Şifre',
       'email_required': 'E-posta gerekli',
@@ -46,7 +47,8 @@ class TranslationService {
       'register': 'Kayıt Ol',
       'register_now': 'Hemen Kayıt Ol',
       'new_user': 'Yeni Kullanıcı?',
-      'create_account_desc': 'Hemen hesap oluşturun ve platformumuzun avantajlarından yararlanın',
+      'create_account_desc':
+          'Hemen hesap oluşturun ve platformumuzun avantajlarından yararlanın',
       'already_have_account': 'Zaten hesabınız var mı?',
       'dont_have_account': 'Hesabınız yok mu?',
       'name': 'Ad Soyad',
@@ -111,7 +113,8 @@ class TranslationService {
       'book_now': 'Book Now',
       'login': 'Login',
       'welcome_back': 'Welcome Back',
-      'login_subtitle': 'Sign in to your account and enjoy appointment management',
+      'login_subtitle':
+          'Sign in to your account and enjoy appointment management',
       'email': 'Email',
       'password': 'Password',
       'email_required': 'Email is required',
@@ -121,7 +124,8 @@ class TranslationService {
       'register': 'Register',
       'register_now': 'Register Now',
       'new_user': 'New User?',
-      'create_account_desc': 'Create an account now and enjoy the benefits of our platform',
+      'create_account_desc':
+          'Create an account now and enjoy the benefits of our platform',
       'already_have_account': 'Already have an account?',
       'dont_have_account': 'Don\'t have an account?',
       'name': 'Full Name',
@@ -194,17 +198,30 @@ class TranslationService {
   ];
 
   bool get isInitialized => _isInitialized;
-  List<LanguageModel> get languages => _languages.isNotEmpty ? _languages : _fallbackLanguages;
+  List<LanguageModel> get languages =>
+      _languages.isNotEmpty ? _languages : _fallbackLanguages;
 
   Future<void> initialize() async {
     if (_isInitialized) return;
 
     try {
       debugPrint('TranslationService initializing...');
-      
+
+      // Web ortamında direkt fallback kullan
+      if (kIsWeb) {
+        debugPrint(
+            'Web platform detected, using fallback languages and translations');
+        _languages = List.from(_fallbackLanguages);
+        _translations.addAll(_fallbackTranslations);
+        _isInitialized = true;
+        debugPrint(
+            'TranslationService initialized for web with ${_languages.length} languages');
+        return;
+      }
+
       // MySQL'den dilleri yüklemeye çalış
       await _loadLanguagesFromDatabase();
-      
+
       // Eğer MySQL'den yüklenemezse fallback kullan
       if (_languages.isEmpty) {
         debugPrint('MySQL unavailable, using fallback languages');
@@ -213,8 +230,8 @@ class TranslationService {
       }
 
       _isInitialized = true;
-      debugPrint('TranslationService initialized with ${_languages.length} languages');
-      
+      debugPrint(
+          'TranslationService initialized with ${_languages.length} languages');
     } catch (e) {
       debugPrint('TranslationService initialization error: $e');
       // Hata durumunda fallback kullan
@@ -226,24 +243,26 @@ class TranslationService {
 
   Future<void> _loadLanguagesFromDatabase() async {
     try {
-      final results = await _mysqlService.query('SELECT * FROM languages WHERE is_active = 1');
-      
-      _languages = results.map<LanguageModel>((row) => LanguageModel(
-        id: row['id'].toString(),
-        name: row['name'].toString(),
-        nativeName: row['native_name'].toString(),
-        flagEmoji: row['flag_emoji'].toString(),
-        isActive: row['is_active'] == 1,
-        sortOrder: row['sort_order'] as int? ?? 1,
-        createdAt: DateTime.parse(row['created_at'].toString()),
-        updatedAt: DateTime.parse(row['updated_at'].toString()),
-      )).toList();
+      final results = await _mysqlService
+          .query('SELECT * FROM languages WHERE is_active = 1');
+
+      _languages = results
+          .map<LanguageModel>((row) => LanguageModel(
+                id: row['id'].toString(),
+                name: row['name'].toString(),
+                nativeName: row['native_name'].toString(),
+                flagEmoji: row['flag_emoji'].toString(),
+                isActive: row['is_active'] == 1,
+                sortOrder: row['sort_order'] as int? ?? 1,
+                createdAt: DateTime.parse(row['created_at'].toString()),
+                updatedAt: DateTime.parse(row['updated_at'].toString()),
+              ))
+          .toList();
 
       // Her dil için çevirileri yükle
       for (final language in _languages) {
         await _loadTranslationsForLanguage(language.id);
       }
-      
     } catch (e) {
       debugPrint('Database language loading error: $e');
       rethrow;
@@ -260,17 +279,18 @@ class TranslationService {
 
       _translations[languageId] = {};
       for (final row in results) {
-        _translations[languageId]![row['translation_key'].toString()] = 
+        _translations[languageId]![row['translation_key'].toString()] =
             row['translation_value'].toString();
       }
-      
-      debugPrint('Loaded ${_translations[languageId]!.length} translations from database');
-      
+
+      debugPrint(
+          'Loaded ${_translations[languageId]!.length} translations from database');
     } catch (e) {
       debugPrint('Translation loading error for $languageId: $e');
       // Hata durumunda fallback kullan
       if (_fallbackTranslations.containsKey(languageId)) {
-        _translations[languageId] = Map.from(_fallbackTranslations[languageId]!);
+        _translations[languageId] =
+            Map.from(_fallbackTranslations[languageId]!);
         debugPrint('Using fallback translations for language: $languageId');
       }
     }
@@ -278,13 +298,13 @@ class TranslationService {
 
   String translate(String key, {String languageId = 'tr', String? fallback}) {
     // Önce cache'den bak
-    if (_translations.containsKey(languageId) && 
+    if (_translations.containsKey(languageId) &&
         _translations[languageId]!.containsKey(key)) {
       return _translations[languageId]![key]!;
     }
 
     // Fallback translation'dan bak
-    if (_fallbackTranslations.containsKey(languageId) && 
+    if (_fallbackTranslations.containsKey(languageId) &&
         _fallbackTranslations[languageId]!.containsKey(key)) {
       return _fallbackTranslations[languageId]![key]!;
     }
@@ -303,7 +323,8 @@ class TranslationService {
     return key;
   }
 
-  Future<void> addTranslation(String languageId, String key, String value) async {
+  Future<void> addTranslation(
+      String languageId, String key, String value) async {
     try {
       // Cache'e ekle
       _translations[languageId] ??= {};
@@ -315,14 +336,14 @@ class TranslationService {
         VALUES (?, ?, ?, 1, NOW(), NOW())
         ON DUPLICATE KEY UPDATE translation_value = ?, updated_at = NOW()
       ''', [languageId, key, value, value]);
-      
     } catch (e) {
       debugPrint('Add translation error: $e');
       // Database hatası olsa bile cache'e eklendi
     }
   }
 
-  Future<void> updateTranslation(String languageId, String key, String value) async {
+  Future<void> updateTranslation(
+      String languageId, String key, String value) async {
     await addTranslation(languageId, key, value);
   }
 
@@ -337,7 +358,6 @@ class TranslationService {
         SET is_active = 0, updated_at = NOW()
         WHERE language_id = ? AND translation_key = ?
       ''', [languageId, key]);
-      
     } catch (e) {
       debugPrint('Delete translation error: $e');
     }
@@ -349,4 +369,4 @@ class TranslationService {
     _isInitialized = false;
     await initialize();
   }
-} 
+}

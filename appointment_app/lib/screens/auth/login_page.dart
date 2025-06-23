@@ -34,14 +34,16 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
-      
+      final languageProvider =
+          Provider.of<LanguageProvider>(context, listen: false);
+
       final email = _emailController.text.trim();
       final password = _passwordController.text.trim();
 
       // AuthProvider'dan giriş yap (API çağrısı yapacak)
-      final success = await authProvider.login(email, password, ''); // Role ID boş, API'den gelecek
-      
+      final success = await authProvider.login(
+          email, password, ''); // Role ID boş, API'den gelecek
+
       if (success && mounted) {
         // Başarılı giriş - role'e göre yönlendir
         final user = authProvider.currentUser;
@@ -62,27 +64,32 @@ class _LoginPageState extends State<LoginPage> {
         }
       } else if (mounted) {
         // Giriş başarısız
-        final errorMessage = authProvider.errorMessage ?? 
-            languageProvider.translate('invalid_credentials', fallback: 'Geçersiz email veya şifre');
-        
+        final errorMessage = authProvider.errorMessage ??
+            languageProvider.translate('invalid_credentials',
+                fallback: 'Geçersiz email veya şifre');
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
         );
       }
     } catch (e) {
       if (mounted) {
-        final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
+        final languageProvider =
+            Provider.of<LanguageProvider>(context, listen: false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${languageProvider.translate('login_error', fallback: 'Giriş hatası')}: $e'),
+            content: Text(
+                '${languageProvider.translate('login_error', fallback: 'Giriş hatası')}: $e'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
         );
       }
@@ -164,31 +171,41 @@ class _LoginPageState extends State<LoginPage> {
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         // Dil seçeneği
-                        if (languageProvider.isInitialized && languageProvider.availableLanguages.isNotEmpty)
+                        if (languageProvider.isInitialized &&
+                            languageProvider.availableLanguages.isNotEmpty)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                              border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.3)),
                             ),
                             child: DropdownButton<String>(
-                              value: languageProvider.currentLanguage?.id ?? 'tr',
-                              dropdownColor: Colors.white.withValues(alpha: 0.95),
-                              icon: const Icon(Icons.expand_more, color: Colors.white, size: 20),
+                              value:
+                                  languageProvider.currentLanguage?.id ?? 'tr',
+                              dropdownColor:
+                                  Colors.white.withValues(alpha: 0.95),
+                              icon: const Icon(Icons.expand_more,
+                                  color: Colors.white, size: 20),
                               underline: Container(),
-                              style: const TextStyle(color: Colors.white, fontSize: 14),
-                              items: languageProvider.availableLanguages.map((language) {
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 14),
+                              items: languageProvider.availableLanguages
+                                  .map((language) {
                                 return DropdownMenuItem<String>(
                                   value: language.id,
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Text(language.flagEmoji, style: const TextStyle(fontSize: 16)),
+                                      Text(language.flagEmoji,
+                                          style: const TextStyle(fontSize: 16)),
                                       const SizedBox(width: 8),
                                       Text(
                                         language.nativeName,
-                                        style: const TextStyle(color: Colors.black87),
+                                        style: const TextStyle(
+                                            color: Colors.black87),
                                       ),
                                     ],
                                   ),
@@ -200,11 +217,13 @@ class _LoginPageState extends State<LoginPage> {
                                 }
                               },
                               selectedItemBuilder: (BuildContext context) {
-                                return languageProvider.availableLanguages.map((language) {
+                                return languageProvider.availableLanguages
+                                    .map((language) {
                                   return Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Text(language.flagEmoji, style: const TextStyle(fontSize: 16)),
+                                      Text(language.flagEmoji,
+                                          style: const TextStyle(fontSize: 16)),
                                       const SizedBox(width: 8),
                                       Text(
                                         language.id.toUpperCase(),
@@ -223,30 +242,40 @@ class _LoginPageState extends State<LoginPage> {
                       ],
                     ),
                   ),
-                  
+
                   // Login formu
                   Expanded(
                     child: SingleChildScrollView(
                       padding: EdgeInsets.symmetric(
-                        horizontal: MediaQuery.of(context).size.width > 600 ? 24.0 : 16.0,
+                        horizontal: MediaQuery.of(context).size.width > 600
+                            ? 24.0
+                            : 16.0,
                       ),
                       child: Column(
                         children: [
-                          SizedBox(height: MediaQuery.of(context).size.height > 700 ? 20 : 10),
-                          
+                          SizedBox(
+                              height: MediaQuery.of(context).size.height > 700
+                                  ? 20
+                                  : 10),
+
                           // Başlık bölümü
                           Column(
                             children: [
                               // Logo - Mobilde daha küçük
                               Container(
-                                width: MediaQuery.of(context).size.height > 700 ? 80 : 60,
-                                height: MediaQuery.of(context).size.height > 700 ? 80 : 60,
+                                width: MediaQuery.of(context).size.height > 700
+                                    ? 80
+                                    : 60,
+                                height: MediaQuery.of(context).size.height > 700
+                                    ? 80
+                                    : 60,
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.1),
+                                      color:
+                                          Colors.black.withValues(alpha: 0.1),
                                       blurRadius: 15,
                                       offset: const Offset(0, 4),
                                     ),
@@ -264,7 +293,12 @@ class _LoginPageState extends State<LoginPage> {
                                         ),
                                         child: Icon(
                                           Icons.schedule,
-                                          size: MediaQuery.of(context).size.height > 700 ? 40 : 30,
+                                          size: MediaQuery.of(context)
+                                                      .size
+                                                      .height >
+                                                  700
+                                              ? 40
+                                              : 30,
                                           color: Colors.white,
                                         ),
                                       );
@@ -272,23 +306,39 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                 ),
                               ),
-                              SizedBox(height: MediaQuery.of(context).size.height > 700 ? 20 : 12),
-                              
+                              SizedBox(
+                                  height:
+                                      MediaQuery.of(context).size.height > 700
+                                          ? 20
+                                          : 12),
+
                               Text(
-                                languageProvider.translate('welcome_back', fallback: 'Tekrar Hoş Geldiniz'),
+                                languageProvider.translate('welcome_back',
+                                    fallback: 'Tekrar Hoş Geldiniz'),
                                 style: TextStyle(
-                                  fontSize: MediaQuery.of(context).size.height > 700 ? 28 : 22,
+                                  fontSize:
+                                      MediaQuery.of(context).size.height > 700
+                                          ? 28
+                                          : 22,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
                                 ),
                                 textAlign: TextAlign.center,
                               ),
-                              SizedBox(height: MediaQuery.of(context).size.height > 700 ? 8 : 4),
-                              
+                              SizedBox(
+                                  height:
+                                      MediaQuery.of(context).size.height > 700
+                                          ? 8
+                                          : 4),
+
                               Text(
-                                languageProvider.translate('login_subtitle', fallback: 'Hesabınıza giriş yapın'),
+                                languageProvider.translate('login_subtitle',
+                                    fallback: 'Hesabınıza giriş yapın'),
                                 style: TextStyle(
-                                  fontSize: MediaQuery.of(context).size.height > 700 ? 14 : 12,
+                                  fontSize:
+                                      MediaQuery.of(context).size.height > 700
+                                          ? 14
+                                          : 12,
                                   color: Colors.white70,
                                 ),
                                 textAlign: TextAlign.center,
@@ -297,8 +347,11 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ],
                           ),
-                          SizedBox(height: MediaQuery.of(context).size.height > 700 ? 24 : 16),
-                          
+                          SizedBox(
+                              height: MediaQuery.of(context).size.height > 700
+                                  ? 24
+                                  : 16),
+
                           // Form kartı
                           Card(
                             elevation: 12,
@@ -306,7 +359,10 @@ class _LoginPageState extends State<LoginPage> {
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Padding(
-                              padding: EdgeInsets.all(MediaQuery.of(context).size.width > 600 ? 24.0 : 16.0),
+                              padding: EdgeInsets.all(
+                                  MediaQuery.of(context).size.width > 600
+                                      ? 24.0
+                                      : 16.0),
                               child: Form(
                                 key: _formKey,
                                 child: Column(
@@ -315,40 +371,64 @@ class _LoginPageState extends State<LoginPage> {
                                     // Email
                                     _buildTextField(
                                       controller: _emailController,
-                                      label: languageProvider.translate('email', fallback: 'E-posta'),
+                                      label: languageProvider.translate('email',
+                                          fallback: 'E-posta'),
                                       icon: Icons.email_outlined,
                                       keyboardType: TextInputType.emailAddress,
                                       validator: (value) {
                                         if (value == null || value.isEmpty) {
-                                          return languageProvider.translate('email_required', fallback: 'E-posta gerekli');
+                                          return languageProvider.translate(
+                                              'email_required',
+                                              fallback: 'E-posta gerekli');
                                         }
                                         if (!value.contains('@')) {
-                                          return languageProvider.translate('invalid_email', fallback: 'Geçerli bir e-posta adresi girin');
+                                          return languageProvider.translate(
+                                              'invalid_email',
+                                              fallback:
+                                                  'Geçerli bir e-posta adresi girin');
                                         }
                                         return null;
                                       },
                                     ),
-                                    SizedBox(height: MediaQuery.of(context).size.height > 700 ? 20 : 16),
-                                    
+                                    SizedBox(
+                                        height:
+                                            MediaQuery.of(context).size.height >
+                                                    700
+                                                ? 20
+                                                : 16),
+
                                     // Şifre
                                     _buildTextField(
                                       controller: _passwordController,
-                                      label: languageProvider.translate('password', fallback: 'Şifre'),
+                                      label: languageProvider.translate(
+                                          'password',
+                                          fallback: 'Şifre'),
                                       icon: Icons.lock_outline,
                                       obscureText: !_passwordVisible,
                                       suffixIcon: IconButton(
-                                        icon: Icon(_passwordVisible ? Icons.visibility_off : Icons.visibility),
-                                        onPressed: () => setState(() => _passwordVisible = !_passwordVisible),
+                                        icon: Icon(_passwordVisible
+                                            ? Icons.visibility_off
+                                            : Icons.visibility),
+                                        onPressed: () => setState(() =>
+                                            _passwordVisible =
+                                                !_passwordVisible),
                                       ),
                                       validator: (value) {
                                         if (value == null || value.isEmpty) {
-                                          return languageProvider.translate('password_required', fallback: 'Şifre gerekli');
+                                          return languageProvider.translate(
+                                              'password_required',
+                                              fallback: 'Şifre gerekli');
                                         }
                                         return null;
                                       },
                                     ),
-                                    SizedBox(height: MediaQuery.of(context).size.height > 700 ? 24 : 20),
-                                    
+                                    SizedBox(
+                                        height:
+                                            MediaQuery.of(context).size.height >
+                                                    700
+                                                ? 24
+                                                : 20),
+
                                     // Giriş butonu
                                     SizedBox(
                                       width: double.infinity,
@@ -356,10 +436,12 @@ class _LoginPageState extends State<LoginPage> {
                                       child: ElevatedButton(
                                         onPressed: _isLoading ? null : _login,
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(0xFF667eea),
+                                          backgroundColor:
+                                              const Color(0xFF667eea),
                                           foregroundColor: Colors.white,
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(14),
+                                            borderRadius:
+                                                BorderRadius.circular(14),
                                           ),
                                           elevation: 4,
                                         ),
@@ -367,53 +449,65 @@ class _LoginPageState extends State<LoginPage> {
                                             ? const SizedBox(
                                                 width: 20,
                                                 height: 20,
-                                                child: CircularProgressIndicator(
+                                                child:
+                                                    CircularProgressIndicator(
                                                   color: Colors.white,
                                                   strokeWidth: 2,
                                                 ),
                                               )
                                             : Row(
-                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
                                                 children: [
-                                                  const Icon(Icons.login, size: 20),
+                                                  const Icon(Icons.login,
+                                                      size: 20),
                                                   const SizedBox(width: 8),
                                                   Text(
-                                                    languageProvider.translate('login', fallback: 'Giriş Yap'),
+                                                    languageProvider.translate(
+                                                        'login',
+                                                        fallback: 'Giriş Yap'),
                                                     style: const TextStyle(
                                                       fontSize: 16,
-                                                      fontWeight: FontWeight.bold,
+                                                      fontWeight:
+                                                          FontWeight.bold,
                                                     ),
                                                   ),
                                                 ],
                                               ),
                                       ),
                                     ),
-                                    SizedBox(height: MediaQuery.of(context).size.height > 700 ? 16 : 12),
-                                    
+                                    SizedBox(
+                                        height:
+                                            MediaQuery.of(context).size.height >
+                                                    700
+                                                ? 16
+                                                : 12),
+
                                     // Şifremi unuttum linki
                                     Center(
                                       child: TextButton(
-                                        onPressed: () {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(
-                                              content: Text(languageProvider.translate('forgot_password_coming_soon', fallback: 'Şifremi unuttum özelliği yakında!')),
-                                              behavior: SnackBarBehavior.floating,
-                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                            ),
-                                          );
-                                        },
+                                        onPressed: () =>
+                                            context.go('/forgot-password'),
                                         child: Text(
-                                          languageProvider.translate('forgot_password', fallback: 'Şifremi Unuttum'),
+                                          languageProvider.translate(
+                                              'forgot_password',
+                                              fallback: 'Şifremi Unuttum'),
                                           style: const TextStyle(
                                             color: Color(0xFF667eea),
                                             fontSize: 13,
-                                            decoration: TextDecoration.underline,
+                                            decoration:
+                                                TextDecoration.underline,
                                           ),
                                         ),
                                       ),
                                     ),
-                                    SizedBox(height: MediaQuery.of(context).size.height > 700 ? 16 : 8),
-                                    
+                                    SizedBox(
+                                        height:
+                                            MediaQuery.of(context).size.height >
+                                                    700
+                                                ? 16
+                                                : 8),
+
                                     // Kayıt ol linki
                                     Container(
                                       width: double.infinity,
@@ -421,12 +515,15 @@ class _LoginPageState extends State<LoginPage> {
                                       decoration: BoxDecoration(
                                         color: Colors.grey.shade50,
                                         borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(color: Colors.grey.shade200),
+                                        border: Border.all(
+                                            color: Colors.grey.shade200),
                                       ),
                                       child: Column(
                                         children: [
                                           Text(
-                                            languageProvider.translate('dont_have_account', fallback: 'Hesabınız yok mu?'),
+                                            languageProvider.translate(
+                                                'dont_have_account',
+                                                fallback: 'Hesabınız yok mu?'),
                                             style: const TextStyle(
                                               color: Colors.grey,
                                               fontSize: 13,
@@ -434,18 +531,26 @@ class _LoginPageState extends State<LoginPage> {
                                           ),
                                           const SizedBox(height: 4),
                                           TextButton.icon(
-                                            onPressed: () => context.go('/register'),
-                                            icon: const Icon(Icons.person_add, size: 16),
+                                            onPressed: () =>
+                                                context.go('/register'),
+                                            icon: const Icon(Icons.person_add,
+                                                size: 16),
                                             label: Text(
-                                              languageProvider.translate('register', fallback: 'Kayıt Ol'),
+                                              languageProvider.translate(
+                                                  'register',
+                                                  fallback: 'Kayıt Ol'),
                                               style: const TextStyle(
                                                 fontSize: 14,
                                                 fontWeight: FontWeight.bold,
                                               ),
                                             ),
                                             style: TextButton.styleFrom(
-                                              foregroundColor: const Color(0xFF667eea),
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                              foregroundColor:
+                                                  const Color(0xFF667eea),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 4),
                                             ),
                                           ),
                                         ],
@@ -456,8 +561,11 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ),
                           ),
-                          SizedBox(height: MediaQuery.of(context).size.height > 700 ? 20 : 16),
-                          
+                          SizedBox(
+                              height: MediaQuery.of(context).size.height > 700
+                                  ? 20
+                                  : 16),
+
                           // Test kullanıcıları kartı
                           Card(
                             elevation: 8,
@@ -485,8 +593,10 @@ class _LoginPageState extends State<LoginPage> {
                                       Container(
                                         padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFF667eea).withValues(alpha: 0.1),
-                                          borderRadius: BorderRadius.circular(8),
+                                          color: const Color(0xFF667eea)
+                                              .withValues(alpha: 0.1),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
                                         ),
                                         child: const Icon(
                                           Icons.info_outline,
@@ -496,7 +606,8 @@ class _LoginPageState extends State<LoginPage> {
                                       ),
                                       const SizedBox(width: 12),
                                       Text(
-                                        languageProvider.translate('test_users', fallback: 'Test Kullanıcıları'),
+                                        languageProvider.translate('test_users',
+                                            fallback: 'Test Kullanıcıları'),
                                         style: const TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
@@ -556,7 +667,7 @@ class _LoginPageState extends State<LoginPage> {
     String? Function(String?)? validator,
   }) {
     final isMobile = MediaQuery.of(context).size.height <= 700;
-    
+
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
@@ -585,7 +696,7 @@ class _LoginPageState extends State<LoginPage> {
         filled: true,
         fillColor: Colors.grey.shade50,
         contentPadding: EdgeInsets.symmetric(
-          horizontal: 16, 
+          horizontal: 16,
           vertical: isMobile ? 12 : 16,
         ),
       ),
@@ -657,7 +768,8 @@ class _LoginPageState extends State<LoginPage> {
                   content: Text('$role hesabı bilgileri dolduruldu'),
                   duration: const Duration(seconds: 2),
                   behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
                 ),
               );
             },
@@ -673,4 +785,4 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
-} 
+}

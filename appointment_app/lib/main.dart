@@ -5,19 +5,14 @@ import 'package:appointment_app/providers/auth_provider.dart';
 import 'package:appointment_app/providers/language_provider.dart';
 import 'package:appointment_app/router.dart';
 import 'package:appointment_app/services/translation_service.dart';
-import 'package:appointment_app/services/hybrid_api_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // TranslationService'i başlat
   final translationService = TranslationService();
   await translationService.initialize();
-  
-  // HybridApiService'i başlat (SQLite + Connectivity)
-  final hybridApiService = HybridApiService();
-  await hybridApiService.initialize();
-  
+
   runApp(const MyApp());
 }
 
@@ -66,7 +61,7 @@ class MyApp extends StatelessWidget {
               Locale('tr', 'TR'),
               Locale('en', 'US'),
             ],
-            locale: languageProvider.currentLanguage != null 
+            locale: languageProvider.currentLanguage != null
                 ? Locale(languageProvider.currentLanguage!.id)
                 : const Locale('tr'),
           );
@@ -74,4 +69,4 @@ class MyApp extends StatelessWidget {
       ),
     );
   }
-} 
+}

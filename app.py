@@ -40,6 +40,8 @@ def home():
             'message': 'Randevu API çalışıyor',
             'endpoints': {
                 'POST /auth/login': 'Kullanıcı girişi',
+                'POST /auth/forgot-password': 'Şifremi unuttum',
+                'POST /auth/reset-password': 'Şifre sıfırlama',
                 'GET /appointments': 'Tüm randevuları listele',
                 'POST /appointments': 'Yeni randevu oluştur',
                 'PUT /appointments/<id>': 'Randevu güncelle',
@@ -54,7 +56,14 @@ def home():
                 'PUT /working-hours/<provider_id>': 'Çalışma saatleri güncelle',
                 'GET /providers': 'Tüm provider\'ları listele',
                 'GET /providers/<provider_id>': 'Belirli provider bilgileri',
-                'PUT /providers/<provider_id>': 'Provider profili güncelle'
+                'PUT /providers/<provider_id>': 'Provider profili güncelle',
+                'GET /dashboard/analytics': 'Dashboard istatistikleri',
+                'POST /qr/generate/<appointment_id>': 'QR kod oluştur',
+                'POST /qr/checkin': 'QR kod ile check-in',
+                'GET /staff': 'Personel listesi',
+                'POST /staff': 'Yeni personel ekle',
+                'GET /shifts': 'Vardiya listesi',
+                'POST /shifts': 'Yeni vardiya oluştur'
             }
         })
     except Exception as e:
@@ -705,6 +714,372 @@ def delete_appointment(appointment_id):
         db.session.commit()
         
         return jsonify({'message': 'Randevu başarıyla silindi'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+# ==================== NEW FEATURES ====================
+
+# Dashboard Analytics Routes
+@app.route('/dashboard/analytics', methods=['GET'])
+def get_dashboard_analytics():
+    try:
+        # Bugünkü tarih
+        today = datetime.now().date()
+        
+        # Toplam istatistikler
+        total_appointments = Appointment.query.count()
+        total_customers = User.query.filter_by(role_id='3').count()
+        total_providers = Provider.query.filter_by(is_active=True).count()
+        total_services = Service.query.count()
+        
+        # Bugünkü randevular
+        today_appointments = Appointment.query.filter_by(appointment_date=today).count()
+        
+        # Bu ayki randevular
+        first_day_of_month = today.replace(day=1)
+        monthly_appointments = Appointment.query.filter(
+            Appointment.appointment_date >= first_day_of_month
+        ).count()
+        
+        # Status dağılımı
+        status_stats = db.session.query(
+            Appointment.status,
+            func.count(Appointment.id)
+        ).group_by(Appointment.status).all()
+        
+        # Son 7 günün randevu trendi
+        appointment_trend = []
+        for i in range(7):
+            date = today - timedelta(days=i)
+            count = Appointment.query.filter_by(appointment_date=date).count()
+            appointment_trend.append({
+                'date': date.isoformat(),
+                'count': count
+            })
+        
+        # Gelir istatistikleri
+        total_revenue = db.session.query(func.sum(Appointment.price)).filter(
+            Appointment.payment_status == 'paid'
+        ).scalar() or 0
+        
+        monthly_revenue = db.session.query(func.sum(Appointment.price)).filter(
+            Appointment.appointment_date >= first_day_of_month,
+            Appointment.payment_status == 'paid'
+        ).scalar() or 0
+        
+        return jsonify({
+            'totals': {
+                'appointments': total_appointments,
+                'customers': total_customers,
+                'providers': total_providers,
+                'services': total_services
+            },
+            'today': {
+                'appointments': today_appointments
+            },
+            'monthly': {
+                'appointments': monthly_appointments,
+                'revenue': float(monthly_revenue)
+            },
+            'status_distribution': [{'status': s[0], 'count': s[1]} for s in status_stats],
+            'appointment_trend': appointment_trend,
+            'revenue': {
+                'total': float(total_revenue),
+                'monthly': float(monthly_revenue)
+            }
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# QR Code Routes
+@app.route('/qr/generate/<appointment_id>', methods=['POST'])
+def generate_qr_code(appointment_id):
+    try:
+        appointment = Appointment.query.get(appointment_id)
+        if not appointment:
+            return jsonify({'error': 'Randevu bulunamadı'}), 404
+        
+        # QR kod verisi oluştur
+        qr_data = {
+            'appointment_id': appointment_id,
+            'customer_name': appointment.customer_name,
+            'appointment_date': appointment.appointment_date.isoformat(),
+            'appointment_time': appointment.appointment_time,
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        # QR kod oluştur
+        qr = qrcode.QRCode(version=1, box_size=10, border=5)
+        qr.add_data(str(qr_data))
+        qr.make(fit=True)
+        
+        # QR kodu image'e çevir
+        qr_image = qr.make_image(fill_color="black", back_color="white")
+        
+        # Base64'e encode et
+        buffer = io.BytesIO()
+        qr_image.save(buffer, format='PNG')
+        qr_base64 = base64.b64encode(buffer.getvalue()).decode()
+        
+        # Veritabanına kaydet
+        qr_code_record = QRCode(
+            id=str(uuid.uuid4()),
+            appointment_id=appointment_id,
+            qr_code_data=qr_base64,
+            expires_at=datetime.now() + timedelta(hours=24)  # 24 saat geçerli
+        )
+        
+        db.session.add(qr_code_record)
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'QR kod başarıyla oluşturuldu',
+            'qr_code': {
+                'id': qr_code_record.id,
+                'data': qr_base64,
+                'expires_at': qr_code_record.expires_at.isoformat()
+            }
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/qr/checkin', methods=['POST'])
+def qr_checkin():
+    try:
+        data = request.json
+        qr_code_id = data.get('qr_code_id')
+        
+        if not qr_code_id:
+            return jsonify({'error': 'QR kod ID gerekli'}), 400
+        
+        qr_code = QRCode.query.get(qr_code_id)
+        if not qr_code:
+            return jsonify({'error': 'QR kod bulunamadı'}), 404
+        
+        if qr_code.used:
+            return jsonify({'error': 'QR kod zaten kullanılmış'}), 400
+        
+        if datetime.now() > qr_code.expires_at:
+            return jsonify({'error': 'QR kod süresi dolmuş'}), 400
+        
+        # Check-in işlemi
+        appointment = Appointment.query.get(qr_code.appointment_id)
+        if appointment:
+            appointment.status = 'checked_in'
+            appointment.updated_at = datetime.utcnow()
+        
+        qr_code.used = True
+        qr_code.used_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Check-in başarılı',
+            'appointment': appointment.to_dict() if appointment else None
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+# Staff Management Routes
+@app.route('/staff', methods=['GET'])
+def get_staff():
+    try:
+        provider_id = request.args.get('provider_id')
+        
+        query = Staff.query
+        if provider_id:
+            query = query.filter_by(provider_id=provider_id)
+        
+        staff_list = query.filter_by(is_active=True).all()
+        staff_data = []
+        
+        for staff in staff_list:
+            staff_dict = staff.to_dict()
+            # User bilgisini ekle
+            user = User.query.get(staff.user_id)
+            staff_dict['user_name'] = user.name if user else None
+            staff_dict['user_email'] = user.email if user else None
+            staff_data.append(staff_dict)
+        
+        return jsonify({
+            'staff': staff_data,
+            'total': len(staff_data)
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/staff', methods=['POST'])
+def create_staff():
+    try:
+        data = request.json
+        
+        new_staff = Staff(
+            id=str(uuid.uuid4()),
+            provider_id=data.get('provider_id', ''),
+            user_id=data.get('user_id', ''),
+            position=data.get('position', ''),
+            department=data.get('department', ''),
+            hire_date=datetime.strptime(data.get('hire_date'), '%Y-%m-%d').date() if data.get('hire_date') else None,
+            salary=data.get('salary', 0),
+            permissions=data.get('permissions', '{}')
+        )
+        
+        db.session.add(new_staff)
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Personel başarıyla eklendi',
+            'staff': new_staff.to_dict()
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/shifts', methods=['GET'])
+def get_shifts():
+    try:
+        staff_id = request.args.get('staff_id')
+        date_from = request.args.get('date_from')
+        date_to = request.args.get('date_to')
+        
+        query = Shift.query
+        
+        if staff_id:
+            query = query.filter_by(staff_id=staff_id)
+        
+        if date_from:
+            query = query.filter(Shift.shift_date >= datetime.strptime(date_from, '%Y-%m-%d').date())
+        
+        if date_to:
+            query = query.filter(Shift.shift_date <= datetime.strptime(date_to, '%Y-%m-%d').date())
+        
+        shifts = query.order_by(Shift.shift_date.desc()).all()
+        shift_data = []
+        
+        for shift in shifts:
+            shift_dict = shift.to_dict()
+            # Staff bilgisini ekle
+            staff = Staff.query.get(shift.staff_id)
+            if staff:
+                user = User.query.get(staff.user_id)
+                shift_dict['staff_name'] = user.name if user else None
+                shift_dict['staff_position'] = staff.position
+            shift_data.append(shift_dict)
+        
+        return jsonify({
+            'shifts': shift_data,
+            'total': len(shift_data)
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/shifts', methods=['POST'])
+def create_shift():
+    try:
+        data = request.json
+        
+        new_shift = Shift(
+            id=str(uuid.uuid4()),
+            staff_id=data.get('staff_id', ''),
+            shift_date=datetime.strptime(data.get('shift_date'), '%Y-%m-%d').date(),
+            start_time=data.get('start_time', '09:00'),
+            end_time=data.get('end_time', '17:00'),
+            shift_type=data.get('shift_type', 'regular'),
+            notes=data.get('notes', '')
+        )
+        
+        db.session.add(new_shift)
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Vardiya başarıyla oluşturuldu',
+            'shift': new_shift.to_dict()
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+# Password Reset Routes
+@app.route('/auth/forgot-password', methods=['POST'])
+def forgot_password():
+    try:
+        data = request.json
+        email = data.get('email')
+        
+        if not email:
+            return jsonify({'error': 'Email gerekli'}), 400
+        
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            return jsonify({'error': 'Bu email ile kayıtlı kullanıcı bulunamadı'}), 404
+        
+        # Reset token oluştur
+        token = ''.join(random.choices(string.ascii_letters + string.digits, k=32))
+        
+        # Önceki kullanılmamış token'ları iptal et
+        PasswordReset.query.filter_by(email=email, used=False).update({'used': True})
+        
+        # Yeni reset kaydı oluştur
+        reset_record = PasswordReset(
+            id=str(uuid.uuid4()),
+            email=email,
+            token=token,
+            expires_at=datetime.now() + timedelta(hours=1)  # 1 saat geçerli
+        )
+        
+        db.session.add(reset_record)
+        db.session.commit()
+        
+        # Gerçek uygulamada burada email gönderilir
+        # Şimdilik token'ı response'ta döndürüyoruz (sadece development için)
+        
+        return jsonify({
+            'message': 'Şifre sıfırlama talebi oluşturuldu',
+            'reset_token': token,  # Production'da bu gönderilmez
+            'expires_at': reset_record.expires_at.isoformat()
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/auth/reset-password', methods=['POST'])
+def reset_password():
+    try:
+        data = request.json
+        token = data.get('token')
+        new_password = data.get('new_password')
+        
+        if not token or not new_password:
+            return jsonify({'error': 'Token ve yeni şifre gerekli'}), 400
+        
+        # Token'ı kontrol et
+        reset_record = PasswordReset.query.filter_by(token=token, used=False).first()
+        if not reset_record:
+            return jsonify({'error': 'Geçersiz veya kullanılmış token'}), 400
+        
+        if datetime.now() > reset_record.expires_at:
+            return jsonify({'error': 'Token süresi dolmuş'}), 400
+        
+        # Kullanıcıyı bul ve şifresini güncelle
+        user = User.query.filter_by(email=reset_record.email).first()
+        if not user:
+            return jsonify({'error': 'Kullanıcı bulunamadı'}), 404
+        
+        # Şifreyi güncelle (gerçek uygulamada hash'lenmeli)
+        user.password = new_password
+        user.updated_at = datetime.utcnow()
+        
+        # Token'ı kullanılmış olarak işaretle
+        reset_record.used = True
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Şifre başarıyla güncellendi'
+        }), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
