@@ -908,12 +908,7 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage>
               'Randevu Oluştur',
               Icons.add_circle_outline,
               const Color(0xFF4CAF50),
-              () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const CreateAppointmentPage(),
-                ),
-              ),
+              () => context.go('/customer/create-appointment'),
             ),
             _buildQuickActionCard(
               'Randevularım',
@@ -925,23 +920,13 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage>
               'Hizmet Sağlayıcılar',
               Icons.people,
               const Color(0xFFFF9800),
-              () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ProvidersPage(),
-                ),
-              ),
+              () => context.go('/customer/providers'),
             ),
             _buildQuickActionCard(
               'AI Raporlar',
               Icons.analytics,
               const Color(0xFF9C27B0),
-              () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const AIReportsPage(),
-                ),
-              ),
+              () => context.go('/customer/ai-reports'),
             ),
           ],
         ),

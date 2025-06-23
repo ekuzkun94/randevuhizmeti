@@ -208,6 +208,13 @@ class AuthProvider extends ChangeNotifier {
           'roleId': '3',
           'password': 'customer123'
         },
+        'provider@example.com': {
+          'id': 'provider-123',
+          'name': 'Dr. Provider User',
+          'email': 'provider@example.com',
+          'roleId': '2',
+          'password': 'provider123'
+        },
       };
 
       if (testUsers.containsKey(email) &&

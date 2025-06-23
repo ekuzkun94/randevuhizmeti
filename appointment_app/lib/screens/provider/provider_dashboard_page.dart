@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'dart:async';
+import 'dart:math';
 import '../../providers/auth_provider.dart';
 import '../../providers/language_provider.dart';
 import '../../services/api_service.dart';
@@ -26,7 +30,7 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage> {
     'averageRating': 0.0,
     'totalReviews': 0,
   };
-  
+
   bool _isLoading = true;
   String _selectedPeriod = 'week'; // week, month, year
 
@@ -44,18 +48,18 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage> {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final currentUser = authProvider.currentUser;
-      
+
       if (currentUser != null) {
         final allAppointments = await ApiService.getAppointments();
-        
+
         // Provider'a ait randevuları filtrele
-        final appointmentsList = allAppointments['appointments'] as List<dynamic>? ?? [];
-        final providerAppointments = appointmentsList
-            .cast<Map<String, dynamic>>()
-            .where((appointment) {
-              return appointment['provider_name'] == currentUser.name;
-            }).toList();
-        
+        final appointmentsList =
+            allAppointments['appointments'] as List<dynamic>? ?? [];
+        final providerAppointments =
+            appointmentsList.cast<Map<String, dynamic>>().where((appointment) {
+          return appointment['provider_name'] == currentUser.name;
+        }).toList();
+
         // İstatistikleri hesapla
         _calculateStats(providerAppointments);
       }
@@ -91,9 +95,10 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage> {
       try {
         final appointmentDate = DateTime.parse(appointment['date_time']);
         final status = appointment['status']?.toLowerCase() ?? 'pending';
-        
+
         // Tarihe göre sayma
-        if (appointmentDate.isAfter(today) && appointmentDate.isBefore(today.add(const Duration(days: 1)))) {
+        if (appointmentDate.isAfter(today) &&
+            appointmentDate.isBefore(today.add(const Duration(days: 1)))) {
           todayCount++;
         }
         if (appointmentDate.isAfter(weekStart)) {
@@ -104,7 +109,7 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage> {
           monthlyCount++;
           monthlyEarnings += 150.0; // Örnek ücret
         }
-        
+
         // Duruma göre sayma
         switch (status) {
           case 'pending':
@@ -145,7 +150,8 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage> {
       builder: (context, languageProvider, child) {
         return Scaffold(
           appBar: AppBar(
-            title: Text(languageProvider.translate('dashboard', fallback: 'Dashboard')),
+            title: Text(
+                languageProvider.translate('dashboard', fallback: 'Dashboard')),
             backgroundColor: const Color(0xFF667eea),
             foregroundColor: Colors.white,
             actions: [
@@ -179,27 +185,27 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage> {
                         // Hoş geldiniz kartı
                         _buildWelcomeCard(),
                         const SizedBox(height: 16),
-                        
+
                         // Dönem seçici
                         _buildPeriodSelector(),
                         const SizedBox(height: 16),
-                        
+
                         // Ana istatistikler
                         _buildMainStats(),
                         const SizedBox(height: 16),
-                        
+
                         // Randevu durumları
                         _buildAppointmentStatus(),
                         const SizedBox(height: 16),
-                        
+
                         // Kazanç bilgisi
                         _buildEarningsCard(),
                         const SizedBox(height: 16),
-                        
+
                         // Değerlendirme bilgisi
                         _buildRatingCard(),
                         const SizedBox(height: 16),
-                        
+
                         // Hızlı aksiyonlar
                         _buildQuickActions(),
                       ],
@@ -214,7 +220,7 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage> {
   Widget _buildWelcomeCard() {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final userName = authProvider.currentUser?.name ?? 'Doktor';
-    
+
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -330,8 +336,12 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage> {
         const SizedBox(width: 12),
         Expanded(
           child: _buildStatCard(
-            _selectedPeriod == 'week' ? 'Bu Hafta' : _selectedPeriod == 'month' ? 'Bu Ay' : 'Bu Yıl',
-            _selectedPeriod == 'week' 
+            _selectedPeriod == 'week'
+                ? 'Bu Hafta'
+                : _selectedPeriod == 'month'
+                    ? 'Bu Ay'
+                    : 'Bu Yıl',
+            _selectedPeriod == 'week'
                 ? _stats['weeklyAppointments'].toString()
                 : _stats['monthlyAppointments'].toString(),
             Icons.calendar_month,
@@ -342,7 +352,8 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+      String title, String value, IconData icon, Color color) {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -655,4 +666,4 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage> {
       ),
     );
   }
-} 
+}

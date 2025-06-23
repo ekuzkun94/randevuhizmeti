@@ -20,6 +20,7 @@ import 'package:appointment_app/screens/customer/create_appointment_page.dart';
 import 'package:appointment_app/screens/customer/profile_page.dart';
 import 'package:appointment_app/screens/customer/my_appointments_page.dart';
 import 'package:appointment_app/screens/customer/providers_page.dart';
+import 'package:appointment_app/screens/customer/ai_reports_page.dart';
 import 'package:appointment_app/screens/guest/guest_booking_page.dart';
 import 'package:appointment_app/screens/home_page.dart';
 import 'package:appointment_app/screens/auth/forgot_password_page.dart';
@@ -249,11 +250,11 @@ final GoRouter router = GoRouter(
     // Customer routes
     GoRoute(
       path: '/customer',
-      builder: (context, state) => const CustomerHomePage(),
+      builder: (context, state) => const CustomerDashboardPage(),
       routes: [
         GoRoute(
-          path: 'dashboard',
-          builder: (context, state) => const CustomerDashboardPage(),
+          path: 'home',
+          builder: (context, state) => const CustomerHomePage(),
         ),
         GoRoute(
           path: 'create-appointment',
@@ -282,6 +283,10 @@ final GoRouter router = GoRouter(
         GoRoute(
           path: 'providers',
           builder: (context, state) => const ProvidersPage(),
+        ),
+        GoRoute(
+          path: 'ai-reports',
+          builder: (context, state) => const AIReportsPage(),
         ),
       ],
     ),
@@ -431,7 +436,7 @@ class AppNavigation {
   }
 
   static void goToCustomerDashboard(BuildContext context) {
-    context.go('/customer/dashboard');
+    context.go('/customer');
   }
 
   static void goToCreateAppointment(
@@ -461,6 +466,10 @@ class AppNavigation {
 
   static void goToProviders(BuildContext context) {
     context.go('/customer/providers');
+  }
+
+  static void goToAIReports(BuildContext context) {
+    context.go('/customer/ai-reports');
   }
 
   // Guest navigation
