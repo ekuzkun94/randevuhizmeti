@@ -7,6 +7,7 @@ import 'package:appointment_app/screens/admin/admin_appointments_page.dart';
 import 'package:appointment_app/screens/admin/admin_users_page.dart';
 import 'package:appointment_app/screens/admin/admin_services_page.dart';
 import 'package:appointment_app/screens/admin/admin_roles_page.dart';
+import 'package:appointment_app/screens/admin/admin_providers_page.dart';
 import 'package:appointment_app/screens/admin/admin_dashboard_page.dart';
 import 'package:appointment_app/screens/provider/provider_home_page.dart';
 import 'package:appointment_app/screens/provider/provider_appointments_page.dart';
@@ -193,6 +194,10 @@ final GoRouter router = GoRouter(
           builder: (context, state) => const AdminRolesPage(),
         ),
         GoRoute(
+          path: 'providers',
+          builder: (context, state) => const AdminProvidersPage(),
+        ),
+        GoRoute(
           path: 'analytics',
           builder: (context, state) => const AdminAnalyticsPage(),
         ),
@@ -364,6 +369,10 @@ class AppNavigation {
 
   static void goToAdminRoles(BuildContext context) {
     context.go('/admin/roles');
+  }
+
+  static void goToAdminProviders(BuildContext context) {
+    context.go('/admin/providers');
   }
 
   static void goToAdminAnalytics(BuildContext context) {

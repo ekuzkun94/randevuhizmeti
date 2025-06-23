@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 # from ai_helper import AIHelper  # Geçici olarak devre dışı
 from dotenv import load_dotenv
 from flask_cors import CORS
@@ -13,6 +13,7 @@ import io
 import base64
 import random
 import string
+import json
 from sqlalchemy import func
 
 # PyMySQL kullanımı için
@@ -196,6 +197,10 @@ class Appointment(db.Model):
     location = db.Column(db.String(255))
     price = db.Column(db.Numeric(10, 2))
     payment_status = db.Column(db.String(20), default='pending')
+    # Onay sistemi alanları
+    approval_level = db.Column(db.Integer, default=0)  # 0: onay gerektirmez, 1-3: onay seviyesi
+    approval_status = db.Column(db.String(20), default='none')  # none, pending, approved, rejected
+    approvers = db.Column(db.Text)  # JSON format: onaycıların listesi
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -217,6 +222,9 @@ class Appointment(db.Model):
             'location': self.location,
             'price': float(self.price) if self.price else 0.0,
             'payment_status': self.payment_status,
+            'approval_level': self.approval_level,
+            'approval_status': self.approval_status,
+            'approvers': self.approvers,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
@@ -309,7 +317,7 @@ class QRCode(db.Model):
     used = db.Column(db.Boolean, default=False)
     used_at = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -319,6 +327,60 @@ class QRCode(db.Model):
             'used': self.used,
             'used_at': self.used_at.isoformat() if self.used_at else None,
             'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+class Approval(db.Model):
+    __tablename__ = 'approvals'
+    
+    id = db.Column(db.String(36), primary_key=True)
+    appointment_id = db.Column(db.String(36), nullable=False)
+    approval_level = db.Column(db.Integer, default=1)  # 1, 2, 3 onay seviyesi
+    current_step = db.Column(db.Integer, default=1)  # Şu anki onay adımı
+    status = db.Column(db.String(20), default='pending')  # pending, approved, rejected
+    created_by = db.Column(db.String(36), nullable=False)  # Onay sürecini başlatan kullanıcı
+    completed_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'appointment_id': self.appointment_id,
+            'approval_level': self.approval_level,
+            'current_step': self.current_step,
+            'status': self.status,
+            'created_by': self.created_by,
+            'completed_at': self.completed_at.isoformat() if self.completed_at else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
+class ApprovalStep(db.Model):
+    __tablename__ = 'approval_steps'
+    
+    id = db.Column(db.String(36), primary_key=True)
+    approval_id = db.Column(db.String(36), nullable=False)
+    step_number = db.Column(db.Integer, nullable=False)  # 1, 2, 3
+    approver_id = db.Column(db.String(36), nullable=False)  # Onaycı kullanıcı ID
+    approver_name = db.Column(db.String(255))  # Onaycı adı
+    status = db.Column(db.String(20), default='pending')  # pending, approved, rejected
+    approved_at = db.Column(db.DateTime)
+    comments = db.Column(db.Text)  # Onay yorumları
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'approval_id': self.approval_id,
+            'step_number': self.step_number,
+            'approver_id': self.approver_id,
+            'approver_name': self.approver_name,
+            'status': self.status,
+            'approved_at': self.approved_at.isoformat() if self.approved_at else None,
+            'comments': self.comments,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
 
 # Auth Routes
@@ -1043,6 +1105,230 @@ def forgot_password():
         }), 200
     except Exception as e:
         db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+# Approval System Routes
+@app.route('/approvals', methods=['GET'])
+def get_approvals():
+    try:
+        appointment_id = request.args.get('appointment_id')
+        status = request.args.get('status')
+        
+        query = Approval.query
+        if appointment_id:
+            query = query.filter_by(appointment_id=appointment_id)
+        if status:
+            query = query.filter_by(status=status)
+        
+        approvals = query.order_by(Approval.created_at.desc()).all()
+        approval_list = []
+        
+        for approval in approvals:
+            approval_data = approval.to_dict()
+            # Appointment bilgisini ekle
+            appointment = Appointment.query.get(approval.appointment_id)
+            if appointment:
+                approval_data['appointment_info'] = {
+                    'customer_name': appointment.customer_name,
+                    'service_name': appointment.service_id,  # Bu service name'e çevrilebilir
+                    'appointment_date': appointment.appointment_date.isoformat() if appointment.appointment_date else None
+                }
+            
+            # Approval steps bilgisini ekle
+            steps = ApprovalStep.query.filter_by(approval_id=approval.id).order_by(ApprovalStep.step_number).all()
+            approval_data['steps'] = [step.to_dict() for step in steps]
+            
+            approval_list.append(approval_data)
+        
+        return jsonify({
+            'approvals': approval_list,
+            'total': len(approval_list)
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/approvals', methods=['POST'])
+def create_approval():
+    try:
+        data = request.json
+        appointment_id = data.get('appointment_id')
+        approval_level = data.get('approval_level', 1)
+        approvers = data.get('approvers', [])
+        created_by = data.get('created_by')
+        
+        if not appointment_id or not created_by:
+            return jsonify({'error': 'appointment_id ve created_by gerekli'}), 400
+        
+        if approval_level < 1 or approval_level > 3:
+            return jsonify({'error': 'Onay seviyesi 1-3 arasında olmalı'}), 400
+        
+        if len(approvers) != approval_level:
+            return jsonify({'error': f'{approval_level} seviye onay için {approval_level} onaycı gerekli'}), 400
+        
+        # Appointment'ı güncelle
+        appointment = Appointment.query.get(appointment_id)
+        if not appointment:
+            return jsonify({'error': 'Randevu bulunamadı'}), 404
+        
+        appointment.approval_level = approval_level
+        appointment.approval_status = 'pending'
+        appointment.approvers = json.dumps(approvers)
+        
+        # Approval kaydı oluştur
+        new_approval = Approval(
+            id=str(uuid.uuid4()),
+            appointment_id=appointment_id,
+            approval_level=approval_level,
+            current_step=1,
+            status='pending',
+            created_by=created_by
+        )
+        
+        db.session.add(new_approval)
+        
+        # Approval steps oluştur
+        for i, approver in enumerate(approvers, 1):
+            step = ApprovalStep(
+                id=str(uuid.uuid4()),
+                approval_id=new_approval.id,
+                step_number=i,
+                approver_id=approver.get('id', ''),
+                approver_name=approver.get('name', ''),
+                status='pending' if i == 1 else 'waiting'  # İlk adım pending, diğerleri waiting
+            )
+            db.session.add(step)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Onay süreci başlatıldı',
+            'approval': new_approval.to_dict()
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/approvals/<approval_id>/approve', methods=['POST'])
+def approve_step(approval_id):
+    try:
+        data = request.json
+        approver_id = data.get('approver_id')
+        comments = data.get('comments', '')
+        action = data.get('action', 'approve')  # approve or reject
+        
+        if not approver_id:
+            return jsonify({'error': 'approver_id gerekli'}), 400
+        
+        approval = Approval.query.get(approval_id)
+        if not approval:
+            return jsonify({'error': 'Onay kaydı bulunamadı'}), 404
+        
+        if approval.status != 'pending':
+            return jsonify({'error': 'Bu onay süreci zaten tamamlanmış'}), 400
+        
+        # Mevcut adımı bul
+        current_step = ApprovalStep.query.filter_by(
+            approval_id=approval_id,
+            step_number=approval.current_step,
+            approver_id=approver_id
+        ).first()
+        
+        if not current_step:
+            return jsonify({'error': 'Bu adımda onay yetkiniz yok'}), 403
+        
+        if current_step.status != 'pending':
+            return jsonify({'error': 'Bu adım zaten işlenmiş'}), 400
+        
+        # Adımı güncelle
+        current_step.status = action
+        current_step.approved_at = datetime.utcnow()
+        current_step.comments = comments
+        
+        if action == 'reject':
+            # Reddedildi - tüm süreci durdur
+            approval.status = 'rejected'
+            approval.completed_at = datetime.utcnow()
+            
+            # Appointment'ı güncelle
+            appointment = Appointment.query.get(approval.appointment_id)
+            if appointment:
+                appointment.approval_status = 'rejected'
+                appointment.status = 'cancelled'  # veya başka bir status
+        
+        elif action == 'approve':
+            if approval.current_step == approval.approval_level:
+                # Son adım onaylandı - süreç tamamlandı
+                approval.status = 'approved'
+                approval.completed_at = datetime.utcnow()
+                
+                # Appointment'ı güncelle
+                appointment = Appointment.query.get(approval.appointment_id)
+                if appointment:
+                    appointment.approval_status = 'approved'
+                    appointment.status = 'confirmed'
+            else:
+                # Sonraki adıma geç
+                approval.current_step += 1
+                
+                # Sonraki adımı aktif et
+                next_step = ApprovalStep.query.filter_by(
+                    approval_id=approval_id,
+                    step_number=approval.current_step
+                ).first()
+                if next_step:
+                    next_step.status = 'pending'
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': f'Onay adımı {action} olarak işlendi',
+            'approval': approval.to_dict()
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/approvals/pending/<user_id>', methods=['GET'])
+def get_pending_approvals(user_id):
+    try:
+        # Bu kullanıcının beklemede olan onaylarını getir
+        pending_steps = ApprovalStep.query.filter_by(
+            approver_id=user_id,
+            status='pending'
+        ).all()
+        
+        approval_list = []
+        for step in pending_steps:
+            approval = Approval.query.get(step.approval_id)
+            if approval and approval.status == 'pending':
+                approval_data = approval.to_dict()
+                
+                # Appointment bilgisini ekle
+                appointment = Appointment.query.get(approval.appointment_id)
+                if appointment:
+                    # Service name'i getir
+                    service = Service.query.get(appointment.service_id)
+                    provider = User.query.get(appointment.provider_id)
+                    
+                    approval_data['appointment_info'] = {
+                        'customer_name': appointment.customer_name,
+                        'service_name': service.name if service else 'Bilinmeyen',
+                        'provider_name': provider.name if provider else 'Bilinmeyen',
+                        'appointment_date': appointment.appointment_date.isoformat() if appointment.appointment_date else None,
+                        'appointment_time': appointment.appointment_time,
+                        'price': float(appointment.price) if appointment.price else 0.0
+                    }
+                
+                # Bu adım bilgisini ekle
+                approval_data['current_step_info'] = step.to_dict()
+                
+                approval_list.append(approval_data)
+        
+        return jsonify({
+            'pending_approvals': approval_list,
+            'total': len(approval_list)
+        }), 200
+    except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 @app.route('/auth/reset-password', methods=['POST'])
