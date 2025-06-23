@@ -43,6 +43,8 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^2.0.0
+  flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.3.10
 
 flutter:
   uses-material-design: true
@@ -51,4 +53,35 @@ flutter:
   assets:
     - assets/images/
     - assets/animations/
-    - assets/icons/ 
+    - assets/icons/
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: false
+  image_path: "assets/images/zamanyonet_logo.png"
+  min_sdk_android: 21
+  web:
+    generate: true
+    image_path: "assets/images/zamanyonet_logo.png"
+    background_color: "#1976D2"
+    theme_color: "#1976D2"
+  windows:
+    generate: true
+    image_path: "assets/images/zamanyonet_logo.png"
+    icon_size: 48
+
+flutter_native_splash:
+  color: "#1976D2"
+  image: assets/images/zamanyonet_logo.png
+  branding: assets/images/zamanyonet_logo.png
+  color_dark: "#0D47A1"
+  image_dark: assets/images/zamanyonet_logo.png
+  branding_dark: assets/images/zamanyonet_logo.png
+
+  android_12:
+    image: assets/images/zamanyonet_logo.png
+    icon_background_color: "#1976D2"
+    image_dark: assets/images/zamanyonet_logo.png
+    icon_background_color_dark: "#0D47A1"
+
+  web: false 

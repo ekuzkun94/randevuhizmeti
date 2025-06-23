@@ -621,4 +621,4 @@ if __name__ == '__main__':
                 print("Database tables verified successfully")
         except Exception as e:
             print(f"Database initialization completed with note: {str(e)}")
-    app.run(debug=True, port=5001) 
+    app.run(host='0.0.0.0', debug=True, port=5001) 
