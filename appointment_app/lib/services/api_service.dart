@@ -65,6 +65,11 @@ class ApiService {
     int? duration,
     String? location,
     double? price,
+    String? paymentMethod,
+    String? cardNumber,
+    String? cardHolder,
+    String? expiryDate,
+    String? cvv,
   }) async {
     try {
       final response = await http.post(
@@ -84,6 +89,11 @@ class ApiService {
           'duration': duration,
           'location': location,
           'price': price,
+          'payment_method': paymentMethod,
+          'card_number': cardNumber,
+          'card_holder': cardHolder,
+          'expiry_date': expiryDate,
+          'cvv': cvv,
         }),
       );
       
@@ -444,6 +454,40 @@ class ApiService {
       }
     } catch (e) {
       return {'success': false, 'status': 'offline', 'message': 'Bağlantı hatası: $e'};
+    }
+  }
+
+  // ==================== USER PROFILE ====================
+  
+  // Kullanıcı profili güncelle
+  static Future<Map<String, dynamic>> updateProfile({
+    required String userId,
+    String? name,
+    String? email,
+    String? phone,
+  }) async {
+    try {
+      final Map<String, dynamic> requestBody = {};
+      
+      if (name != null) requestBody['name'] = name;
+      if (email != null) requestBody['email'] = email;
+      if (phone != null) requestBody['phone'] = phone;
+      
+      final response = await http.put(
+        Uri.parse('$baseUrl/users/$userId'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(requestBody),
+      );
+      
+      final responseData = json.decode(response.body);
+      
+      if (response.statusCode == 200) {
+        return responseData;
+      } else {
+        return {'error': responseData['error'] ?? 'Profil güncellenemedi'};
+      }
+    } catch (e) {
+      return {'error': 'Bağlantı hatası: $e'};
     }
   }
 

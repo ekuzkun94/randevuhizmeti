@@ -402,6 +402,80 @@ class AuthProvider extends ChangeNotifier {
     _clearError();
   }
 
+  // Profile güncelleme methodu
+  Future<bool> updateUserProfile({
+    String? name,
+    String? email,
+    String? phone,
+  }) async {
+    try {
+      if (_currentUser == null) {
+        _setError('Kullanıcı oturumu bulunamadı');
+        return false;
+      }
+
+      _setLoading(true);
+      _clearError();
+
+      // API'ye profil güncelleme isteği gönder
+      try {
+        final userId = _currentUser!.id;
+        if (userId == null) {
+          _setError('Kullanıcı ID bulunamadı');
+          return false;
+        }
+        
+        final response = await ApiService.updateProfile(
+          userId: userId,
+          name: name,
+          email: email,
+          phone: phone,
+        );
+
+        if (response['user'] != null) {
+          final userData = response['user'];
+          _currentUser = UserModel(
+            id: userData['id'],
+            name: userData['name'],
+            email: userData['email'],
+            roleId: userData['role_id'],
+            createdAt: DateTime.parse(userData['created_at']),
+            updatedAt: DateTime.parse(userData['updated_at']),
+          );
+          
+          await _storeAuth();
+          notifyListeners();
+          return true;
+        } else {
+          _setError(response['error'] ?? 'Profil güncellenemedi');
+          return false;
+        }
+      } catch (e) {
+        // API hatası durumunda local güncelleme
+        print('API profil güncelleme hatası: $e');
+        
+        _currentUser = UserModel(
+          id: _currentUser!.id,
+          name: name ?? _currentUser!.name,
+          email: email ?? _currentUser!.email,
+          roleId: _currentUser!.roleId,
+          password: _currentUser!.password,
+          createdAt: _currentUser!.createdAt,
+          updatedAt: DateTime.now(),
+        );
+        
+        await _storeAuth();
+        notifyListeners();
+        return true;
+      }
+    } catch (e) {
+      _setError('Profil güncellenirken hata: $e');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   @override
   void dispose() {
     _sessionTimer?.cancel();

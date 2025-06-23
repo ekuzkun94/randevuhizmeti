@@ -57,7 +57,22 @@ class _ProfilePageState extends State<ProfilePage> {
       await Future.delayed(const Duration(seconds: 1));
       
       // Update user data
-      // TODO: Implement updateUserProfile method in AuthProvider
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final success = await authProvider.updateUserProfile(
+        name: _nameController.text,
+        email: _emailController.text,
+        phone: _phoneController.text,
+      );
+      
+      if (!success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authProvider.errorMessage ?? 'Profil güncellenemedi'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
       
       setState(() => _isEditing = false);
       

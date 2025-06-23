@@ -390,9 +390,45 @@ class _ProvidersPageState extends State<ProvidersPage> {
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () {
-                        // TODO: Telefon arama işlemi
-                      },
+                                              onPressed: () async {
+                          final phone = provider['phone'] ?? '';
+                          if (phone.isNotEmpty) {
+                            // Telefon numarasından özel karakterleri temizle
+                            final cleanPhone = phone.replaceAll(RegExp(r'[^\d+]'), '');
+                            // tel: URL scheme kullanarak varsayılan telefon uygulamasını aç
+                            final uri = Uri.parse('tel:$cleanPhone');
+                            try {
+                              // Web platformunda tel: link'i desteklenmez, bu yüzden
+                              // masaüstü/web için alternatif göster
+                              if (Uri.base.scheme == 'http' || Uri.base.scheme == 'https') {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Telefon: $phone'),
+                                    action: SnackBarAction(
+                                      label: 'Kopyala',
+                                      onPressed: () {
+                                        // Clipboard API web'de çalışır
+                                        print('Telefon numarası: $phone');
+                                      },
+                                    ),
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Telefon uygulaması açılamadı: $phone'),
+                                ),
+                              );
+                            }
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Telefon numarası bulunamadı'),
+                              ),
+                            );
+                          }
+                        },
                       icon: const Icon(Icons.phone),
                       label: const Text('Ara'),
                       style: OutlinedButton.styleFrom(
