@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta, timezone
-# from ai_helper import AIHelper  # Geçici olarak devre dışı
+from ai_helper import AIHelper
 from dotenv import load_dotenv
 from flask_cors import CORS
 import os
@@ -32,7 +32,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql://{os.getenv('MYSQL_USER')}:{os.
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
-# ai_helper = AIHelper()  # Geçici olarak devre dışı
+ai_helper = AIHelper()
 
 # Ana sayfa route'u
 @app.route('/', methods=['GET'])
@@ -1371,6 +1371,158 @@ def reset_password():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+# ==================== AI ENDPOINTS ====================
+
+@app.route('/ai/log-behavior', methods=['POST'])
+def log_user_behavior():
+    """Log user behavior for AI learning"""
+    try:
+        data = request.json
+        user_id = data.get('user_id')
+        action = data.get('action')
+        behavior_data = data.get('data', {})
+        
+        if not user_id or not action:
+            return jsonify({'error': 'user_id ve action gerekli'}), 400
+        
+        ai_helper.log_user_behavior(user_id, action, behavior_data)
+        
+        return jsonify({
+            'message': 'Kullanıcı davranışı kaydedildi',
+            'status': 'success'
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Davranış kaydetme hatası: {str(e)}'}), 500
+
+@app.route('/ai/recommendations/<user_id>', methods=['GET'])
+def get_user_recommendations(user_id):
+    """Get AI-powered recommendations for user"""
+    try:
+        service_limit = request.args.get('service_limit', 5, type=int)
+        provider_limit = request.args.get('provider_limit', 3, type=int)
+        
+        service_recommendations = ai_helper.get_service_recommendations(user_id, service_limit)
+        provider_recommendations = ai_helper.get_provider_recommendations(user_id, provider_limit)
+        
+        return jsonify({
+            'user_id': user_id,
+            'recommendations': {
+                'services': service_recommendations,
+                'providers': provider_recommendations,
+            },
+            'generated_at': datetime.now(timezone.utc).isoformat(),
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Öneri alma hatası: {str(e)}'}), 500
+
+@app.route('/ai/customer-insights/<user_id>', methods=['GET'])
+def get_customer_insights(user_id):
+    """Get comprehensive AI insights for customer"""
+    try:
+        insights = ai_helper.generate_customer_insights(user_id)
+        
+        return jsonify({
+            'user_id': user_id,
+            'insights': insights,
+            'generated_at': datetime.now(timezone.utc).isoformat(),
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Müşteri analizi hatası: {str(e)}'}), 500
+
+@app.route('/ai/chatbot/<user_id>', methods=['POST'])
+def chatbot_conversation(user_id):
+    """Handle AI chatbot conversations"""
+    try:
+        data = request.json
+        message = data.get('message', '')
+        context = data.get('context', {})
+        
+        if not message:
+            return jsonify({'error': 'Mesaj boş olamaz'}), 400
+        
+        response = ai_helper.generate_chatbot_response(user_id, message, context)
+        
+        return jsonify({
+            'user_id': user_id,
+            'user_message': message,
+            'ai_response': response,
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Chatbot hatası: {str(e)}'}), 500
+
+@app.route('/ai/personalized-dashboard/<user_id>', methods=['GET'])
+def get_personalized_dashboard(user_id):
+    """Get personalized dashboard data with AI insights"""
+    try:
+        insights = ai_helper.generate_customer_insights(user_id)
+        service_recommendations = ai_helper.get_service_recommendations(user_id, 3)
+        provider_recommendations = ai_helper.get_provider_recommendations(user_id, 2)
+        
+        user_appointments = Appointment.query.filter_by(customer_id=user_id)\
+                                          .order_by(Appointment.created_at.desc())\
+                                          .limit(5).all()
+        
+        appointments_data = []
+        for apt in user_appointments:
+            apt_data = apt.to_dict()
+            provider = User.query.get(apt.provider_id)
+            service = Service.query.get(apt.service_id)
+            apt_data['provider_name'] = provider.name if provider else 'Bilinmeyen'
+            apt_data['service_name'] = service.name if service else 'Bilinmeyen'
+            appointments_data.append(apt_data)
+        
+        total_spent = sum([float(apt.price) for apt in user_appointments if apt.price])
+        avg_appointment_value = total_spent / len(user_appointments) if user_appointments else 0
+        
+        dashboard_data = {
+            'user_profile': insights['customer_profile'],
+            'statistics': {
+                **insights['statistics'],
+                'total_spent': total_spent,
+                'average_appointment_value': avg_appointment_value,
+            },
+            'recommendations': {
+                'services': service_recommendations,
+                'providers': provider_recommendations,
+                'next_visit': insights['recommendations']['next_visit_suggestion'],
+            },
+            'loyalty': insights['recommendations']['loyalty_rewards'],
+            'personalized_offers': insights['recommendations']['personalized_offers'],
+            'recent_appointments': appointments_data,
+            'ai_score': insights['ai_score'],
+        }
+        
+        return jsonify({
+            'user_id': user_id,
+            'dashboard': dashboard_data,
+            'generated_at': datetime.now(timezone.utc).isoformat(),
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Dashboard verisi alma hatası: {str(e)}'}), 500
+
+@app.route('/ai/generate-report/<user_id>', methods=['GET'])
+def generate_ai_report(user_id):
+    """Generate comprehensive AI report for user"""
+    try:
+        period_months = request.args.get('period', 1, type=int)
+        
+        report_data = ai_helper.generate_comprehensive_report(user_id, period_months)
+        
+        return jsonify({
+            'user_id': user_id,
+            'report': report_data,
+            'generated_at': datetime.now(timezone.utc).isoformat(),
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Rapor oluşturma hatası: {str(e)}'}), 500
 
 if __name__ == '__main__':
     with app.app_context():
