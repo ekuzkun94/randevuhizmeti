@@ -7,6 +7,10 @@ from flask_cors import CORS
 import os
 import hashlib
 import uuid
+import pymysql
+
+# PyMySQL kullanımı için
+pymysql.install_as_MySQLdb()
 
 # Load environment variables
 load_dotenv()

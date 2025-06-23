@@ -34,7 +34,7 @@ class _MyAppointmentsPageState extends State<MyAppointmentsPage> {
 
       if (isOnline) {
         final appointmentsResponse = await ApiService.getAppointments();
-        if (appointmentsResponse is Map && appointmentsResponse.containsKey('appointments')) {
+        if (appointmentsResponse.containsKey('appointments')) {
           final appointmentsList = appointmentsResponse['appointments'] as List<dynamic>? ?? [];
           setState(() {
             _appointments = appointmentsList.map<Map<String, dynamic>>((appointment) {
@@ -522,7 +522,7 @@ class _MyAppointmentsPageState extends State<MyAppointmentsPage> {
                     margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -624,7 +624,7 @@ class _MyAppointmentsPageState extends State<MyAppointmentsPage> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: _getStatusColor(appointment['status']).withOpacity(0.1),
+                      color: _getStatusColor(appointment['status']).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(

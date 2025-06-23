@@ -57,8 +57,7 @@ class _ProfilePageState extends State<ProfilePage> {
       await Future.delayed(const Duration(seconds: 1));
       
       // Update user data
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      // authProvider.updateUserProfile(...) - implement this method
+      // TODO: Implement updateUserProfile method in AuthProvider
       
       setState(() => _isEditing = false);
       

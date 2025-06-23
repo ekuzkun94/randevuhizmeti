@@ -477,9 +477,9 @@ class _ProvidersPageState extends State<ProvidersPage> {
               return Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF667eea).withOpacity(0.1),
+                  color: const Color(0xFF667eea).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFF667eea).withOpacity(0.3)),
+                  border: Border.all(color: const Color(0xFF667eea).withValues(alpha: 0.3)),
                 ),
                 child: Text(
                   specialty.toString(),
@@ -531,7 +531,7 @@ class _ProvidersPageState extends State<ProvidersPage> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -585,7 +585,7 @@ class _ProvidersPageState extends State<ProvidersPage> {
                                       _selectedCategory = category;
                                     });
                                   },
-                                  selectedColor: const Color(0xFF667eea).withOpacity(0.2),
+                                  selectedColor: const Color(0xFF667eea).withValues(alpha: 0.2),
                                   checkmarkColor: const Color(0xFF667eea),
                                   labelStyle: TextStyle(
                                     color: isSelected ? const Color(0xFF667eea) : Colors.grey.shade700,

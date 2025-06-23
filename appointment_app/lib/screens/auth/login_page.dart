@@ -457,6 +457,82 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
                           SizedBox(height: MediaQuery.of(context).size.height > 700 ? 20 : 16),
+                          
+                          // Test kullanıcıları kartı
+                          Card(
+                            elevation: 8,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Colors.blue.shade50,
+                                    Colors.purple.shade50,
+                                  ],
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF667eea).withValues(alpha: 0.1),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: const Icon(
+                                          Icons.info_outline,
+                                          color: Color(0xFF667eea),
+                                          size: 20,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Text(
+                                        languageProvider.translate('test_users', fallback: 'Test Kullanıcıları'),
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF667eea),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  _buildTestUserInfo(
+                                    role: 'Admin',
+                                    email: 'admin@example.com',
+                                    password: 'admin123',
+                                    icon: Icons.admin_panel_settings,
+                                    color: Colors.red,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  _buildTestUserInfo(
+                                    role: 'Hizmet Sağlayıcı',
+                                    email: 'ahmet@example.com',
+                                    password: 'provider123',
+                                    icon: Icons.business_center,
+                                    color: Colors.orange,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  _buildTestUserInfo(
+                                    role: 'Müşteri',
+                                    email: 'mehmet@example.com',
+                                    password: 'customer123',
+                                    icon: Icons.person,
+                                    color: Colors.green,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -512,6 +588,88 @@ class _LoginPageState extends State<LoginPage> {
           horizontal: 16, 
           vertical: isMobile ? 12 : 16,
         ),
+      ),
+    );
+  }
+
+  Widget _buildTestUserInfo({
+    required String role,
+    required String email,
+    required String password,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Icon(icon, color: color, size: 16),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  role,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  email,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Colors.black87,
+                  ),
+                ),
+                Text(
+                  password,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: () {
+              _emailController.text = email;
+              _passwordController.text = password;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('$role hesabı bilgileri dolduruldu'),
+                  duration: const Duration(seconds: 2),
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              );
+            },
+            icon: const Icon(Icons.copy, size: 16),
+            tooltip: 'Bilgileri Doldur',
+            constraints: const BoxConstraints(
+              minWidth: 32,
+              minHeight: 32,
+            ),
+            padding: const EdgeInsets.all(4),
+          ),
+        ],
       ),
     );
   }

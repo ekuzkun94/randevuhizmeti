@@ -96,8 +96,14 @@ class AuthProvider extends ChangeNotifier {
       
       if (response['user'] != null) {
         final userData = response['user'];
-        _token = response['token'];
-        _refreshToken = response['refreshToken'];
+        
+        // Mock token oluştur (API'de token sistemi henüz yok)
+        _token = _generateMockToken({
+          'id': userData['id'],
+          'email': userData['email'],
+          'roleId': userData['role_id'],
+        });
+        _refreshToken = _generateMockRefreshToken();
         
         _currentUser = UserModel(
           id: userData['id'],
@@ -147,6 +153,28 @@ class AuthProvider extends ChangeNotifier {
       }
 
       final testUsers = {
+        'admin@example.com': {
+          'id': 'admin-001',
+          'name': 'Admin User',
+          'email': 'admin@example.com',
+          'roleId': '1',
+          'password': 'admin123'
+        },
+        'ahmet@example.com': {
+          'id': 'provider-001',
+          'name': 'Dr. Ahmet Yılmaz',
+          'email': 'ahmet@example.com',
+          'roleId': '2',
+          'password': 'provider123'
+        },
+        'mehmet@example.com': {
+          'id': 'customer-001',
+          'name': 'Mehmet Kaya',
+          'email': 'mehmet@example.com',
+          'roleId': '3',
+          'password': 'customer123'
+        },
+        // Hızlı test için kısa alternatifler
         'a@a.com': {
           'id': 'admin-001',
           'name': 'Admin User',

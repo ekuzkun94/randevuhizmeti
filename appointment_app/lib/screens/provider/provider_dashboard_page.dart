@@ -241,7 +241,7 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage> {
                   Text(
                     'Hoş geldiniz,',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       fontSize: 14,
                     ),
                   ),
@@ -256,7 +256,7 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage> {
                   Text(
                     'Güncel durumunuz aşağıda gösterilmektedir',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
+                      color: Colors.white.withValues(alpha: 0.8),
                       fontSize: 12,
                     ),
                   ),

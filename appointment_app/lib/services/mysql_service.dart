@@ -1,6 +1,5 @@
 import 'package:mysql1/mysql1.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:appointment_app/config/database_config.dart';
 
 class MySQLService {
