@@ -25,23 +25,31 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
   final _formKey = GlobalKey<FormState>();
   final _notesController = TextEditingController();
   final _userNameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _searchController = TextEditingController();
   final _providerSearchController = TextEditingController();
+  final _scrollController = ScrollController();
   
-  DateTime _selectedDate = DateTime.now();
-  DateTime _focusedDay = DateTime.now();
+  // Global keys for sections
+  final GlobalKey _providerSectionKey = GlobalKey();
+  final GlobalKey _timeSectionKey = GlobalKey();
+  
+  DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
+  DateTime _focusedDay = DateTime.now().add(const Duration(days: 1));
   String? _selectedService;
   String? _selectedProvider;
   String? _selectedTime;
+  String? _suggestedTime;
   bool _isLoading = false;
   bool _isApiOnline = false;
   List<Map<String, dynamic>> _existingAppointments = [];
   
-  // Database'den çekilen hizmetler
+  // Database services
   List<Map<String, dynamic>> _allServices = [];
   bool _isLoadingServices = true;
   
-  // Database'den çekilen providers
+  // Database providers
   List<Map<String, dynamic>> _allProviders = [];
   bool _isLoadingProviders = true;
 
@@ -51,7 +59,7 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
     '16:00', '16:30', '17:00', '17:30',
   ];
 
-  // Filtrelenmiş hizmetler
+  // Filtered services
   List<Map<String, dynamic>> get _filteredServices {
     if (_searchController.text.isEmpty) {
       return _allServices;
@@ -64,11 +72,10 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
     }).toList();
   }
 
-  // Seçilen hizmete göre providers
+  // Available providers based on selected service
   List<Map<String, dynamic>> get _availableProviders {
     if (_selectedService == null) return _allProviders;
     
-    // Seçilen hizmete ait providers'ı filtrele
     final selectedServiceData = _allServices.firstWhere(
       (service) => service['id'] == _selectedService,
       orElse: () => <String, dynamic>{},
@@ -76,18 +83,16 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
     
     if (selectedServiceData.isEmpty) return _allProviders;
     
-    // Hizmetin provider_id'si varsa o provider'ı döndür
     final providerId = selectedServiceData['provider_id']?.toString() ?? '';
     if (providerId.isNotEmpty) {
       return _allProviders.where((provider) => 
         provider['id'] == providerId).toList();
     }
     
-    // Yoksa tüm providers'ı döndür
     return _allProviders;
   }
 
-  // Filtrelenmiş providers
+  // Filtered providers
   List<Map<String, dynamic>> get _filteredProviders {
     if (_providerSearchController.text.isEmpty) {
       return _availableProviders;
@@ -105,6 +110,18 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
   void initState() {
     super.initState();
     _initializeData();
+  }
+
+  @override
+  void dispose() {
+    _notesController.dispose();
+    _userNameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _searchController.dispose();
+    _providerSearchController.dispose();
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _initializeData() async {
@@ -177,7 +194,7 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
               'description': providerMap['description'] ?? '',
               'specialization': providerMap['specialization'] ?? '',
               'experience_years': providerMap['experience_years'] ?? 0,
-              'rating': providerMap['rating'] ?? 4.0,
+              'rating': (providerMap['rating'] ?? 4.0).toDouble(),
               'total_reviews': providerMap['total_reviews'] ?? 0,
               'phone': providerMap['phone'] ?? '',
               'address': providerMap['address'] ?? '',
@@ -201,79 +218,90 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
     
     try {
       final response = await ApiService.getAppointments();
-      final appointments = response['appointments'] as List<dynamic>? ?? [];
-      setState(() {
-        _existingAppointments = appointments.cast<Map<String, dynamic>>();
-      });
+      if (response is Map && response.containsKey('appointments')) {
+        final appointments = response['appointments'] as List<dynamic>? ?? [];
+        setState(() {
+          _existingAppointments = appointments.cast<Map<String, dynamic>>();
+        });
+        _suggestBestTime();
+      }
     } catch (e) {
       print('Randevular yüklenirken hata: $e');
+    }
+  }
+
+  void _suggestBestTime() {
+    if (_selectedProvider == null) return;
+    
+    Map<String, int> slotUsage = {};
+    for (var time in _timeSlots) {
+      final count = _existingAppointments.where((appt) =>
+        appt['appointment_date'] == DateFormat('yyyy-MM-dd').format(_selectedDate) &&
+        appt['appointment_time'] == time &&
+        appt['provider_id'] == _selectedProvider
+      ).length;
+      slotUsage[time] = count;
+    }
+    
+    var bestTime = slotUsage.entries
+        .where((entry) => entry.value == 0)
+        .toList();
+    
+    if (bestTime.isNotEmpty) {
+      setState(() {
+        _suggestedTime = bestTime.first.key;
+      });
     }
   }
 
   bool _isTimeSlotOccupied(String timeSlot) {
     if (_selectedProvider == null) return false;
     
-    final selectedProviderData = _availableProviders.firstWhere(
-      (provider) => provider['id'] == _selectedProvider,
-      orElse: () => <String, dynamic>{},
-    );
-    
-    if (selectedProviderData.isEmpty) return false;
-    
-    final targetDateTime = DateTime(
-      _selectedDate.year,
-      _selectedDate.month,
-      _selectedDate.day,
-      int.parse(timeSlot.split(':')[0]),
-      int.parse(timeSlot.split(':')[1]),
-    );
-    
     return _existingAppointments.any((appointment) {
-      final appointmentDate = DateTime.tryParse(
-        '${appointment['appointment_date']} ${appointment['appointment_time']}'
-      );
-      
-      if (appointmentDate == null) return false;
-      
-      return appointmentDate.year == targetDateTime.year &&
-             appointmentDate.month == targetDateTime.month &&
-             appointmentDate.day == targetDateTime.day &&
-             appointmentDate.hour == targetDateTime.hour &&
-             appointmentDate.minute == targetDateTime.minute &&
+      return appointment['appointment_date'] == DateFormat('yyyy-MM-dd').format(_selectedDate) &&
+             appointment['appointment_time'] == timeSlot &&
              appointment['provider_id'] == _selectedProvider;
     });
+  }
+
+  bool _isSlotConflicted(String timeSlot) {
+    return _existingAppointments.any((appt) =>
+      appt['provider_id'] == _selectedProvider &&
+      appt['appointment_date'] == DateFormat('yyyy-MM-dd').format(_selectedDate) &&
+      appt['appointment_time'] == timeSlot
+    );
+  }
+
+  bool _hasAppointmentsOnDay(DateTime day) {
+    if (_selectedProvider == null) return false;
+    
+    final dayStr = DateFormat('yyyy-MM-dd').format(day);
+    return _existingAppointments.any((appt) => 
+      appt['appointment_date'] == dayStr && 
+      appt['provider_id'] == _selectedProvider
+    );
+  }
+
+  void _scrollToSection(GlobalKey key) {
+    final context = key.currentContext;
+    if (context != null) {
+      Scrollable.ensureVisible(
+        context,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    }
   }
 
   Future<void> _createAppointment() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedService == null || _selectedProvider == null || _selectedTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Lütfen hizmet, sağlayıcı ve saat seçiniz'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showErrorSnackBar('Lütfen hizmet, sağlayıcı ve saat seçiniz');
       return;
     }
 
-    if (_userNameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Lütfen adınızı giriniz'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    // Seçilen saat dolu mu kontrol et
-    if (_isTimeSlotOccupied(_selectedTime!)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Seçilen saat dolu. Lütfen başka bir saat seçiniz.'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+    if (_isSlotConflicted(_selectedTime!)) {
+      _showErrorSnackBar('Seçilen saat dolu. Lütfen başka bir saat seçiniz.');
       return;
     }
 
@@ -290,9 +318,10 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
         orElse: () => <String, dynamic>{},
       );
 
-      // API çağrısı yap
       final result = await ApiService.createAppointment(
         customerName: _userNameController.text.trim(),
+        customerEmail: _emailController.text.trim(),
+        customerPhone: _phoneController.text.trim(),
         providerId: selectedProviderData['id'],
         serviceId: selectedServiceData['id'],
         appointmentDate: DateFormat('yyyy-MM-dd').format(_selectedDate),
@@ -301,27 +330,12 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
       );
 
       if (result['success'] == true) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Randevu başarıyla oluşturuldu!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.pop(context, true);
-        }
+        _showSuccessDialog();
       } else {
         throw Exception(result['message'] ?? 'Randevu oluşturulamadı');
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Hata: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      _showErrorSnackBar('Hata: $e');
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -329,525 +343,143 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
     }
   }
 
-  Widget _buildServiceCard(Map<String, dynamic> service) {
-    final isSelected = _selectedService == service['id'];
-    final serviceProviderId = service['provider_id']?.toString() ?? '';
-    final availableProviderCount = serviceProviderId.isEmpty 
-        ? _allProviders.length 
-        : _allProviders.where((provider) => provider['id'] == serviceProviderId).length;
-    
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedService = service['id'];
-          _selectedProvider = null; // Reset provider when service changes
-          _selectedTime = null; // Reset time when service changes
-          _providerSearchController.clear(); // Clear provider search
-        });
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF667eea).withOpacity(0.1) : Colors.grey.shade50,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? const Color(0xFF667eea) : Colors.grey.shade300,
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    service['name']!,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: isSelected ? const Color(0xFF667eea) : Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '$availableProviderCount sağlayıcı • ${service['category']}',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          service['duration']!,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.blue.shade700,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.green.shade50,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          service['price']!,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.green.shade700,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            if (isSelected)
-              const Icon(
-                Icons.check_circle,
-                color: Color(0xFF667eea),
-                size: 24,
-              ),
-          ],
-        ),
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }
 
-  Widget _buildProviderCard(Map<String, dynamic> provider) {
-    final isSelected = _selectedProvider == provider['id'];
-    
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedProvider = provider['id'];
-          _selectedTime = null; // Reset time when provider changes
-        });
-        // Randevuları yükle
-        _loadExistingAppointments();
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF667eea).withOpacity(0.1) : Colors.grey.shade50,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? const Color(0xFF667eea) : Colors.grey.shade300,
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Row(
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        icon: const Icon(Icons.check_circle, color: Colors.green, size: 48),
+        title: const Text('Randevu Oluşturuldu!'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    provider['name']!,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: isSelected ? const Color(0xFF667eea) : Colors.black87,
-                    ),
-                  ),
-                  if (provider['business_name']?.isNotEmpty == true) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      provider['business_name']!,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade600,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 4),
-                  Text(
-                    '${provider['specialization']} • ${provider['experience_years']} yıl deneyim',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.star,
-                        color: Colors.amber,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${provider['rating']} (${provider['total_reviews']} değerlendirme)',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            if (isSelected)
-              const Icon(
-                Icons.check_circle,
-                color: Color(0xFF667eea),
-                size: 24,
-              ),
+            const Text('Randevunuz başarıyla oluşturuldu.'),
+            const SizedBox(height: 16),
+            _buildAppointmentSummary(),
           ],
         ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pop(context, true);
+            },
+            child: const Text('Tamam'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAppointmentSummary() {
+    final selectedService = _allServices.firstWhere(
+      (service) => service['id'] == _selectedService,
+      orElse: () => <String, dynamic>{},
+    );
+    final selectedProvider = _availableProviders.firstWhere(
+      (provider) => provider['id'] == _selectedProvider,
+      orElse: () => <String, dynamic>{},
+    );
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.medical_services, size: 16, color: Colors.blue),
+              const SizedBox(width: 8),
+              Expanded(child: Text(selectedService['name'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold))),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Icon(Icons.person, size: 16, color: Colors.orange),
+              const SizedBox(width: 8),
+              Expanded(child: Text(selectedProvider['name'] ?? '')),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Icon(Icons.calendar_today, size: 16, color: Colors.green),
+              const SizedBox(width: 8),
+              Text(DateFormat('dd MMMM yyyy', 'tr_TR').format(_selectedDate)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Icon(Icons.access_time, size: 16, color: Colors.purple),
+              const SizedBox(width: 8),
+              Text(_selectedTime ?? ''),
+            ],
+          ),
+        ],
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final languageProvider = Provider.of<LanguageProvider>(context);
-
     return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
         title: const Text('Randevu Oluştur'),
-        backgroundColor: const Color(0xFF667eea),
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
+          controller: _scrollController,
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // API Durum Göstergesi
-              Container(
-                padding: const EdgeInsets.all(12),
-                margin: const EdgeInsets.only(bottom: 20),
-                decoration: BoxDecoration(
-                  color: _isApiOnline ? Colors.green.shade50 : Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: _isApiOnline ? Colors.green.shade200 : Colors.red.shade200,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      _isApiOnline ? Icons.check_circle : Icons.error,
-                      color: _isApiOnline ? Colors.green : Colors.red,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _isApiOnline 
-                          ? 'Bağlantı başarılı - Gerçek veriler kullanılıyor'
-                          : 'API bağlantısı yok - Test modu',
-                        style: TextStyle(
-                          color: _isApiOnline ? Colors.green.shade700 : Colors.red.shade700,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: _checkApiStatus,
-                      child: Icon(
-                        Icons.refresh,
-                        color: _isApiOnline ? Colors.green : Colors.red,
-                        size: 20,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Hizmet Seçimi
-              const Text(
-                'Hizmet Seç',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-              
-              // Hizmet Arama
-              TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: 'Hizmet ara...',
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            _searchController.clear();
-                            setState(() {});
-                          },
-                        )
-                      : null,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                onChanged: (value) {
-                  setState(() {});
-                },
-              ),
-              const SizedBox(height: 16),
-              
-              // Hizmet loading göstergesi
-              if (_isLoadingServices)
-                const Center(child: CircularProgressIndicator())
-              // Hizmet listesi
-              else if (_filteredServices.isNotEmpty) ...[
-                ..._filteredServices.map((service) {
-                  return _buildServiceCard(service);
-                }).toList(),
-              ] else
-                const Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Text(
-                    'Hizmet bulunamadı.',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ),
-
-              // Provider Seçimi
-              if (_selectedService != null) ...[
-                const SizedBox(height: 24),
-                const Text(
-                  'Sağlayıcı Seç',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-                
-                // Provider Arama
-                TextField(
-                  controller: _providerSearchController,
-                  decoration: InputDecoration(
-                    hintText: 'Sağlayıcı ara...',
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon: _providerSearchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () {
-                              _providerSearchController.clear();
-                              setState(() {});
-                            },
-                          )
-                        : null,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  onChanged: (value) {
-                    setState(() {});
-                  },
-                ),
-                const SizedBox(height: 16),
-                
-                // Provider loading göstergesi
-                if (_isLoadingProviders)
-                  const Center(child: CircularProgressIndicator())
-                // Provider listesi
-                else if (_filteredProviders.isNotEmpty) ...[
-                  ..._filteredProviders.map((provider) {
-                    return _buildProviderCard(provider);
-                  }).toList(),
-                ] else
-                  const Padding(
-                    padding: EdgeInsets.all(20),
-                    child: Text(
-                      'Bu hizmet için sağlayıcı bulunamadı.',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  ),
-              ],
-
-              // Tarih Seçimi
-              if (_selectedService != null && _selectedProvider != null) ...[
-                const SizedBox(height: 24),
-                const Text(
-                  'Tarih Seç',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: TableCalendar<dynamic>(
-                    firstDay: DateTime.now(),
-                    lastDay: DateTime.now().add(const Duration(days: 90)),
-                    focusedDay: _focusedDay,
-                    selectedDayPredicate: (day) {
-                      return isSameDay(_selectedDate, day);
-                    },
-                    onDaySelected: (selectedDay, focusedDay) {
-                      setState(() {
-                        _selectedDate = selectedDay;
-                        _focusedDay = focusedDay;
-                        _selectedTime = null; // Reset time when date changes
-                      });
-                      _loadExistingAppointments();
-                    },
-                    onPageChanged: (focusedDay) {
-                      _focusedDay = focusedDay;
-                    },
-                    calendarFormat: CalendarFormat.month,
-                    availableCalendarFormats: const {
-                      CalendarFormat.month: 'Month',
-                    },
-                    headerStyle: const HeaderStyle(
-                      formatButtonVisible: false,
-                      titleCentered: true,
-                    ),
-                  ),
-                ),
-                
-                // Saat Seçimi
-                const SizedBox(height: 24),
-                const Text(
-                  'Saat Seç',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: _timeSlots.map((timeSlot) {
-                    final isSelected = _selectedTime == timeSlot;
-                    final isOccupied = _isTimeSlotOccupied(timeSlot);
-                    
-                    return GestureDetector(
-                      onTap: isOccupied ? null : () {
-                        setState(() {
-                          _selectedTime = timeSlot;
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: isOccupied 
-                              ? Colors.grey.shade200
-                              : isSelected 
-                                  ? const Color(0xFF667eea)
-                                  : Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: isOccupied 
-                                ? Colors.grey.shade300
-                                : isSelected 
-                                    ? const Color(0xFF667eea)
-                                    : Colors.grey.shade300,
-                          ),
-                        ),
-                        child: Text(
-                          timeSlot,
-                          style: TextStyle(
-                            color: isOccupied 
-                                ? Colors.grey.shade500
-                                : isSelected 
-                                    ? Colors.white
-                                    : Colors.black87,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ],
-
-              // Kişisel Bilgiler
-              if (_selectedService != null && _selectedProvider != null) ...[
-                const SizedBox(height: 24),
-                const Text(
-                  'Kişisel Bilgiler',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _userNameController,
-                  decoration: InputDecoration(
-                    labelText: 'Adınız Soyadınız *',
-                    hintText: 'Tam adınızı giriniz',
-                    prefixIcon: const Icon(Icons.person),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Lütfen adınızı giriniz';
-                    }
-                    return null;
-                  },
-                ),
-              ],
-
-              // Notlar
-              if (_selectedService != null && _selectedProvider != null) ...[
-                const SizedBox(height: 16),
-                const Text(
-                  'Notlar (Opsiyonel)',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _notesController,
-                  decoration: InputDecoration(
-                    hintText: 'Randevunuz hakkında not ekleyebilirsiniz...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  maxLines: 3,
-                ),
-              ],
-
-              // Randevu Oluştur Butonu
-              if (_selectedService != null && _selectedProvider != null && _selectedTime != null) ...[
-                const SizedBox(height: 32),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _createAppointment,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF667eea),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text(
-                            'Randevu Oluştur',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
-                  ),
-                ),
-              ],
-
+              _buildApiStatusCard(),
               const SizedBox(height: 20),
+              _buildServiceSection(),
+              const SizedBox(height: 20),
+              if (_selectedService != null) ...[
+                _buildProviderSection(),
+                const SizedBox(height: 20),
+              ],
+              if (_selectedProvider != null) ...[
+                _buildDateTimeSection(),
+                const SizedBox(height: 20),
+              ],
+              if (_selectedTime != null) ...[
+                _buildCustomerInfoSection(),
+                const SizedBox(height: 30),
+                _buildCreateButton(),
+              ],
             ],
           ),
         ),
@@ -855,12 +487,675 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> {
     );
   }
 
-  @override
-  void dispose() {
-    _notesController.dispose();
-    _userNameController.dispose();
-    _searchController.dispose();
-    _providerSearchController.dispose();
-    super.dispose();
+  Widget _buildApiStatusCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _isApiOnline ? Colors.green.shade50 : Colors.red.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: _isApiOnline ? Colors.green.shade200 : Colors.red.shade200,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            _isApiOnline ? Icons.check_circle : Icons.error,
+            color: _isApiOnline ? Colors.green : Colors.red,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _isApiOnline 
+                    ? 'API Bağlantısı Aktif' 
+                    : 'API Bağlantısı Kapalı',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: _isApiOnline ? Colors.green.shade700 : Colors.red.shade700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: _checkApiStatus,
+            icon: Icon(
+              Icons.refresh,
+              color: _isApiOnline ? Colors.green : Colors.red,
+            ),
+          ),
+        ],
+      ),
+    );
   }
-}
+
+  Widget _buildServiceSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '1. Hizmet Seçin',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _searchController,
+          onChanged: (value) => setState(() {}),
+          decoration: InputDecoration(
+            hintText: 'Hizmet ara...',
+            prefixIcon: const Icon(Icons.search),
+            suffixIcon: _searchController.text.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.clear),
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() {});
+                    },
+                  )
+                : null,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        if (_isLoadingServices)
+          const Center(child: CircularProgressIndicator())
+        else if (_filteredServices.isEmpty)
+          const Center(
+            child: Text('Henüz hizmet bulunamadı'),
+          )
+        else
+          ...List.generate(
+            _filteredServices.length,
+            (index) => _buildServiceCard(_filteredServices[index]),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildServiceCard(Map<String, dynamic> service) {
+    final isSelected = _selectedService == service['id'];
+    
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: isSelected ? 4 : 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isSelected ? const Color(0xFF667eea) : Colors.grey.shade300,
+          width: isSelected ? 2 : 1,
+        ),
+      ),
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _selectedService = service['id'];
+            _selectedProvider = null;
+            _selectedTime = null;
+            _providerSearchController.clear();
+          });
+          _scrollToSection(_providerSectionKey);
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: isSelected ? const Color(0xFF667eea) : Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.medical_services,
+                  color: isSelected ? Colors.white : Colors.grey.shade600,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      service['name'] ?? '',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: isSelected ? const Color(0xFF667eea) : Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      service['description'] ?? '',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade600,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade50,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            service['duration'] ?? '30 dk',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.blue.shade700,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            service['price'] ?? '0 ₺',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.green.shade700,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              if (isSelected)
+                const Icon(
+                  Icons.check_circle,
+                  color: Color(0xFF667eea),
+                  size: 24,
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProviderSection() {
+    return Column(
+      key: _providerSectionKey,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '2. Sağlayıcı Seçin',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _providerSearchController,
+          onChanged: (value) => setState(() {}),
+          decoration: InputDecoration(
+            hintText: 'Sağlayıcı ara...',
+            prefixIcon: const Icon(Icons.person),
+            suffixIcon: _providerSearchController.text.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.clear),
+                    onPressed: () {
+                      _providerSearchController.clear();
+                      setState(() {});
+                    },
+                  )
+                : null,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        if (_isLoadingProviders)
+          const Center(child: CircularProgressIndicator())
+        else if (_filteredProviders.isEmpty)
+          const Center(
+            child: Text('Bu hizmet için sağlayıcı bulunamadı'),
+          )
+        else
+          ...List.generate(
+            _filteredProviders.length,
+            (index) => _buildProviderCard(_filteredProviders[index]),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildProviderCard(Map<String, dynamic> provider) {
+    final isSelected = _selectedProvider == provider['id'];
+    
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: isSelected ? 4 : 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isSelected ? const Color(0xFF667eea) : Colors.grey.shade300,
+          width: isSelected ? 2 : 1,
+        ),
+      ),
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _selectedProvider = provider['id'];
+            _selectedTime = null;
+          });
+          _loadExistingAppointments();
+          _scrollToSection(_timeSectionKey);
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 25,
+                backgroundColor: isSelected ? const Color(0xFF667eea) : Colors.grey.shade300,
+                child: Icon(
+                  Icons.person,
+                  color: isSelected ? Colors.white : Colors.grey.shade600,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      provider['name'] ?? '',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: isSelected ? const Color(0xFF667eea) : Colors.black87,
+                      ),
+                    ),
+                    if (provider['business_name'] != null && provider['business_name']!.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        provider['business_name']!,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade600,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.star, size: 16, color: Colors.amber.shade600),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${provider['rating']} (${provider['total_reviews']} değerlendirme)',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (provider['specialization'] != null && provider['specialization']!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade50,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          provider['specialization']!,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.orange.shade700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              if (isSelected)
+                const Icon(
+                  Icons.check_circle,
+                  color: Color(0xFF667eea),
+                  size: 24,
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDateTimeSection() {
+    return Column(
+      key: _timeSectionKey,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '3. Tarih ve Saat Seçin',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        _buildCalendar(),
+        const SizedBox(height: 20),
+        _buildTimeSlots(),
+      ],
+    );
+  }
+
+  Widget _buildCalendar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 10,
+          ),
+        ],
+      ),
+      child: TableCalendar<dynamic>(
+        firstDay: DateTime.now(),
+        lastDay: DateTime.now().add(const Duration(days: 90)),
+        focusedDay: _focusedDay,
+        selectedDayPredicate: (day) => isSameDay(_selectedDate, day),
+        calendarFormat: CalendarFormat.month,
+        startingDayOfWeek: StartingDayOfWeek.monday,
+        headerStyle: const HeaderStyle(
+          formatButtonVisible: false,
+          titleCentered: true,
+          titleTextStyle: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        calendarStyle: CalendarStyle(
+          outsideDaysVisible: false,
+          weekendTextStyle: const TextStyle(color: Colors.red),
+          selectedDecoration: const BoxDecoration(
+            color: Color(0xFF667eea),
+            shape: BoxShape.circle,
+          ),
+          todayDecoration: BoxDecoration(
+            color: Colors.grey.shade400,
+            shape: BoxShape.circle,
+          ),
+          markerDecoration: BoxDecoration(
+            color: Colors.orange.shade300,
+            shape: BoxShape.circle,
+          ),
+        ),
+        eventLoader: (day) {
+          return _hasAppointmentsOnDay(day) ? ['appointment'] : [];
+        },
+        onDaySelected: (selectedDay, focusedDay) {
+          if (!isSameDay(_selectedDate, selectedDay)) {
+            setState(() {
+              _selectedDate = selectedDay;
+              _focusedDay = focusedDay;
+              _selectedTime = null;
+              _suggestedTime = null;
+            });
+            _suggestBestTime();
+          }
+        },
+        onPageChanged: (focusedDay) {
+          _focusedDay = focusedDay;
+        },
+      ),
+    );
+  }
+
+  Widget _buildTimeSlots() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Text(
+              'Saat Seçin',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const Spacer(),
+            if (_suggestedTime != null)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.green.shade200),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.lightbulb, size: 14, color: Colors.green.shade600),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Önerilen: $_suggestedTime',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.green.shade700,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _timeSlots.map((time) {
+            final isOccupied = _isTimeSlotOccupied(time);
+            final isSelected = _selectedTime == time;
+            final isSuggested = _suggestedTime == time;
+            
+            return InkWell(
+              onTap: isOccupied ? null : () {
+                setState(() {
+                  _selectedTime = time;
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: isOccupied 
+                      ? Colors.red.shade100
+                      : isSelected 
+                          ? const Color(0xFF667eea)
+                          : isSuggested
+                              ? Colors.green.shade50
+                              : Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isOccupied
+                        ? Colors.red.shade300
+                        : isSelected
+                            ? const Color(0xFF667eea)
+                            : isSuggested
+                                ? Colors.green.shade300
+                                : Colors.grey.shade300,
+                    width: isSelected ? 2 : 1,
+                  ),
+                ),
+                child: Text(
+                  time,
+                  style: TextStyle(
+                    color: isOccupied
+                        ? Colors.red.shade700
+                        : isSelected
+                            ? Colors.white
+                            : isSuggested
+                                ? Colors.green.shade700
+                                : Colors.black87,
+                    fontWeight: isSelected || isSuggested ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            _buildTimeLegend(Colors.white, Colors.grey.shade300, 'Müsait'),
+            const SizedBox(width: 16),
+            _buildTimeLegend(Colors.red.shade100, Colors.red.shade300, 'Dolu'),
+            const SizedBox(width: 16),
+            _buildTimeLegend(Colors.green.shade50, Colors.green.shade300, 'Önerilen'),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTimeLegend(Color bgColor, Color borderColor, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: bgColor,
+            border: Border.all(color: borderColor),
+            borderRadius: BorderRadius.circular(3),
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey.shade600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCustomerInfoSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '4. İletişim Bilgileri',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _userNameController,
+          decoration: InputDecoration(
+            labelText: 'Adınız Soyadınız *',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Ad soyad gereklidir';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _emailController,
+          keyboardType: TextInputType.emailAddress,
+          decoration: InputDecoration(
+            labelText: 'E-posta *',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'E-posta gereklidir';
+            }
+            if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+              return 'Geçerli bir e-posta adresi giriniz';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _phoneController,
+          keyboardType: TextInputType.phone,
+          decoration: InputDecoration(
+            labelText: 'Telefon *',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Telefon numarası gereklidir';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _notesController,
+          maxLines: 3,
+          decoration: InputDecoration(
+            labelText: 'Notlar (İsteğe bağlı)',
+            alignLabelWithHint: true,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCreateButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : _createAppointment,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF667eea),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: _isLoading
+            ? const CircularProgressIndicator(color: Colors.white)
+            : const Text(
+                'Randevu Oluştur',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+      ),
+    );
+  }
+} 

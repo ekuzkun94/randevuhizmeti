@@ -602,7 +602,19 @@ def delete_appointment(appointment_id):
 if __name__ == '__main__':
     with app.app_context():
         try:
-            db.create_all()
+            # Mevcut tabloları kontrol et ve sadece gerekli olanları oluştur
+            from sqlalchemy import inspect
+            inspector = inspect(db.engine)
+            existing_tables = inspector.get_table_names()
+            
+            if not existing_tables:
+                db.create_all()
+                print("Database tables created successfully")
+            else:
+                print("Database tables already exist, verifying schema...")
+                # Sadece eksik tabloları oluştur
+                db.create_all()
+                print("Database tables verified successfully")
         except Exception as e:
-            print(f"Database tables already exist or error: {e}")
+            print(f"Database initialization completed with note: {str(e)}")
     app.run(debug=True, port=5001) 

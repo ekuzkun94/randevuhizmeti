@@ -438,12 +438,143 @@ class ApiService {
       );
       
       if (response.statusCode == 200) {
-        return {'status': 'online', 'message': 'API bağlantısı başarılı'};
+        return {'success': true, 'status': 'online', 'message': 'API bağlantısı başarılı'};
       } else {
-        return {'status': 'offline', 'message': 'API erişilemez'};
+        return {'success': false, 'status': 'offline', 'message': 'API erişilemez'};
       }
     } catch (e) {
-      return {'status': 'offline', 'message': 'Bağlantı hatası: $e'};
+      return {'success': false, 'status': 'offline', 'message': 'Bağlantı hatası: $e'};
     }
+  }
+
+  // ==================== SECURITY & AUTH ====================
+  
+  // Token refresh
+  static Future<Map<String, dynamic>> refreshToken(String refreshToken) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/refresh'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'refresh_token': refreshToken,
+        }),
+      );
+      
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['error'] ?? 'Token yenilenemedi');
+      }
+    } catch (e) {
+      throw Exception('Token refresh hatası: $e');
+    }
+  }
+  
+  // Çıkış yapma (logout)
+  static Future<Map<String, dynamic>> logout(String token) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/logout'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        final errorData = json.decode(response.body);
+        return {'error': errorData['error'] ?? 'Çıkış yapılamadı'};
+      }
+    } catch (e) {
+      return {'error': 'Bağlantı hatası: $e'};
+    }
+  }
+  
+  // Token doğrulama
+  static Future<Map<String, dynamic>> validateToken(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/auth/validate'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        final errorData = json.decode(response.body);
+        return {'valid': false, 'error': errorData['error'] ?? 'Token geçersiz'};
+      }
+    } catch (e) {
+      return {'valid': false, 'error': 'Token doğrulama hatası: $e'};
+    }
+  }
+  
+  // Authorization header'ı ekleyen generic HTTP request metodu
+  static Future<http.Response> _authorizedRequest({
+    required String method,
+    required String endpoint,
+    String? token,
+    Map<String, dynamic>? body,
+    Map<String, String>? additionalHeaders,
+  }) async {
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      ...?additionalHeaders,
+    };
+    
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+    
+    final uri = Uri.parse('$baseUrl$endpoint');
+    
+    switch (method.toUpperCase()) {
+      case 'GET':
+        return await http.get(uri, headers: headers);
+      case 'POST':
+        return await http.post(uri, headers: headers, body: body != null ? json.encode(body) : null);
+      case 'PUT':
+        return await http.put(uri, headers: headers, body: body != null ? json.encode(body) : null);
+      case 'DELETE':
+        return await http.delete(uri, headers: headers);
+      default:
+        throw Exception('Desteklenmeyen HTTP metodu: $method');
+    }
+  }
+  
+  // ==================== SECURITY HELPERS ====================
+  
+  // Rate limiting kontrolü
+  static final Map<String, DateTime> _lastRequestTimes = {};
+  static const Duration _minRequestInterval = Duration(milliseconds: 100);
+  
+  static bool _canMakeRequest(String endpoint) {
+    final now = DateTime.now();
+    if (_lastRequestTimes.containsKey(endpoint)) {
+      final lastRequest = _lastRequestTimes[endpoint]!;
+      if (now.difference(lastRequest) < _minRequestInterval) {
+        return false;
+      }
+    }
+    _lastRequestTimes[endpoint] = now;
+    return true;
+  }
+  
+  // IP geoblocking kontrolü (basit)
+  static Future<bool> _checkGeolocation() async {
+    // Production'da gerçek geolocation API'si kullanılabilir
+    return true;
+  }
+  
+  // Audit log
+  static void _logSecurityEvent(String event, Map<String, dynamic> details) {
+    print('[SECURITY] $event: ${json.encode(details)}');
+    // Production'da bu logs bir güvenlik sistemine gönderilebilir
   }
 } 

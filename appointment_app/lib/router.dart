@@ -34,37 +34,88 @@ final GoRouter router = GoRouter(
       return null;
     }
     
-    // Ana sayfa, login, register ve guest-booking sayfalarına herkese erişim izni ver
+    final currentPath = state.matchedLocation;
+    
+    // 🔓 Public paths - herkese açık
     final publicPaths = ['/', '/login', '/register', '/guest-booking'];
-    if (publicPaths.contains(state.matchedLocation)) {
+    if (publicPaths.contains(currentPath)) {
       return null;
     }
     
-    // If not authenticated, redirect to login
-    if (authProvider.currentUser == null) {
+    // 🔐 Authentication kontrolü
+    if (!authProvider.isAuthenticated) {
+      print('[SECURITY] Unauthorized access attempt to: $currentPath');
       return '/login';
     }
     
-    // If authenticated, check role-based access
+    // 🛡️ Role-based access control with permissions
     final user = authProvider.currentUser!;
-    final currentPath = state.matchedLocation;
     
-    // Admin routes - only admin can access
-    if (currentPath.startsWith('/admin') && user.roleId != '1') {
+    // Admin rotaları - sadece admin erişebilir
+    if (currentPath.startsWith('/admin')) {
+      if (!authProvider.isAdmin) {
+        print('[SECURITY] Non-admin user ${user.email} attempted to access admin route: $currentPath');
+        return '/login';
+      }
+      
+      // Specific admin permission checks
+      if (currentPath.contains('/users') && !authProvider.hasPermission('admin.users.view')) {
+        print('[SECURITY] User ${user.email} lacks permission for users management');
+        return '/admin';
+      }
+      
+      if (currentPath.contains('/services') && !authProvider.hasPermission('admin.services.view')) {
+        print('[SECURITY] User ${user.email} lacks permission for services management');
+        return '/admin';
+      }
+      
+      if (currentPath.contains('/roles') && !authProvider.hasPermission('admin.roles.view')) {
+        print('[SECURITY] User ${user.email} lacks permission for roles management');
+        return '/admin';
+      }
+    }
+    
+    // Provider rotaları - sadece provider erişebilir
+    else if (currentPath.startsWith('/provider')) {
+      if (!authProvider.isProvider) {
+        print('[SECURITY] Non-provider user ${user.email} attempted to access provider route: $currentPath');
+        return '/login';
+      }
+      
+      // Provider permission checks
+      if (currentPath.contains('/services') && !authProvider.hasPermission('provider.services.view')) {
+        print('[SECURITY] Provider ${user.email} lacks permission for services management');
+        return '/provider';
+      }
+      
+      if (currentPath.contains('/schedule') && !authProvider.hasPermission('provider.schedule.view')) {
+        print('[SECURITY] Provider ${user.email} lacks permission for schedule management');
+        return '/provider';
+      }
+    }
+    
+    // Customer rotaları - sadece customer erişebilir
+    else if (currentPath.startsWith('/customer')) {
+      if (!authProvider.isCustomer) {
+        print('[SECURITY] Non-customer user ${user.email} attempted to access customer route: $currentPath');
+        return '/login';
+      }
+      
+      // Customer permission checks
+      if (currentPath.contains('/create-appointment') && !authProvider.hasPermission('customer.appointments.create')) {
+        print('[SECURITY] Customer ${user.email} lacks permission to create appointments');
+        return '/customer';
+      }
+    }
+    
+    // 🔒 Additional security: Check session validity
+    if (authProvider.token == null) {
+      print('[SECURITY] Missing authentication token for user: ${user.email}');
       return '/login';
     }
     
-    // Provider routes - only provider can access
-    if (currentPath.startsWith('/provider') && user.roleId != '2') {
-      return '/login';
-    }
-    
-    // Customer routes - only customer can access
-    if (currentPath.startsWith('/customer') && user.roleId != '3') {
-      return '/login';
-    }
-    
-    // Allow access to role-based paths
+    // ✅ Access granted
+    print('[SECURITY] Access granted to ${user.email} (${user.roleId}) for: $currentPath');
     return null;
   },
   routes: [
