@@ -331,7 +331,7 @@ class _ProvidersPageState extends State<ProvidersPage> {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(Icons.star, color: Colors.amber, size: 16),
+                            const Icon(Icons.star, color: Colors.amber, size: 16),
                             const SizedBox(width: 4),
                             Text(
                               provider['rating'].toString(),
@@ -754,7 +754,7 @@ class _ProvidersPageState extends State<ProvidersPage> {
                     // Rating and Experience
                     Row(
                       children: [
-                        Icon(Icons.star, color: Colors.amber, size: 16),
+                        const Icon(Icons.star, color: Colors.amber, size: 16),
                         const SizedBox(width: 4),
                         Text(
                           provider['rating'].toString(),

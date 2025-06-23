@@ -10,7 +10,7 @@ class ProviderSchedulePage extends StatefulWidget {
 }
 
 class _ProviderSchedulePageState extends State<ProviderSchedulePage> {
-  Map<String, Map<String, dynamic>> _schedule = {
+  final Map<String, Map<String, dynamic>> _schedule = {
     'monday': {
       'name': 'Pazartesi',
       'isWorking': true,

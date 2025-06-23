@@ -27,7 +27,8 @@ class HybridApiService {
     try {
       if (isOnline) {
         // Try online login first
-        final result = await ApiService.login(email, password);
+        final result = await ApiService.login(
+            email, password, '3'); // Default role customer
         return result;
       } else {
         // Fallback to offline login
@@ -54,7 +55,7 @@ class HybridApiService {
           };
         }
       }
-      throw e;
+      rethrow;
     }
   }
 
@@ -107,7 +108,7 @@ class HybridApiService {
         };
       }
     } catch (e) {
-      throw e;
+      rethrow;
     }
   }
 
@@ -192,9 +193,10 @@ class HybridApiService {
         // Offline appointment creation
         final serverId = _uuid.v4();
         appointmentData['server_id'] = serverId;
-        
+
         await _localDb.insertAppointment(appointmentData);
-        await _localDb.addToSyncQueue('appointments', serverId, 'create', appointmentData);
+        await _localDb.addToSyncQueue(
+            'appointments', serverId, 'create', appointmentData);
 
         return {
           'appointment': appointmentData,
@@ -205,9 +207,10 @@ class HybridApiService {
       // Fallback to local storage
       final serverId = _uuid.v4();
       appointmentData['server_id'] = serverId;
-      
+
       await _localDb.insertAppointment(appointmentData);
-      await _localDb.addToSyncQueue('appointments', serverId, 'create', appointmentData);
+      await _localDb.addToSyncQueue(
+          'appointments', serverId, 'create', appointmentData);
 
       return {
         'appointment': appointmentData,
@@ -227,8 +230,10 @@ class HybridApiService {
     String? paymentStatus,
   }) async {
     final updateData = <String, dynamic>{};
-    if (appointmentDate != null) updateData['appointment_date'] = appointmentDate;
-    if (appointmentTime != null) updateData['appointment_time'] = appointmentTime;
+    if (appointmentDate != null)
+      updateData['appointment_date'] = appointmentDate;
+    if (appointmentTime != null)
+      updateData['appointment_time'] = appointmentTime;
     if (notes != null) updateData['notes'] = notes;
     if (status != null) updateData['status'] = status;
     if (location != null) updateData['location'] = location;
@@ -249,15 +254,17 @@ class HybridApiService {
         );
       } else {
         await _localDb.updateAppointment(appointmentId, updateData);
-        await _localDb.addToSyncQueue('appointments', appointmentId, 'update', updateData);
-        
+        await _localDb.addToSyncQueue(
+            'appointments', appointmentId, 'update', updateData);
+
         return {'success': true, 'offline_mode': true};
       }
     } catch (e) {
       // Fallback to local update
       await _localDb.updateAppointment(appointmentId, updateData);
-      await _localDb.addToSyncQueue('appointments', appointmentId, 'update', updateData);
-      
+      await _localDb.addToSyncQueue(
+          'appointments', appointmentId, 'update', updateData);
+
       return {'success': true, 'offline_mode': true};
     }
   }
@@ -269,14 +276,14 @@ class HybridApiService {
       } else {
         await _localDb.deleteAppointment(appointmentId);
         await _localDb.addToSyncQueue('appointments', appointmentId, 'delete');
-        
+
         return {'success': true, 'offline_mode': true};
       }
     } catch (e) {
       // Fallback to local delete
       await _localDb.deleteAppointment(appointmentId);
       await _localDb.addToSyncQueue('appointments', appointmentId, 'delete');
-      
+
       return {'success': true, 'offline_mode': true};
     }
   }
@@ -325,9 +332,10 @@ class HybridApiService {
       } else {
         final serverId = _uuid.v4();
         serviceData['server_id'] = serverId;
-        
+
         await _localDb.insertService(serviceData);
-        await _localDb.addToSyncQueue('services', serverId, 'create', serviceData);
+        await _localDb.addToSyncQueue(
+            'services', serverId, 'create', serviceData);
 
         return {
           'service': serviceData,
@@ -338,9 +346,10 @@ class HybridApiService {
       // Fallback to local storage
       final serverId = _uuid.v4();
       serviceData['server_id'] = serverId;
-      
+
       await _localDb.insertService(serviceData);
-      await _localDb.addToSyncQueue('services', serverId, 'create', serviceData);
+      await _localDb.addToSyncQueue(
+          'services', serverId, 'create', serviceData);
 
       return {
         'service': serviceData,
@@ -383,8 +392,9 @@ class HybridApiService {
           final tableName = item['table_name'] as String;
           final recordId = item['record_id'] as String;
           final action = item['action'] as String;
-          final data = item['data'] != null ? 
-            jsonDecode(item['data'] as String) as Map<String, dynamic> : null;
+          final data = item['data'] != null
+              ? jsonDecode(item['data'] as String) as Map<String, dynamic>
+              : null;
 
           bool syncSuccess = false;
 
@@ -413,7 +423,8 @@ class HybridApiService {
 
       if (synced > 0) {
         await _localDb.clearSyncQueue();
-        await _localDb.setSetting('last_sync', DateTime.now().toIso8601String());
+        await _localDb.setSetting(
+            'last_sync', DateTime.now().toIso8601String());
       }
 
       return {
@@ -426,7 +437,8 @@ class HybridApiService {
     }
   }
 
-  Future<bool> _syncAppointment(String recordId, String action, Map<String, dynamic>? data) async {
+  Future<bool> _syncAppointment(
+      String recordId, String action, Map<String, dynamic>? data) async {
     try {
       switch (action) {
         case 'create':
@@ -472,7 +484,8 @@ class HybridApiService {
     }
   }
 
-  Future<bool> _syncService(String recordId, String action, Map<String, dynamic>? data) async {
+  Future<bool> _syncService(
+      String recordId, String action, Map<String, dynamic>? data) async {
     try {
       switch (action) {
         case 'create':
@@ -508,7 +521,8 @@ class HybridApiService {
     }
   }
 
-  Future<bool> _syncUser(String recordId, String action, Map<String, dynamic>? data) async {
+  Future<bool> _syncUser(
+      String recordId, String action, Map<String, dynamic>? data) async {
     try {
       switch (action) {
         case 'create':
@@ -551,7 +565,7 @@ class HybridApiService {
     final stats = await _localDb.getDatabaseStats();
     final syncQueue = await _localDb.getSyncQueue();
     final lastSync = await _localDb.getSetting('last_sync');
-    
+
     return {
       'online': isOnline,
       'database_stats': stats,
@@ -564,7 +578,7 @@ class HybridApiService {
     final stats = await _localDb.getDatabaseStats();
     final lastSync = await _localDb.getSetting('last_sync');
     final appVersion = await _localDb.getSetting('app_version');
-    
+
     return {
       'app_version': appVersion,
       'database_stats': stats,
@@ -572,4 +586,4 @@ class HybridApiService {
       'connection_status': isOnline ? 'Online' : 'Offline',
     };
   }
-} 
+}

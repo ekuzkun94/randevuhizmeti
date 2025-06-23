@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import '../services/hybrid_api_service.dart';
+import '../services/api_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   UserModel? _currentUser;
@@ -13,7 +14,7 @@ class AuthProvider extends ChangeNotifier {
   String? _refreshToken;
   Timer? _sessionTimer;
   Timer? _refreshTimer;
-  
+
   // Session timeout (30 dakika)
   static const int _sessionTimeoutMinutes = 30;
   static const int _refreshIntervalMinutes = 25;
@@ -26,40 +27,43 @@ class AuthProvider extends ChangeNotifier {
 
   // Role-based permissions
   Map<String, List<String>> get rolePermissions => {
-    '1': [ // Admin
-      'admin.dashboard',
-      'admin.users.view',
-      'admin.users.create',
-      'admin.users.edit',
-      'admin.users.delete',
-      'admin.appointments.view',
-      'admin.appointments.manage',
-      'admin.services.view',
-      'admin.services.manage',
-      'admin.roles.view',
-      'admin.roles.manage',
-      'system.settings',
-    ],
-    '2': [ // Provider
-      'provider.dashboard',
-      'provider.appointments.view',
-      'provider.appointments.manage',
-      'provider.services.view',
-      'provider.services.manage',
-      'provider.schedule.view',
-      'provider.schedule.manage',
-      'provider.profile.edit',
-    ],
-    '3': [ // Customer
-      'customer.dashboard',
-      'customer.appointments.view',
-      'customer.appointments.create',
-      'customer.appointments.cancel',
-      'customer.profile.view',
-      'customer.profile.edit',
-      'customer.providers.view',
-    ],
-  };
+        '1': [
+          // Admin
+          'admin.dashboard',
+          'admin.users.view',
+          'admin.users.create',
+          'admin.users.edit',
+          'admin.users.delete',
+          'admin.appointments.view',
+          'admin.appointments.manage',
+          'admin.services.view',
+          'admin.services.manage',
+          'admin.roles.view',
+          'admin.roles.manage',
+          'system.settings',
+        ],
+        '2': [
+          // Provider
+          'provider.dashboard',
+          'provider.appointments.view',
+          'provider.appointments.manage',
+          'provider.services.view',
+          'provider.services.manage',
+          'provider.schedule.view',
+          'provider.schedule.manage',
+          'provider.profile.edit',
+        ],
+        '3': [
+          // Customer
+          'customer.dashboard',
+          'customer.appointments.view',
+          'customer.appointments.create',
+          'customer.appointments.cancel',
+          'customer.profile.view',
+          'customer.profile.edit',
+          'customer.providers.view',
+        ],
+      };
 
   AuthProvider() {
     _initializeAuth();
@@ -72,7 +76,7 @@ class AuthProvider extends ChangeNotifier {
   // Permission kontrolü
   bool hasPermission(String permission) {
     if (_currentUser == null) return false;
-    
+
     final userPermissions = rolePermissions[_currentUser!.roleId] ?? [];
     return userPermissions.contains(permission);
   }
@@ -94,10 +98,10 @@ class AuthProvider extends ChangeNotifier {
       // API'ye giriş isteği gönder
       final hybridApi = HybridApiService();
       final response = await hybridApi.login(email, password);
-      
+
       if (response['user'] != null) {
         final userData = response['user'];
-        
+
         // Mock token oluştur (API'de token sistemi henüz yok)
         _token = _generateMockToken({
           'id': userData['id'],
@@ -105,7 +109,7 @@ class AuthProvider extends ChangeNotifier {
           'roleId': userData['role_id'],
         });
         _refreshToken = _generateMockRefreshToken();
-        
+
         _currentUser = UserModel(
           id: userData['id'],
           name: userData['name'],
@@ -114,11 +118,11 @@ class AuthProvider extends ChangeNotifier {
           createdAt: DateTime.parse(userData['created_at']),
           updatedAt: DateTime.parse(userData['updated_at']),
         );
-        
+
         await _storeAuth();
         _startSessionTimer();
         _startRefreshTimer();
-        
+
         _setLoading(false);
         notifyListeners();
         return true;
@@ -199,19 +203,20 @@ class AuthProvider extends ChangeNotifier {
         },
       };
 
-      if (testUsers.containsKey(email) && testUsers[email]!['password'] == password) {
+      if (testUsers.containsKey(email) &&
+          testUsers[email]!['password'] == password) {
         final userData = testUsers[email]!;
-        
+
         // RoleId kontrolü
         if (roleId.isNotEmpty && userData['roleId'] != roleId) {
           _setError('Bu role ile giriş yetkiniz yok');
           return false;
         }
-        
+
         // Mock JWT token oluştur
         _token = _generateMockToken(userData);
         _refreshToken = _generateMockRefreshToken();
-        
+
         _currentUser = UserModel(
           id: userData['id']!,
           name: userData['name']!,
@@ -221,11 +226,11 @@ class AuthProvider extends ChangeNotifier {
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
-        
+
         await _storeAuth();
         _startSessionTimer();
         _startRefreshTimer();
-        
+
         _setLoading(false);
         notifyListeners();
         return true;
@@ -244,7 +249,7 @@ class AuthProvider extends ChangeNotifier {
   // Session timer - otomatik çıkış
   void _startSessionTimer() {
     _sessionTimer?.cancel();
-    _sessionTimer = Timer(Duration(minutes: _sessionTimeoutMinutes), () {
+    _sessionTimer = Timer(const Duration(minutes: _sessionTimeoutMinutes), () {
       _handleSessionTimeout();
     });
   }
@@ -252,7 +257,7 @@ class AuthProvider extends ChangeNotifier {
   // Token refresh timer
   void _startRefreshTimer() {
     _refreshTimer?.cancel();
-    _refreshTimer = Timer(Duration(minutes: _refreshIntervalMinutes), () {
+    _refreshTimer = Timer(const Duration(minutes: _refreshIntervalMinutes), () {
       _refreshTokenIfNeeded();
     });
   }
@@ -264,11 +269,11 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> _refreshTokenIfNeeded() async {
     if (_refreshToken == null) return;
-    
+
     try {
       // API'ye token refresh isteği
       final response = await ApiService.refreshToken(_refreshToken!);
-      
+
       if (response['token'] != null) {
         _token = response['token'];
         _refreshToken = response['refreshToken'];
@@ -296,7 +301,8 @@ class AuthProvider extends ChangeNotifier {
       await prefs.setString('user_data', jsonEncode(_currentUser!.toJson()));
       await prefs.setString('auth_token', _token!);
       await prefs.setString('refresh_token', _refreshToken ?? '');
-      await prefs.setInt('login_timestamp', DateTime.now().millisecondsSinceEpoch);
+      await prefs.setInt(
+          'login_timestamp', DateTime.now().millisecondsSinceEpoch);
     }
   }
 
@@ -312,18 +318,19 @@ class AuthProvider extends ChangeNotifier {
       // Token süre kontrolü
       final loginTime = DateTime.fromMillisecondsSinceEpoch(loginTimestamp);
       final timeDifference = DateTime.now().difference(loginTime);
-      
+
       if (timeDifference.inMinutes < _sessionTimeoutMinutes) {
         _currentUser = UserModel.fromJson(jsonDecode(userData));
         _token = token;
         _refreshToken = refreshToken;
-        
+
         // Kalan süre için timer başlat
-        final remainingMinutes = _sessionTimeoutMinutes - timeDifference.inMinutes;
+        final remainingMinutes =
+            _sessionTimeoutMinutes - timeDifference.inMinutes;
         _sessionTimer = Timer(Duration(minutes: remainingMinutes), () {
           _handleSessionTimeout();
         });
-        
+
         _startRefreshTimer();
         notifyListeners();
       } else {
@@ -362,26 +369,30 @@ class AuthProvider extends ChangeNotifier {
   }
 
   String _generateMockToken(Map<String, dynamic> userData) {
-    final header = base64Encode(utf8.encode(jsonEncode({
-      'typ': 'JWT',
-      'alg': 'HS256'
-    })));
-    
+    final header =
+        base64Encode(utf8.encode(jsonEncode({'typ': 'JWT', 'alg': 'HS256'})));
+
     final payload = base64Encode(utf8.encode(jsonEncode({
       'sub': userData['id'],
       'email': userData['email'],
       'role': userData['roleId'],
       'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
-      'exp': DateTime.now().add(Duration(minutes: _sessionTimeoutMinutes)).millisecondsSinceEpoch ~/ 1000,
+      'exp': DateTime.now()
+              .add(const Duration(minutes: _sessionTimeoutMinutes))
+              .millisecondsSinceEpoch ~/
+          1000,
     })));
-    
+
     return '$header.$payload.mock_signature';
   }
 
   String _generateMockRefreshToken() {
-    final chars = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
-    return String.fromCharCodes(Iterable.generate(64, (_) => 
-        chars.codeUnitAt((DateTime.now().millisecondsSinceEpoch * 13) % chars.length)));
+    const chars =
+        'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
+    return String.fromCharCodes(Iterable.generate(
+        64,
+        (_) => chars.codeUnitAt(
+            (DateTime.now().millisecondsSinceEpoch * 13) % chars.length)));
   }
 
   void _setLoading(bool loading) {
@@ -425,7 +436,7 @@ class AuthProvider extends ChangeNotifier {
           _setError('Kullanıcı ID bulunamadı');
           return false;
         }
-        
+
         final response = await ApiService.updateProfile(
           userId: userId,
           name: name,
@@ -443,7 +454,7 @@ class AuthProvider extends ChangeNotifier {
             createdAt: DateTime.parse(userData['created_at']),
             updatedAt: DateTime.parse(userData['updated_at']),
           );
-          
+
           await _storeAuth();
           notifyListeners();
           return true;
@@ -454,7 +465,7 @@ class AuthProvider extends ChangeNotifier {
       } catch (e) {
         // API hatası durumunda local güncelleme
         print('API profil güncelleme hatası: $e');
-        
+
         _currentUser = UserModel(
           id: _currentUser!.id,
           name: name ?? _currentUser!.name,
@@ -464,7 +475,7 @@ class AuthProvider extends ChangeNotifier {
           createdAt: _currentUser!.createdAt,
           updatedAt: DateTime.now(),
         );
-        
+
         await _storeAuth();
         notifyListeners();
         return true;
@@ -483,4 +494,4 @@ class AuthProvider extends ChangeNotifier {
     _refreshTimer?.cancel();
     super.dispose();
   }
-} 
+}

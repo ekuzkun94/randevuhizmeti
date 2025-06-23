@@ -71,7 +71,7 @@ class _ProviderAppointmentsPageState extends State<ProviderAppointmentsPage> {
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('Randevu durumu güncellendi'),
             backgroundColor: Colors.green,
           ),

@@ -465,11 +465,11 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            const Row(
               children: [
-                const Icon(Icons.attach_money, color: Colors.green, size: 24),
-                const SizedBox(width: 8),
-                const Text(
+                Icon(Icons.attach_money, color: Colors.green, size: 24),
+                SizedBox(width: 8),
+                Text(
                   'Kazanç Bilgileri',
                   style: TextStyle(
                     fontSize: 18,

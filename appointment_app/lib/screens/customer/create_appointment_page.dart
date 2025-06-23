@@ -1263,11 +1263,11 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
-              const Icon(Icons.credit_card, color: Colors.blue),
-              const SizedBox(width: 8),
-              const Text(
+              Icon(Icons.credit_card, color: Colors.blue),
+              SizedBox(width: 8),
+              Text(
                 'Kredi Kartı Bilgileri',
                 style: TextStyle(
                   fontSize: 16,
