@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: zamanyonet-ultra-minimal
+    env: python
+    region: frankfurt
+    plan: free
+    buildCommand: pip install --no-cache-dir -r requirements_render_ultra_minimal.txt
+    startCommand: gunicorn -w 2 -b 0.0.0.0:$PORT app_ultra_minimal:app --timeout 60
+    healthCheckPath: /health
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: DEBUG
+        value: false
+      - key: SUPABASE_PASSWORD
+        value: your_supabase_password_here
+      # These will be set manually in Render dashboard:
+      # - DATABASE_URL: postgresql://postgres.ugmyyphiqoahludwuzpu:[PASSWORD]@aws-0-eu-central-1.pooler.supabase.com:5432/postgres
+      # - SECRET_KEY: [generate random 32-char string]
+      # - JWT_SECRET_KEY: [generate different random 32-char string] 
