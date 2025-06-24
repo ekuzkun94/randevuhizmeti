@@ -8,8 +8,16 @@ import secrets
 import hashlib
 from datetime import datetime, timedelta, timezone
 from functools import wraps
-from flask import request, jsonify, current_app
+from flask import request, jsonify, current_app, g
 from typing import Optional, Dict, Any, Union
+from werkzeug.security import generate_password_hash, check_password_hash
+
+# Try to import bcrypt, fallback to hashlib if not available
+try:
+    import bcrypt
+    BCRYPT_AVAILABLE = True
+except ImportError:
+    BCRYPT_AVAILABLE = False
 
 class SecurityUtils:
     """Güvenlik işlemleri için utility sınıfı"""
@@ -17,20 +25,28 @@ class SecurityUtils:
     @staticmethod
     def hash_password(password: str) -> str:
         """Şifreyi güvenli bir şekilde hashle"""
-        if not password:
-            raise ValueError("Password cannot be empty")
-        
-        salt = bcrypt.gensalt(rounds=current_app.config.get('BCRYPT_LOG_ROUNDS', 12))
-        return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+        if BCRYPT_AVAILABLE and current_app.config.get('USE_BCRYPT', True):
+            # bcrypt kullan
+            rounds = current_app.config.get('BCRYPT_LOG_ROUNDS', 12)
+            salt = bcrypt.gensalt(rounds=rounds)
+            return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+        else:
+            # Fallback to werkzeug's password hashing
+            return generate_password_hash(password, method='pbkdf2:sha256:150000')
     
     @staticmethod
-    def verify_password(password: str, hashed_password: str) -> bool:
-        """Şifreyi doğrula"""
-        if not password or not hashed_password:
+    def verify_password(password: str, hashed: str) -> bool:
+        """Şifreyi hash ile karşılaştır"""
+        if not password or not hashed:
             return False
         
         try:
-            return bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8'))
+            if BCRYPT_AVAILABLE and hashed.startswith('$2b$'):
+                # bcrypt hash detected
+                return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+            else:
+                # werkzeug hash or fallback
+                return check_password_hash(hashed, password)
         except Exception:
             return False
     
@@ -176,7 +192,9 @@ def require_auth(f):
             return jsonify({'error': 'Geçersiz token'}), 401
         
         # Request'e user bilgilerini ekle
-        request.current_user = payload
+        g.current_user_id = payload['user_id']
+        g.current_user_role = payload['role_id']
+        g.token_type = payload.get('type', 'access')
         
         return f(*args, **kwargs)
     
@@ -188,7 +206,7 @@ def require_role(allowed_roles):
         @wraps(f)
         @require_auth
         def decorated_function(*args, **kwargs):
-            user_role = request.current_user.get('role_id')
+            user_role = g.current_user_role
             
             if user_role not in allowed_roles:
                 return jsonify({'error': 'Bu işlem için yetkiniz yok'}), 403
