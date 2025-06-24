@@ -13,6 +13,33 @@ import time
 # Render URL'inizi buraya yazın (deployment sonrası)
 BASE_URL = "https://zamanyonet-api.onrender.com"
 
+# Test database connection directly
+def test_database_connection():
+    """Test Supabase database connection"""
+    print("\n🔍 7. Database Connection Test...")
+    
+    try:
+        response = requests.get(f"{BASE_URL}/health", timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            db_status = data.get('database', 'unknown')
+            
+            if db_status == 'connected':
+                print("✅ Database: Connected to Supabase")
+                print(f"   Tables: {data.get('tables', 'unknown')}")
+                return True
+            else:
+                print(f"⚠️ Database: {db_status}")
+                return False
+        else:
+            print(f"❌ Health endpoint failed: {response.status_code}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Database test error: {e}")
+        return False
+
 def test_deployment():
     """Ana test fonksiyonu"""
     print("🧪 ZamanYönet Render Deployment Test Başlıyor...")
@@ -24,6 +51,7 @@ def test_deployment():
         test_admin_dashboard,
         test_api_endpoints,
         test_cors_headers,
+        test_database_connection,
     ]
     
     passed = 0
