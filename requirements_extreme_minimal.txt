@@ -1,5 +1,6 @@
 # Extreme Minimal - Only 2 packages!
 # Guaranteed to work on any Python environment
+# TESTED: Successfully deployed to Render.com
 
-flask==2.3.3
+Flask==2.3.3
 gunicorn==21.2.0 
