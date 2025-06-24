@@ -1,0 +1,65 @@
+# ZamanYönet PostgreSQL Environment Variables
+# Copy this file to .env and update values
+
+# === POSTGRESQL DATABASE ===
+# Option 1: Supabase (Production/Staging)
+DATABASE_URL=postgresql://postgres.ugmyyphiqoahludwuzpu:[YOUR_SUPABASE_PASSWORD]@aws-0-eu-central-1.pooler.supabase.com:5432/postgres
+
+# Option 2: Local PostgreSQL (Development)
+# DATABASE_URL=postgresql://postgres:postgres123@localhost:5432/randevu_db
+# PG_HOST=localhost
+# PG_PORT=5432
+# PG_USER=postgres
+# PG_PASSWORD=postgres123
+# PG_DATABASE=randevu_db
+
+# === SUPABASE CONFIGURATION ===
+SUPABASE_URL=https://ugmyyphiqoahludwuzpu.supabase.co
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnbXl5cGhpcW9haGx1ZHd1enB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3ODYxOTUsImV4cCI6MjA2NjM2MjE5NX0.n3FmnmMjVqvodqmnvf1g74pACaZuiZ4SYw7oVMekyoc
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnbXl5cGhpcW9haGx1ZHd1enB1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MDc4NjE5NSwiZXhwIjoyMDY2MzYyMTk1fQ.Owy1Ps0tWq5JiqMM27vpsrp-N6KJoQvwwFPGCxy98QI
+
+# === FLASK CONFIGURATION ===
+SECRET_KEY=your-super-secret-key-change-this-in-production
+JWT_SECRET_KEY=your-jwt-secret-key-different-from-secret-key
+FLASK_ENV=development
+FLASK_DEBUG=true
+
+# === LOGGING ===
+LOG_LEVEL=INFO
+LOG_FILE=app.log
+
+# === EMAIL (Optional) ===
+MAIL_SERVER=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your-email@gmail.com
+MAIL_PASSWORD=your-gmail-app-password
+MAIL_DEFAULT_SENDER=your-email@gmail.com
+
+# === REDIS (Optional - for rate limiting) ===
+REDIS_URL=redis://localhost:6379
+
+# === DEPLOYMENT ===
+PORT=5001
+
+# === INSTRUCTIONS ===
+# 1. Development with Supabase:
+#    - Set DATABASE_URL with your Supabase credentials
+#    - Get password from Supabase Dashboard → Settings → Database
+#
+# 2. Development with Local PostgreSQL:
+#    - Comment out DATABASE_URL 
+#    - Set individual PG_* variables
+#    - Run: docker-compose up postgres
+#
+# 3. Production Deployment:
+#    - Use DATABASE_URL for Supabase
+#    - Set strong SECRET_KEY and JWT_SECRET_KEY
+#    - Set FLASK_ENV=production, FLASK_DEBUG=false
+#    - Configure email settings for password reset
+#
+# 4. Database Setup:
+#    - Supabase: Run SQL from supabase_schema.sql in SQL Editor
+#    - Local: Tables auto-created on first run
+#
+# 5. Test Environment:
+#    python -c "from config import config; print(config['development']().SQLALCHEMY_DATABASE_URI)" 

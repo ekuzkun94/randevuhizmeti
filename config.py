@@ -8,28 +8,44 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Config:
-    """Base configuration class"""
+    """Base configuration class - PostgreSQL only"""
     
     # Flask ayarları
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
     DEBUG = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
     
-    # Database ayarları
-    MYSQL_HOST = os.getenv('MYSQL_HOST', 'localhost')
-    MYSQL_PORT = os.getenv('MYSQL_PORT', '3306')
-    MYSQL_USER = os.getenv('MYSQL_USER', 'randevu_user')
-    MYSQL_PASSWORD = os.getenv('MYSQL_PASSWORD', 'randevu_pass')
-    MYSQL_DATABASE = os.getenv('MYSQL_DATABASE', 'randevu_db')
+    # PostgreSQL Database ayarları (Supabase/Local)
+    DATABASE_URL = os.getenv('DATABASE_URL')
     
-    # PyMySQL connection string for Docker MySQL
-    SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}?charset=utf8mb4"
+    if DATABASE_URL:
+        # For pg8000 driver compatibility (pure Python PostgreSQL driver)
+        if DATABASE_URL.startswith('postgresql://'):
+            SQLALCHEMY_DATABASE_URI = DATABASE_URL.replace('postgresql://', 'postgresql+pg8000://')
+        else:
+            SQLALCHEMY_DATABASE_URI = DATABASE_URL
+    else:
+        # Fallback to individual components for local PostgreSQL
+        PG_HOST = os.getenv('PG_HOST', 'localhost')
+        PG_PORT = os.getenv('PG_PORT', '5432')
+        PG_USER = os.getenv('PG_USER', 'postgres')
+        PG_PASSWORD = os.getenv('PG_PASSWORD', 'postgres')
+        PG_DATABASE = os.getenv('PG_DATABASE', 'randevu_db')
+        
+        SQLALCHEMY_DATABASE_URI = f"postgresql+pg8000://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DATABASE}"
+    
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_pre_ping': True,
-        'pool_recycle': 300,
-        'pool_timeout': 20,
-        'max_overflow': 0
+        'pool_recycle': 3600,  # 1 hour for PostgreSQL
+        'pool_timeout': 30,
+        'max_overflow': 10,
+        'pool_size': 5  # Smaller pool for development
     }
+    
+    # Supabase Configuration (if needed for direct API calls)
+    SUPABASE_URL = os.getenv('SUPABASE_URL')
+    SUPABASE_ANON_KEY = os.getenv('SUPABASE_ANON_KEY')
+    SUPABASE_SERVICE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
     
     # JWT ayarları
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', SECRET_KEY)
@@ -41,7 +57,8 @@ class Config:
         'http://localhost:8080',
         'http://127.0.0.1:8080',
         'http://localhost:3000',
-        'http://127.0.0.1:3000'
+        'http://127.0.0.1:3000',
+        'http://localhost:5173'  # Vite default port
     ]
     
     # Rate limiting
@@ -74,21 +91,40 @@ class Config:
 class DevelopmentConfig(Config):
     """Development configuration"""
     DEBUG = True
+    LOG_LEVEL = 'DEBUG'
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,
+        'pool_recycle': 300,  # Shorter for development
+        'pool_timeout': 20,
+        'max_overflow': 5,
+        'pool_size': 2  # Smaller pool for development
+    }
     
 class ProductionConfig(Config):
-    """Production configuration"""
+    """Production configuration - Supabase PostgreSQL"""
     DEBUG = False
     SESSION_COOKIE_SECURE = True
+    LOG_LEVEL = 'WARNING'
+    
+    # Production optimized pool settings
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,
+        'pool_recycle': 3600,  # 1 hour
+        'pool_timeout': 30,
+        'max_overflow': 20,
+        'pool_size': 10  # Larger pool for production
+    }
     
 class TestingConfig(Config):
     """Testing configuration"""
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'  # Fast in-memory for tests
+    WTF_CSRF_ENABLED = False
 
 # Configuration mapping
 config = {
     'development': DevelopmentConfig,
     'production': ProductionConfig,
     'testing': TestingConfig,
-    'default': DevelopmentConfig
+    'default': DevelopmentConfig  # Default to development for local testing
 } 

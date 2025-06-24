@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import os
-import pymysql
 from flask import Flask, render_template
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -21,9 +20,6 @@ from routes.appointments import appointments_bp
 from routes.services import services_bp
 from routes.providers import providers_bp
 from routes.admin_logs import admin_logs_bp
-
-# PyMySQL kullanımı için
-pymysql.install_as_MySQLdb()
 
 # Load environment variables
 load_dotenv()
