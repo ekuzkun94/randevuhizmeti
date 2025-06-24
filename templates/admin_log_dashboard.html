@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZamanYönet Admin - Log Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2rem;
+        }
+        
+        .header p {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card h3 {
+            margin: 0 0 15px 0;
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .metric:last-child {
+            border-bottom: none;
+        }
+        
+        .metric-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .metric-label {
+            color: #666;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 20px 0;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-healthy {
+            background-color: #28a745;
+        }
+        
+        .status-warning {
+            background-color: #ffc107;
+        }
+        
+        .status-error {
+            background-color: #dc3545;
+        }
+        
+        .log-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .log-table th,
+        .log-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .log-table th {
+            background-color: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .log-table tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .log-level {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .log-level.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .log-level.warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .log-level.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .log-level.critical {
+            background-color: #d1ecf1;
+            color: #721c24;
+            background-color: #f5c6cb;
+        }
+        
+        .filters {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .filter-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .filter-group label {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .filter-group select,
+        .filter-group input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background-color: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #5a6fd8;
+        }
+        
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .alert-warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .pagination button {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            background: white;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        
+        .pagination button:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .pagination button.active {
+            background-color: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .filter-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .log-table {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 ZamanYönet Admin - Log Dashboard</h1>
+        <p>Sistem logları, güvenlik olayları ve performans izleme merkezi</p>
+    </div>
+
+    <div class="container">
+        <!-- Dashboard Cards -->
+        <div class="dashboard-grid">
+            <!-- System Status -->
+            <div class="card">
+                <h3>🖥️ Sistem Durumu</h3>
+                <div id="systemStatus">
+                    <div class="loading">Yükleniyor...</div>
+                </div>
+            </div>
+
+            <!-- Security Overview -->
+            <div class="card">
+                <h3>🔒 Güvenlik Özeti</h3>
+                <div id="securityOverview">
+                    <div class="loading">Yükleniyor...</div>
+                </div>
+            </div>
+
+            <!-- Performance Metrics -->
+            <div class="card">
+                <h3>⚡ Performans Metrikleri</h3>
+                <div id="performanceMetrics">
+                    <div class="loading">Yükleniyor...</div>
+                </div>
+            </div>
+
+            <!-- User Activity -->
+            <div class="card">
+                <h3>👥 Kullanıcı Aktivitesi</h3>
+                <div id="userActivity">
+                    <div class="loading">Yükleniyor...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="card">
+            <h3>📊 Log Trendleri</h3>
+            <div class="chart-container">
+                <canvas id="logTrendsChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters">
+            <h3>🔍 Log Filtreleri</h3>
+            <div class="filter-group">
+                <label>Log Tipi:</label>
+                <select id="logTypeFilter">
+                    <option value="system">Sistem Logları</option>
+                    <option value="security">Güvenlik Logları</option>
+                    <option value="audit">Denetim Logları</option>
+                    <option value="performance">Performans Logları</option>
+                </select>
+
+                <label>Seviye:</label>
+                <select id="levelFilter">
+                    <option value="">Tümü</option>
+                    <option value="INFO">INFO</option>
+                    <option value="WARNING">WARNING</option>
+                    <option value="ERROR">ERROR</option>
+                    <option value="CRITICAL">CRITICAL</option>
+                </select>
+
+                <label>Son:</label>
+                <select id="timeRangeFilter">
+                    <option value="1h">1 Saat</option>
+                    <option value="24h" selected>24 Saat</option>
+                    <option value="7d">7 Gün</option>
+                    <option value="30d">30 Gün</option>
+                </select>
+
+                <button class="btn btn-primary" onclick="loadLogs()">Filtrele</button>
+                <button class="btn btn-secondary" onclick="exportLogs()">Export</button>
+                <button class="btn btn-danger" onclick="showCleanupModal()">Temizle</button>
+            </div>
+        </div>
+
+        <!-- Log Table -->
+        <div class="card">
+            <h3 id="logTableTitle">📋 Sistem Logları</h3>
+            <div id="logTableContainer">
+                <div class="loading">Yükleniyor...</div>
+            </div>
+            <div id="logPagination" class="pagination"></div>
+        </div>
+
+        <!-- High Risk Events -->
+        <div class="card" id="highRiskEventsCard" style="display: none;">
+            <h3>⚠️ Yüksek Risk Olayları</h3>
+            <div id="highRiskEvents">
+                <div class="loading">Yükleniyor...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentPage = 1;
+        let currentLogType = 'system';
+        let dashboardData = null;
+        let logTrendsChart = null;
+
+        // Load dashboard on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboard();
+            setInterval(loadDashboard, 60000); // Refresh every minute
+        });
+
+        // Load dashboard data
+        async function loadDashboard() {
+            try {
+                const response = await fetch('/admin/logs/dashboard', {
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Dashboard verisi yüklenemedi');
+                }
+
+                dashboardData = await response.json();
+                updateDashboardCards();
+                updateLogTrendsChart();
+                loadLogs();
+            } catch (error) {
+                console.error('Dashboard yükleme hatası:', error);
+                showAlert('Dashboard yüklenirken hata oluştu: ' + error.message, 'danger');
+            }
+        }
+
+        // Update dashboard cards
+        function updateDashboardCards() {
+            if (!dashboardData || !dashboardData.success) return;
+
+            const data = dashboardData.data;
+
+            // System Status
+            const systemStatusHTML = `
+                <div class="metric">
+                    <span class="metric-label">Toplam İstek (24s)</span>
+                    <span class="metric-value">${data.summary.last_24h.total_requests || 0}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Hata Sayısı</span>
+                    <span class="metric-value">${data.summary.last_24h.system_logs.ERROR || 0}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Güvenlik Olayı</span>
+                    <span class="metric-value">${data.summary.last_24h.security_events || 0}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Yüksek Risk</span>
+                    <span class="metric-value">${data.summary.last_24h.high_risk_events || 0}</span>
+                </div>
+            `;
+            document.getElementById('systemStatus').innerHTML = systemStatusHTML;
+
+            // Security Overview
+            let securityHTML = '';
+            data.security_overview.forEach(event => {
+                securityHTML += `
+                    <div class="metric">
+                        <span class="metric-label">${event.event_type} (${event.severity})</span>
+                        <span class="metric-value">${event.count}</span>
+                    </div>
+                `;
+            });
+            document.getElementById('securityOverview').innerHTML = securityHTML || '<p>Güvenlik olayı bulunamadı</p>';
+
+            // Performance Metrics
+            let performanceHTML = '';
+            data.performance_metrics.slow_endpoints.slice(0, 5).forEach(endpoint => {
+                performanceHTML += `
+                    <div class="metric">
+                        <span class="metric-label">${endpoint.endpoint}</span>
+                        <span class="metric-value">${endpoint.avg_response_time}s</span>
+                    </div>
+                `;
+            });
+            document.getElementById('performanceMetrics').innerHTML = performanceHTML || '<p>Performans verisi yok</p>';
+
+            // User Activity
+            let activityHTML = '';
+            data.user_activity.slice(0, 5).forEach(user => {
+                activityHTML += `
+                    <div class="metric">
+                        <span class="metric-label">${user.user_email}</span>
+                        <span class="metric-value">${user.activity_count}</span>
+                    </div>
+                `;
+            });
+            document.getElementById('userActivity').innerHTML = activityHTML || '<p>Kullanıcı aktivitesi yok</p>';
+
+            // High Risk Events
+            if (data.high_risk_events && data.high_risk_events.length > 0) {
+                document.getElementById('highRiskEventsCard').style.display = 'block';
+                let riskHTML = '';
+                data.high_risk_events.forEach(event => {
+                    riskHTML += `
+                        <div class="metric">
+                            <span class="metric-label">
+                                <span class="status-indicator status-error"></span>
+                                ${event.event_type} - ${event.email || 'Unknown'}
+                            </span>
+                            <span class="metric-value">Risk: ${event.risk_score}</span>
+                        </div>
+                    `;
+                });
+                document.getElementById('highRiskEvents').innerHTML = riskHTML;
+            }
+        }
+
+        // Update log trends chart
+        function updateLogTrendsChart() {
+            if (!dashboardData || !dashboardData.success) return;
+
+            const data = dashboardData.data.error_trends;
+            const ctx = document.getElementById('logTrendsChart').getContext('2d');
+
+            if (logTrendsChart) {
+                logTrendsChart.destroy();
+            }
+
+            logTrendsChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => d.date),
+                    datasets: [{
+                        label: 'Hata Sayısı',
+                        data: data.map(d => d.error_count),
+                        borderColor: '#dc3545',
+                        backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Load logs based on current filters
+        async function loadLogs() {
+            const logType = document.getElementById('logTypeFilter').value;
+            const level = document.getElementById('levelFilter').value;
+            const timeRange = document.getElementById('timeRangeFilter').value;
+
+            currentLogType = logType;
+            
+            const params = new URLSearchParams({
+                page: currentPage,
+                limit: 20
+            });
+
+            if (level) params.append('level', level);
+
+            // Calculate date range
+            const now = new Date();
+            const startDate = new Date();
+            switch (timeRange) {
+                case '1h':
+                    startDate.setHours(startDate.getHours() - 1);
+                    break;
+                case '24h':
+                    startDate.setDate(startDate.getDate() - 1);
+                    break;
+                case '7d':
+                    startDate.setDate(startDate.getDate() - 7);
+                    break;
+                case '30d':
+                    startDate.setDate(startDate.getDate() - 30);
+                    break;
+            }
+            params.append('start_date', startDate.toISOString());
+
+            try {
+                const response = await fetch(`/admin/logs/${logType}?${params}`, {
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Log verisi yüklenemedi');
+                }
+
+                const result = await response.json();
+                displayLogs(result.data);
+                updatePagination(result.data.pagination);
+                
+                // Update table title
+                const titles = {
+                    'system': 'Sistem Logları',
+                    'security': 'Güvenlik Logları', 
+                    'audit': 'Denetim Logları',
+                    'performance': 'Performans Logları'
+                };
+                document.getElementById('logTableTitle').textContent = `📋 ${titles[logType]}`;
+
+            } catch (error) {
+                console.error('Log yükleme hatası:', error);
+                showAlert('Loglar yüklenirken hata oluştu: ' + error.message, 'danger');
+            }
+        }
+
+        // Display logs in table
+        function displayLogs(data) {
+            if (!data.logs || data.logs.length === 0) {
+                document.getElementById('logTableContainer').innerHTML = '<p>Log kaydı bulunamadı</p>';
+                return;
+            }
+
+            let tableHTML = '<table class="log-table"><thead><tr>';
+            
+            // Table headers based on log type
+            switch (currentLogType) {
+                case 'system':
+                    tableHTML += '<th>Zaman</th><th>Seviye</th><th>Kategori</th><th>Mesaj</th><th>Endpoint</th><th>IP</th>';
+                    break;
+                case 'security':
+                    tableHTML += '<th>Zaman</th><th>Olay</th><th>Risk</th><th>Kullanıcı</th><th>IP</th><th>Durum</th>';
+                    break;
+                case 'audit':
+                    tableHTML += '<th>Zaman</th><th>İşlem</th><th>Tablo</th><th>Kullanıcı</th><th>IP</th>';
+                    break;
+                case 'performance':
+                    tableHTML += '<th>Zaman</th><th>Endpoint</th><th>Süre</th><th>Durum</th><th>Memory</th>';
+                    break;
+            }
+            
+            tableHTML += '</tr></thead><tbody>';
+
+            data.logs.forEach(log => {
+                tableHTML += '<tr>';
+                const timestamp = new Date(log.timestamp).toLocaleString('tr-TR');
+                
+                switch (currentLogType) {
+                    case 'system':
+                        tableHTML += `
+                            <td>${timestamp}</td>
+                            <td><span class="log-level ${log.level.toLowerCase()}">${log.level}</span></td>
+                            <td>${log.category}</td>
+                            <td>${log.message}</td>
+                            <td>${log.endpoint || '-'}</td>
+                            <td>${log.ip_address || '-'}</td>
+                        `;
+                        break;
+                    case 'security':
+                        tableHTML += `
+                            <td>${timestamp}</td>
+                            <td>${log.event_type}</td>
+                            <td><span class="metric-value">${log.risk_score}</span></td>
+                            <td>${log.email || '-'}</td>
+                            <td>${log.ip_address || '-'}</td>
+                            <td>${log.success ? '✅' : '❌'}</td>
+                        `;
+                        break;
+                    case 'audit':
+                        tableHTML += `
+                            <td>${timestamp}</td>
+                            <td>${log.action}</td>
+                            <td>${log.table_name}</td>
+                            <td>${log.user_email || '-'}</td>
+                            <td>${log.ip_address || '-'}</td>
+                        `;
+                        break;
+                    case 'performance':
+                        const memoryMB = log.memory_usage ? (log.memory_usage / 1024 / 1024).toFixed(1) + ' MB' : '-';
+                        tableHTML += `
+                            <td>${timestamp}</td>
+                            <td>${log.endpoint}</td>
+                            <td>${log.response_time.toFixed(3)}s</td>
+                            <td>${log.status_code}</td>
+                            <td>${memoryMB}</td>
+                        `;
+                        break;
+                }
+                
+                tableHTML += '</tr>';
+            });
+
+            tableHTML += '</tbody></table>';
+            document.getElementById('logTableContainer').innerHTML = tableHTML;
+        }
+
+        // Update pagination
+        function updatePagination(pagination) {
+            let paginationHTML = '';
+            
+            // Previous button
+            if (pagination.page > 1) {
+                paginationHTML += `<button onclick="changePage(${pagination.page - 1})">« Önceki</button>`;
+            }
+            
+            // Page numbers
+            for (let i = Math.max(1, pagination.page - 2); i <= Math.min(pagination.pages, pagination.page + 2); i++) {
+                const activeClass = i === pagination.page ? 'active' : '';
+                paginationHTML += `<button class="${activeClass}" onclick="changePage(${i})">${i}</button>`;
+            }
+            
+            // Next button
+            if (pagination.page < pagination.pages) {
+                paginationHTML += `<button onclick="changePage(${pagination.page + 1})">Sonraki »</button>`;
+            }
+            
+            document.getElementById('logPagination').innerHTML = paginationHTML;
+        }
+
+        // Change page
+        function changePage(page) {
+            currentPage = page;
+            loadLogs();
+        }
+
+        // Export logs
+        async function exportLogs() {
+            const logType = document.getElementById('logTypeFilter').value;
+            const level = document.getElementById('levelFilter').value;
+            const timeRange = document.getElementById('timeRangeFilter').value;
+
+            const exportData = {
+                log_type: logType,
+                format: 'json',
+                filters: {}
+            };
+
+            if (level) exportData.filters.level = level;
+
+            // Calculate date range
+            const now = new Date();
+            const startDate = new Date();
+            switch (timeRange) {
+                case '1h':
+                    startDate.setHours(startDate.getHours() - 1);
+                    break;
+                case '24h':
+                    startDate.setDate(startDate.getDate() - 1);
+                    break;
+                case '7d':
+                    startDate.setDate(startDate.getDate() - 7);
+                    break;
+                case '30d':
+                    startDate.setDate(startDate.getDate() - 30);
+                    break;
+            }
+            
+            exportData.start_date = startDate.toISOString();
+            exportData.end_date = now.toISOString();
+
+            try {
+                const response = await fetch('/admin/logs/export', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+                    },
+                    body: JSON.stringify(exportData)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Export işlemi başarısız');
+                }
+
+                const result = await response.json();
+                
+                // Download file
+                const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: 'application/json' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${logType}_logs_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                showAlert('Loglar başarıyla export edildi', 'success');
+
+            } catch (error) {
+                console.error('Export hatası:', error);
+                showAlert('Export işleminde hata oluştu: ' + error.message, 'danger');
+            }
+        }
+
+        // Show cleanup modal
+        function showCleanupModal() {
+            const confirmation = confirm('Eski logları temizlemek istediğinizden emin misiniz? Bu işlem geri alınamaz.');
+            if (confirmation) {
+                const days = prompt('Kaç günden eski loglar silinsin?', '30');
+                if (days && !isNaN(days)) {
+                    cleanupLogs(parseInt(days));
+                }
+            }
+        }
+
+        // Cleanup logs
+        async function cleanupLogs(days) {
+            const logType = document.getElementById('logTypeFilter').value;
+
+            try {
+                const response = await fetch('/admin/logs/cleanup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+                    },
+                    body: JSON.stringify({
+                        log_type: logType,
+                        days_to_keep: days
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Temizleme işlemi başarısız');
+                }
+
+                const result = await response.json();
+                showAlert(`Temizleme tamamlandı. ${JSON.stringify(result.data.deleted_counts)} kayıt silindi.`, 'success');
+                loadLogs(); // Refresh logs
+
+            } catch (error) {
+                console.error('Cleanup hatası:', error);
+                showAlert('Temizleme işleminde hata oluştu: ' + error.message, 'danger');
+            }
+        }
+
+        // Show alert message
+        function showAlert(message, type = 'info') {
+            const alertHTML = `
+                <div class="alert alert-${type}">
+                    ${message}
+                </div>
+            `;
+            
+            // Insert alert at top of container
+            const container = document.querySelector('.container');
+            container.insertAdjacentHTML('afterbegin', alertHTML);
+            
+            // Remove alert after 5 seconds
+            setTimeout(() => {
+                const alert = container.querySelector('.alert');
+                if (alert) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+
+        // Check if user is authenticated
+        if (!localStorage.getItem('access_token')) {
+            window.location.href = '/login';
+        }
+    </script>
+</body>
+</html> 
