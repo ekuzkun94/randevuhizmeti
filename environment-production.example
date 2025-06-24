@@ -1,0 +1,46 @@
+# ZamanYönet Production Environment Variables
+# Copy this file to .env and update the values
+
+# Supabase Database Configuration
+DATABASE_URL=postgresql://postgres.ugmyyphiqoahludwuzpu:[YOUR_SUPABASE_PASSWORD]@aws-0-eu-central-1.pooler.supabase.com:5432/postgres
+SUPABASE_URL=https://ugmyyphiqoahludwuzpu.supabase.co
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnbXl5cGhpcW9haGx1ZHd1enB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3ODYxOTUsImV4cCI6MjA2NjM2MjE5NX0.n3FmnmMjVqvodqmnvf1g74pACaZuiZ4SYw7oVMekyoc
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnbXl5cGhpcW9haGx1ZHd1enB1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MDc4NjE5NSwiZXhwIjoyMDY2MzYyMTk1fQ.Owy1Ps0tWq5JiqMM27vpsrp-N6KJoQvwwFPGCxy98QI
+
+# Flask Configuration
+SECRET_KEY=your-super-secret-production-key-change-this-to-random-string
+JWT_SECRET_KEY=your-jwt-secret-key-change-this-to-different-random-string
+FLASK_ENV=production
+DEBUG=false
+
+# Email Configuration (Optional - for password reset functionality)
+MAIL_SERVER=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your-email@gmail.com
+MAIL_PASSWORD=your-gmail-app-password
+MAIL_DEFAULT_SENDER=your-email@gmail.com
+
+# Logging
+LOG_LEVEL=INFO
+LOG_FILE=production.log
+
+# Security Settings
+BCRYPT_LOG_ROUNDS=14
+SESSION_COOKIE_SECURE=true
+
+# CORS Origins (Add your production domains)
+CORS_ORIGINS=["https://yourdomain.com","https://www.yourdomain.com"]
+
+# Rate Limiting (Redis URL for production - optional)
+REDIS_URL=redis://localhost:6379
+
+# File Upload Settings
+MAX_CONTENT_LENGTH=16777216
+UPLOAD_FOLDER=uploads
+
+# Instructions:
+# 1. Copy this file: cp environment-production.example .env
+# 2. Edit .env and replace [YOUR_SUPABASE_PASSWORD] with your actual Supabase password
+# 3. Generate strong random keys for SECRET_KEY and JWT_SECRET_KEY
+# 4. Update email settings if you want password reset functionality
+# 5. Add your production domain to CORS_ORIGINS 

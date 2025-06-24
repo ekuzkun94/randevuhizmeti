@@ -14,7 +14,7 @@ PyJWT==2.8.0
 flask-limiter==3.5.0
 marshmallow==3.20.2
 # Logging ve monitoring
-structlog==23.2.0
+structlog==25.4.0
 # Email support
 flask-mail==0.9.1
 # Validation
