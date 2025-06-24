@@ -1,0 +1,5 @@
+# Extreme Minimal - Only 2 packages!
+# Guaranteed to work on any Python environment
+
+flask==2.3.3
+gunicorn==21.2.0 
