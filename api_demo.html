@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZamanYönet API Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #f0f0f0;
+            border-radius: 10px;
+            background: #fafafa;
+        }
+        
+        .test-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: transform 0.2s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .response {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .response.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .response.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-online {
+            background: #28a745;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-offline {
+            background: #dc3545;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .api-info {
+            background: #e7f3ff;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🕐 ZamanYönet API</h1>
+            <p>Canlı API Test Arayüzü</p>
+            <div style="margin-top: 15px;">
+                <span id="statusIndicator" class="status-indicator status-offline"></span>
+                <span id="statusText">API Durumu Kontrol Ediliyor...</span>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="api-info">
+                <strong>🌐 API URL:</strong> https://zaman-yonet-api.onrender.com<br>
+                <strong>📖 Versiyon:</strong> <span id="apiVersion">Yükleniyor...</span><br>
+                <strong>📊 Aktif Endpoint'ler:</strong> <span id="endpointCount">Yükleniyor...</span>
+            </div>
+            
+            <!-- API Status Test -->
+            <div class="test-section">
+                <h3>🔍 API Durumu</h3>
+                <button class="btn" onclick="checkApiStatus()">API Durumunu Kontrol Et</button>
+                <button class="btn" onclick="checkHealth()">Sağlık Kontrolü</button>
+                <div id="statusResponse" class="response" style="display: none;"></div>
+            </div>
+            
+            <!-- User Registration -->
+            <div class="test-section">
+                <h3>👤 Kullanıcı Kaydı</h3>
+                <div class="form-group">
+                    <label>Kullanıcı Adı:</label>
+                    <input type="text" id="regUsername" placeholder="Örnek: ahmet123">
+                </div>
+                <div class="form-group">
+                    <label>Email:</label>
+                    <input type="email" id="regEmail" placeholder="Örnek: ahmet@example.com">
+                </div>
+                <div class="form-group">
+                    <label>Şifre:</label>
+                    <input type="password" id="regPassword" placeholder="En az 6 karakter">
+                </div>
+                <div class="form-group">
+                    <label>Ad Soyad:</label>
+                    <input type="text" id="regFullName" placeholder="Örnek: Ahmet Yılmaz">
+                </div>
+                <button class="btn" onclick="registerUser()">Kayıt Ol</button>
+                <div id="registerResponse" class="response" style="display: none;"></div>
+            </div>
+            
+            <!-- User Login -->
+            <div class="test-section">
+                <h3>🔐 Kullanıcı Girişi</h3>
+                <div class="form-group">
+                    <label>Email:</label>
+                    <input type="email" id="loginEmail" placeholder="Kayıt olduğunuz email">
+                </div>
+                <div class="form-group">
+                    <label>Şifre:</label>
+                    <input type="password" id="loginPassword" placeholder="Şifreniz">
+                </div>
+                <button class="btn" onclick="loginUser()">Giriş Yap</button>
+                <div id="loginResponse" class="response" style="display: none;"></div>
+            </div>
+            
+            <!-- Appointments -->
+            <div class="test-section">
+                <h3>📅 Randevu İşlemleri</h3>
+                <div class="form-group">
+                    <label>Hizmet Adı:</label>
+                    <input type="text" id="serviceName" placeholder="Örnek: Kuaför Hizmeti">
+                </div>
+                <div class="form-group">
+                    <label>Müşteri Email:</label>
+                    <input type="email" id="customerEmail" placeholder="Müşteri email adresi">
+                </div>
+                <div class="form-group">
+                    <label>Sağlayıcı:</label>
+                    <input type="text" id="providerName" placeholder="Örnek: Ahmet Berber">
+                </div>
+                <div class="form-group">
+                    <label>Tarih:</label>
+                    <input type="date" id="appointmentDate">
+                </div>
+                <div class="form-group">
+                    <label>Saat:</label>
+                    <input type="time" id="appointmentTime">
+                </div>
+                <div class="form-group">
+                    <label>Notlar:</label>
+                    <textarea id="appointmentNotes" rows="3" placeholder="Ek bilgiler..."></textarea>
+                </div>
+                <button class="btn" onclick="createAppointment()">Randevu Oluştur</button>
+                <button class="btn" onclick="getAppointments()">Randevu Listesi</button>
+                <div id="appointmentResponse" class="response" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://zaman-yonet-api.onrender.com';
+        
+        // Sayfa yüklendiğinde API durumunu kontrol et
+        window.onload = function() {
+            checkApiStatus();
+        };
+        
+        async function checkApiStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('statusIndicator').className = 'status-indicator status-online';
+                    document.getElementById('statusText').textContent = 'API Çalışıyor ✅';
+                    document.getElementById('apiVersion').textContent = data.version;
+                    document.getElementById('endpointCount').textContent = Object.keys(data.endpoints).length;
+                    
+                    showResponse('statusResponse', data, true);
+                } else {
+                    throw new Error('API yanıt vermedi');
+                }
+            } catch (error) {
+                document.getElementById('statusIndicator').className = 'status-indicator status-offline';
+                document.getElementById('statusText').textContent = 'API Offline ❌';
+                showResponse('statusResponse', { error: error.message }, false);
+            }
+        }
+        
+        async function checkHealth() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                showResponse('statusResponse', data, response.ok);
+            } catch (error) {
+                showResponse('statusResponse', { error: error.message }, false);
+            }
+        }
+        
+        async function registerUser() {
+            const userData = {
+                username: document.getElementById('regUsername').value,
+                email: document.getElementById('regEmail').value,
+                password: document.getElementById('regPassword').value,
+                full_name: document.getElementById('regFullName').value
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(userData)
+                });
+                
+                const data = await response.json();
+                showResponse('registerResponse', data, response.ok);
+                
+                if (response.ok) {
+                    // Başarılı kayıt sonrası login formunu otomatik doldur
+                    document.getElementById('loginEmail').value = userData.email;
+                    document.getElementById('loginPassword').value = userData.password;
+                }
+            } catch (error) {
+                showResponse('registerResponse', { error: error.message }, false);
+            }
+        }
+        
+        async function loginUser() {
+            const loginData = {
+                email: document.getElementById('loginEmail').value,
+                password: document.getElementById('loginPassword').value
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(loginData)
+                });
+                
+                const data = await response.json();
+                showResponse('loginResponse', data, response.ok);
+                
+                if (response.ok) {
+                    // Başarılı giriş sonrası customer email'i otomatik doldur
+                    document.getElementById('customerEmail').value = loginData.email;
+                }
+            } catch (error) {
+                showResponse('loginResponse', { error: error.message }, false);
+            }
+        }
+        
+        async function createAppointment() {
+            const appointmentData = {
+                service_name: document.getElementById('serviceName').value,
+                customer_email: document.getElementById('customerEmail').value,
+                provider_name: document.getElementById('providerName').value,
+                appointment_date: document.getElementById('appointmentDate').value,
+                appointment_time: document.getElementById('appointmentTime').value,
+                notes: document.getElementById('appointmentNotes').value
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/appointments`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(appointmentData)
+                });
+                
+                const data = await response.json();
+                showResponse('appointmentResponse', data, response.ok);
+            } catch (error) {
+                showResponse('appointmentResponse', { error: error.message }, false);
+            }
+        }
+        
+        async function getAppointments() {
+            try {
+                const response = await fetch(`${API_BASE}/appointments`);
+                const data = await response.json();
+                showResponse('appointmentResponse', data, response.ok);
+            } catch (error) {
+                showResponse('appointmentResponse', { error: error.message }, false);
+            }
+        }
+        
+        function showResponse(elementId, data, isSuccess) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `response ${isSuccess ? 'success' : 'error'}`;
+            element.textContent = JSON.stringify(data, null, 2);
+        }
+        
+        // Bugünün tarihini default olarak ayarla
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('appointmentDate').value = today;
+            document.getElementById('appointmentTime').value = '14:00';
+        });
+    </script>
+</body>
+</html> 
