@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: zamanyonet-supabase-api
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements_supabase_production.txt
+    startCommand: gunicorn app_supabase_production:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: PORT
+        generateValue: true
+      - key: SUPABASE_USER
+        value: postgres
+      - key: SUPABASE_PASSWORD
+        sync: false  # User must set this manually
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FLASK_ENV
+        value: production
+      - key: DEBUG
+        value: false
+    healthCheckPath: /health
+    numInstances: 1
+    region: oregon 

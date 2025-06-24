@@ -1,0 +1,39 @@
+# ZamanYönet Supabase Production Environment
+# Copy this file to .env and fill in your values
+
+# Supabase Database Configuration
+SUPABASE_USER=postgres
+SUPABASE_PASSWORD=your_supabase_database_password_here
+SUPABASE_HOST=ugmyyphiqoahludwuzpu.supabase.co
+SUPABASE_PORT=5432
+SUPABASE_DB=postgres
+
+# Flask Configuration
+SECRET_KEY=supabase-production-secret-2024-change-this
+FLASK_ENV=production
+DEBUG=False
+
+# JWT Configuration
+JWT_SECRET_KEY=your_jwt_secret_key_here
+JWT_ACCESS_TOKEN_EXPIRES=86400
+
+# API Configuration
+API_VERSION=2.0.0-supabase
+API_TITLE=ZamanYönet API
+CORS_ORIGINS=*
+
+# Render.com Configuration (if deploying to Render)
+PORT=8000
+
+# Security Configuration
+BCRYPT_LOG_ROUNDS=12
+RATE_LIMIT_PER_MINUTE=60
+
+# Feature Flags
+ENABLE_REGISTRATION=true
+ENABLE_GUEST_BOOKING=true
+ENABLE_EMAIL_VERIFICATION=false
+
+# Logging Configuration
+LOG_LEVEL=INFO
+LOG_FORMAT=json 
