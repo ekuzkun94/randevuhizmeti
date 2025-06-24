@@ -1,37 +1,20 @@
 services:
   - type: web
-    name: zamanyonet-api
+    name: zamanyonet-ultra-minimal
     env: python
-    region: frankfurt  # EU Central - closest to Turkey
+    region: frankfurt
     plan: free
-    buildCommand: pip install --no-cache-dir -r requirements_render.txt
-    startCommand: gunicorn -w 2 -b 0.0.0.0:$PORT app_production:app --timeout 120 --keep-alive 5 --max-requests 1000
+    buildCommand: pip install --no-cache-dir -r requirements_render_ultra_minimal.txt
+    startCommand: gunicorn -w 2 -b 0.0.0.0:$PORT app_ultra_minimal:app --timeout 60
     healthCheckPath: /health
     envVars:
       - key: FLASK_ENV
         value: production
       - key: DEBUG
         value: false
-      - key: LOG_LEVEL
-        value: INFO
-      - key: BCRYPT_LOG_ROUNDS
-        value: 14
-      - key: SESSION_COOKIE_SECURE
-        value: true
-      - key: SUPABASE_URL
-        value: https://ugmyyphiqoahludwuzpu.supabase.co
-      - key: SUPABASE_ANON_KEY
-        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnbXl5cGhpcW9haGx1ZHd1enB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3ODYxOTUsImV4cCI6MjA2NjM2MjE5NX0.n3FmnmMjVqvodqmnvf1g74pACaZuiZ4SYw7oVMekyoc
-      - key: SUPABASE_SERVICE_ROLE_KEY
-        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnbXl5cGhpcW9haGx1ZHd1enB1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MDc4NjE5NSwiZXhwIjoyMDY2MzYyMTk1fQ.Owy1Ps0tWq5JiqMM27vpsrp-N6KJoQvwwFPGCxy98QI
+      - key: SUPABASE_PASSWORD
+        value: your_supabase_password_here
       # These will be set manually in Render dashboard:
       # - DATABASE_URL: postgresql://postgres.ugmyyphiqoahludwuzpu:[PASSWORD]@aws-0-eu-central-1.pooler.supabase.com:5432/postgres
       # - SECRET_KEY: [generate random 32-char string]
-      # - JWT_SECRET_KEY: [generate different random 32-char string]
-
-# Optional: Background worker for heavy tasks
-# - type: worker
-#   name: zamanyonet-worker
-#   env: python
-#   buildCommand: pip install -r requirements_production.txt
-#   startCommand: python worker.py 
+      # - JWT_SECRET_KEY: [generate different random 32-char string] 
