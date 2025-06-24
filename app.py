@@ -201,6 +201,10 @@ def stats():
         return {'error': 'İstatistikler yüklenemedi'}, 500
 
 if __name__ == '__main__':
+    print("🚨 RENDER.COM DEPLOYMENT İÇİN:")
+    print("Start Command: gunicorn app_extreme_minimal:app")
+    print("Bu app.py local development için, production için app_extreme_minimal.py kullanın!")
+    print()
     print("🚀 ZamanYönet Randevu API v2.0 başlatılıyor...")
     print(f"🌍 Environment: {os.getenv('FLASK_ENV', 'development')}")
     print(f"🔧 Debug mode: {app.config.get('DEBUG', False)}")
