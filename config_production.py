@@ -23,8 +23,11 @@ class Config:
     DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://postgres:[YOUR-PASSWORD]@db.ugmyyphiqoahludwuzpu.supabase.co:5432/postgres')  # Supabase connection string
     
     if DATABASE_URL:
-        # Supabase format: postgresql://[user[:password]@][netloc][:port][/dbname]
-        SQLALCHEMY_DATABASE_URI = DATABASE_URL
+        # For pg8000 driver compatibility (pure Python PostgreSQL driver)
+        if DATABASE_URL.startswith('postgresql://'):
+            SQLALCHEMY_DATABASE_URI = DATABASE_URL.replace('postgresql://', 'postgresql+pg8000://')
+        else:
+            SQLALCHEMY_DATABASE_URI = DATABASE_URL
     else:
         # Fallback to individual components
         DB_HOST = os.getenv('DB_HOST', 'localhost')

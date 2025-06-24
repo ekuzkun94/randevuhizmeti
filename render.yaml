@@ -4,8 +4,8 @@ services:
     env: python
     region: frankfurt  # EU Central - closest to Turkey
     plan: free
-    buildCommand: pip install -r requirements_production.txt
-    startCommand: gunicorn -w 4 -b 0.0.0.0:$PORT app_production:app --timeout 120 --keep-alive 5
+    buildCommand: pip install --no-cache-dir -r requirements_render.txt
+    startCommand: gunicorn -w 2 -b 0.0.0.0:$PORT app_production:app --timeout 120 --keep-alive 5 --max-requests 1000
     healthCheckPath: /health
     envVars:
       - key: FLASK_ENV
