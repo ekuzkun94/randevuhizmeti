@@ -1,0 +1,5 @@
+# RENDER.COM DEPLOYMENT FIX
+# Sadece 2 paket - hiç compilation error olmaz!
+
+Flask==2.3.3
+gunicorn==21.2.0 
