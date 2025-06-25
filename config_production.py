@@ -110,9 +110,10 @@ class ProductionConfig(Config):
     """Production configuration for Render.com deployment with Supabase PostgreSQL"""
     
     # Flask Settings
-    SECRET_KEY = os.environ.get('SECRET_KEY') or secrets.token_urlsafe(32)
-    DEBUG = os.environ.get('DEBUG', 'false').lower() == 'true'
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'super-secret-production-key-change-this!')
+    DEBUG = False
     TESTING = False
+    ENV = 'production'
     
     # Database Configuration (PostgreSQL/Supabase)
     DATABASE_URL = os.environ.get('DATABASE_URL')
@@ -124,18 +125,18 @@ class ProductionConfig(Config):
             DATABASE_URL = DATABASE_URL.replace('postgresql://', 'postgresql+pg8000://', 1)
     else:
         # Fallback Supabase connection
-        SUPABASE_URL = os.environ.get('SUPABASE_URL', 'https://ugmyyphiqoahludwuzpu.supabase.co')
-        SUPABASE_PASSWORD = os.environ.get('SUPABASE_PASSWORD', 'your_supabase_password')
-        DATABASE_URL = f"postgresql+pg8000://postgres.ugmyyphiqoahludwuzpu:{SUPABASE_PASSWORD}@aws-0-eu-central-1.pooler.supabase.com:5432/postgres"
+        SUPABASE_URL = 'https://ugmyyphiqoahludwuzpu.supabase.co'
+        SUPABASE_PASSWORD = os.environ.get('SUPABASE_PASSWORD', '*RasT_1385*!')
+        DATABASE_URL = f"postgresql+pg8000://postgres.ugmyyphiqoahludwuzpu:{SUPABASE_PASSWORD}@aws-0-eu-central-1.pooler.supabase.com:6543/postgres"
     
     SQLALCHEMY_DATABASE_URI = DATABASE_URL
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_timeout': 20,
-        'pool_recycle': 3600,
+        'pool_recycle': 300,
         'pool_pre_ping': True,
-        'pool_size': 5,
-        'max_overflow': 10
+        'pool_size': 10,
+        'max_overflow': 20
     }
     
     # Security Settings (Simplified for deployment)
@@ -144,22 +145,22 @@ class ProductionConfig(Config):
     PASSWORD_MIN_LENGTH = 6
     
     # JWT Configuration
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or secrets.token_urlsafe(32)
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'jwt-secret-production-key-change-this!')
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
     JWT_ALGORITHM = 'HS256'
     
     # Session Configuration
-    SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'true').lower() == 'true'
+    SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
-    PERMANENT_SESSION_LIFETIME = timedelta(hours=1)
+    PERMANENT_SESSION_LIFETIME = 3600  # 1 hour
     
     # CORS Settings
     CORS_ORIGINS = [
-        'https://ugmyyphiqoahludwuzpu.supabase.co',
-        'https://zamanyonet.onrender.com',
-        'https://zamanyonet-api.onrender.com'
+        'https://zamanyonet.com',
+        'https://www.zamanyonet.com',
+        'https://app.zamanyonet.com'
     ]
     
     # Rate Limiting
@@ -169,26 +170,24 @@ class ProductionConfig(Config):
     RATELIMIT_HEADERS_ENABLED = True
     
     # Email Configuration (Optional)
-    MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
-    MAIL_PORT = int(os.environ.get('MAIL_PORT', 587))
-    MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'true').lower() == 'true'
+    MAIL_SERVER = 'smtp.gmail.com'
+    MAIL_PORT = 587
+    MAIL_USE_TLS = True
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@zamanyonet.com')
     
     # Logging Configuration
-    LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
-    LOG_FORMAT = 'json'
-    LOG_TO_FILE = False  # Use stdout in production
+    LOGGING_LEVEL = 'INFO'
+    LOG_FILE = '/var/log/zamanyonet/app.log'
     
     # File Upload Settings
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
     UPLOAD_FOLDER = '/tmp/uploads'  # Temporary storage on Render
     
     # Supabase Settings
-    SUPABASE_URL = os.environ.get('SUPABASE_URL')
-    SUPABASE_ANON_KEY = os.environ.get('SUPABASE_ANON_KEY')
-    SUPABASE_SERVICE_ROLE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY')
+    SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnbXl5cGhpcW9haGx1ZHd1enB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3ODYxOTUsImV4cCI6MjA2NjM2MjE5NX0.n3FmnmMjVqvodqmnvf1g74pACaZuiZ4SYw7oVMekyoc'
+    SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnbXl5cGhpcW9haGx1ZHd1enB1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MDc4NjE5NSwiZXhwIjoyMDY2MzYyMTk1fQ.Owy1Ps0tWq5JiqMM27vpsrp-N6KJoQvwwFPGCxy98QI'
     
     # Performance Settings
     SQLALCHEMY_ENGINE_OPTIONS.update({
@@ -207,6 +206,12 @@ class ProductionConfig(Config):
         'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
     }
     
+    # Feature Flags
+    ENABLE_REGISTRATION = True
+    ENABLE_PASSWORD_RESET = True
+    ENABLE_ANALYTICS = True
+    ENABLE_MONITORING = True
+    
     @staticmethod
     def init_app(app):
         """Initialize production-specific settings"""
@@ -216,7 +221,7 @@ class ProductionConfig(Config):
         # Configure logging
         import logging
         logging.basicConfig(
-            level=getattr(logging, app.config['LOG_LEVEL']),
+            level=getattr(logging, app.config['LOGGING_LEVEL']),
             format='%(asctime)s %(levelname)s: %(message)s'
         )
 

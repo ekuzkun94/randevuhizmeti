@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
-import 'dart:math';
 import '../../providers/auth_provider.dart';
 import '../../providers/language_provider.dart';
 import '../../services/api_service.dart';
@@ -134,7 +133,7 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
         });
       }
     } catch (e) {
-      print('Dashboard data yükleme hatası: $e');
+      debugPrint('Dashboard data yükleme hatası: $e');
       _setMockDashboardData();
     }
   }
@@ -153,7 +152,7 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
         });
       }
     } catch (e) {
-      print('AI insights yükleme hatası: $e');
+      debugPrint('AI insights yükleme hatası: $e');
       _setMockAIInsights();
     }
   }
@@ -185,7 +184,7 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
         });
       }
     } catch (e) {
-      print('Bugünkü randevular yükleme hatası: $e');
+      debugPrint('Bugünkü randevular yükleme hatası: $e');
     }
   }
 
@@ -204,7 +203,7 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
         });
       }
     } catch (e) {
-      print('AI recommendations yükleme hatası: $e');
+      debugPrint('AI recommendations yükleme hatası: $e');
       _setMockRecommendations();
     }
   }
@@ -222,7 +221,7 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
         }),
       );
     } catch (e) {
-      print('Behavior log hatası: $e');
+      debugPrint('Behavior log hatası: $e');
     }
   }
 
@@ -488,7 +487,7 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -503,7 +502,7 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(15),
                 ),
                 child: const Icon(
@@ -520,7 +519,7 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
                     Text(
                       'Hoş geldiniz,',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                         fontSize: 14,
                       ),
                     ),
@@ -536,7 +535,7 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -557,7 +556,7 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
           Text(
             welcomeMessage,
             style: TextStyle(
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.9),
               fontSize: 14,
               height: 1.4,
             ),
@@ -587,7 +586,7 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -608,7 +607,7 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
               Text(
                 label,
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.8),
+                  color: Colors.white.withValues(alpha: 0.8),
                   fontSize: 12,
                 ),
               ),
@@ -628,11 +627,11 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
+        color: Colors.white.withValues(alpha: 0.95),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -646,7 +645,7 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF667eea).withOpacity(0.1),
+                  color: const Color(0xFF667eea).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -727,7 +726,7 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -760,11 +759,11 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
+        color: Colors.white.withValues(alpha: 0.95),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -837,14 +836,14 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [color, color.withOpacity(0.7)],
+            colors: [color, color.withValues(alpha: 0.7)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.3),
+              color: color.withValues(alpha: 0.3),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
@@ -875,11 +874,11 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
+        color: Colors.white.withValues(alpha: 0.95),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -966,7 +965,7 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: statusColor.withOpacity(0.1),
+        color: statusColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
         border: Border(
           left: BorderSide(color: statusColor, width: 4),
@@ -1022,11 +1021,11 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
+        color: Colors.white.withValues(alpha: 0.95),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -1104,9 +1103,9 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: impactColor.withOpacity(0.05),
+        color: impactColor.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: impactColor.withOpacity(0.2)),
+        border: Border.all(color: impactColor.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1127,7 +1126,7 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: impactColor.withOpacity(0.2),
+                  color: impactColor.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -1164,11 +1163,11 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
+        color: Colors.white.withValues(alpha: 0.95),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -1245,7 +1244,7 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(

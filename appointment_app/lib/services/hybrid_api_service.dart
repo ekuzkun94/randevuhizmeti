@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import 'api_service.dart';
 import 'local_database_service.dart';
@@ -10,29 +10,34 @@ class HybridApiService {
   factory HybridApiService() => _instance;
   HybridApiService._internal();
 
-  final LocalDatabaseService _localDb = LocalDatabaseService();
+  final LocalDatabaseService? _localDb = kIsWeb ? null : LocalDatabaseService();
   final ConnectivityService _connectivity = ConnectivityService();
   final Uuid _uuid = const Uuid();
 
   bool get isOnline => _connectivity.isOnline;
+  bool get isWebPlatform => kIsWeb;
+  bool get canUseOfflineMode => !kIsWeb && _localDb != null;
 
   Future<void> initialize() async {
     await _connectivity.initialize();
-    await _localDb.database; // Initialize local database
+    if (canUseOfflineMode) {
+      await _localDb!.database; // Initialize local database only if not web
+    }
   }
 
   // ==================== AUTHENTICATION ====================
 
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
-      if (isOnline) {
+      // Web platformunda her zaman API kullan
+      if (isWebPlatform || isOnline) {
         // Try online login first
         final result = await ApiService.login(
             email, password, '3'); // Default role customer
         return result;
-      } else {
-        // Fallback to offline login
-        final user = await _localDb.authenticateUser(email, password);
+      } else if (canUseOfflineMode) {
+        // Fallback to offline login (sadece mobile)
+        final user = await _localDb!.authenticateUser(email, password);
         if (user != null) {
           return {
             'user': user,
@@ -42,11 +47,13 @@ class HybridApiService {
         } else {
           throw Exception('Invalid credentials');
         }
+      } else {
+        throw Exception('No internet connection');
       }
     } catch (e) {
-      // If online fails, try offline
-      if (isOnline) {
-        final user = await _localDb.authenticateUser(email, password);
+      // If online fails, try offline (sadece mobile)
+      if (canUseOfflineMode && !isWebPlatform) {
+        final user = await _localDb!.authenticateUser(email, password);
         if (user != null) {
           return {
             'user': user,
@@ -79,7 +86,7 @@ class HybridApiService {
       } else {
         // Offline registration
         final serverId = _uuid.v4();
-        await _localDb.insertUser({
+        await _localDb!.insertUser({
           'server_id': serverId,
           'name': name,
           'email': email,
@@ -88,7 +95,7 @@ class HybridApiService {
           'role': role,
         });
 
-        await _localDb.addToSyncQueue('users', serverId, 'create', {
+        await _localDb!.addToSyncQueue('users', serverId, 'create', {
           'name': name,
           'email': email,
           'phone': phone,
@@ -116,16 +123,24 @@ class HybridApiService {
 
   Future<Map<String, dynamic>> getAppointments([String? customerId]) async {
     try {
-      if (isOnline) {
+      // Web platformunda her zaman API kullan
+      if (isWebPlatform || isOnline) {
         return await ApiService.getAppointments();
-      } else {
-        final appointments = await _localDb.getAppointments(customerId);
+      } else if (canUseOfflineMode) {
+        final appointments = await _localDb!.getAppointments(customerId);
         return {'appointments': appointments};
+      } else {
+        throw Exception(
+            'No internet connection and offline mode not available');
       }
     } catch (e) {
-      // Fallback to local data
-      final appointments = await _localDb.getAppointments(customerId);
-      return {'appointments': appointments};
+      // Web platformunda fallback yok, sadece mobile'da
+      if (canUseOfflineMode) {
+        final appointments = await _localDb!.getAppointments(customerId);
+        return {'appointments': appointments};
+      } else {
+        rethrow; // Web'de error'u yukarı fırlat
+      }
     }
   }
 
@@ -194,8 +209,8 @@ class HybridApiService {
         final serverId = _uuid.v4();
         appointmentData['server_id'] = serverId;
 
-        await _localDb.insertAppointment(appointmentData);
-        await _localDb.addToSyncQueue(
+        await _localDb!.insertAppointment(appointmentData);
+        await _localDb!.addToSyncQueue(
             'appointments', serverId, 'create', appointmentData);
 
         return {
@@ -208,9 +223,9 @@ class HybridApiService {
       final serverId = _uuid.v4();
       appointmentData['server_id'] = serverId;
 
-      await _localDb.insertAppointment(appointmentData);
-      await _localDb.addToSyncQueue(
-          'appointments', serverId, 'create', appointmentData);
+      await _localDb!.insertAppointment(appointmentData);
+      await _localDb!
+          .addToSyncQueue('appointments', serverId, 'create', appointmentData);
 
       return {
         'appointment': appointmentData,
@@ -230,10 +245,12 @@ class HybridApiService {
     String? paymentStatus,
   }) async {
     final updateData = <String, dynamic>{};
-    if (appointmentDate != null)
+    if (appointmentDate != null) {
       updateData['appointment_date'] = appointmentDate;
-    if (appointmentTime != null)
+    }
+    if (appointmentTime != null) {
       updateData['appointment_time'] = appointmentTime;
+    }
     if (notes != null) updateData['notes'] = notes;
     if (status != null) updateData['status'] = status;
     if (location != null) updateData['location'] = location;
@@ -253,17 +270,17 @@ class HybridApiService {
           paymentStatus: paymentStatus,
         );
       } else {
-        await _localDb.updateAppointment(appointmentId, updateData);
-        await _localDb.addToSyncQueue(
+        await _localDb!.updateAppointment(appointmentId, updateData);
+        await _localDb!.addToSyncQueue(
             'appointments', appointmentId, 'update', updateData);
 
         return {'success': true, 'offline_mode': true};
       }
     } catch (e) {
       // Fallback to local update
-      await _localDb.updateAppointment(appointmentId, updateData);
-      await _localDb.addToSyncQueue(
-          'appointments', appointmentId, 'update', updateData);
+      await _localDb!.updateAppointment(appointmentId, updateData);
+      await _localDb!
+          .addToSyncQueue('appointments', appointmentId, 'update', updateData);
 
       return {'success': true, 'offline_mode': true};
     }
@@ -274,15 +291,15 @@ class HybridApiService {
       if (isOnline) {
         return await ApiService.deleteAppointment(appointmentId);
       } else {
-        await _localDb.deleteAppointment(appointmentId);
-        await _localDb.addToSyncQueue('appointments', appointmentId, 'delete');
+        await _localDb!.deleteAppointment(appointmentId);
+        await _localDb!.addToSyncQueue('appointments', appointmentId, 'delete');
 
         return {'success': true, 'offline_mode': true};
       }
     } catch (e) {
       // Fallback to local delete
-      await _localDb.deleteAppointment(appointmentId);
-      await _localDb.addToSyncQueue('appointments', appointmentId, 'delete');
+      await _localDb!.deleteAppointment(appointmentId);
+      await _localDb!.addToSyncQueue('appointments', appointmentId, 'delete');
 
       return {'success': true, 'offline_mode': true};
     }
@@ -292,16 +309,24 @@ class HybridApiService {
 
   Future<Map<String, dynamic>> getServices() async {
     try {
-      if (isOnline) {
+      // Web platformunda her zaman API kullan
+      if (isWebPlatform || isOnline) {
         return await ApiService.getServices();
-      } else {
-        final services = await _localDb.getServices();
+      } else if (canUseOfflineMode) {
+        final services = await _localDb!.getServices();
         return {'services': services};
+      } else {
+        throw Exception(
+            'No internet connection and offline mode not available');
       }
     } catch (e) {
-      // Fallback to local data
-      final services = await _localDb.getServices();
-      return {'services': services};
+      // Web platformunda fallback yok, sadece mobile'da
+      if (canUseOfflineMode) {
+        final services = await _localDb!.getServices();
+        return {'services': services};
+      } else {
+        rethrow; // Web'de error'u yukarı fırlat
+      }
     }
   }
 
@@ -333,9 +358,9 @@ class HybridApiService {
         final serverId = _uuid.v4();
         serviceData['server_id'] = serverId;
 
-        await _localDb.insertService(serviceData);
-        await _localDb.addToSyncQueue(
-            'services', serverId, 'create', serviceData);
+        await _localDb!.insertService(serviceData);
+        await _localDb!
+            .addToSyncQueue('services', serverId, 'create', serviceData);
 
         return {
           'service': serviceData,
@@ -347,9 +372,9 @@ class HybridApiService {
       final serverId = _uuid.v4();
       serviceData['server_id'] = serverId;
 
-      await _localDb.insertService(serviceData);
-      await _localDb.addToSyncQueue(
-          'services', serverId, 'create', serviceData);
+      await _localDb!.insertService(serviceData);
+      await _localDb!
+          .addToSyncQueue('services', serverId, 'create', serviceData);
 
       return {
         'service': serviceData,
@@ -362,16 +387,24 @@ class HybridApiService {
 
   Future<Map<String, dynamic>> getProviders() async {
     try {
-      if (isOnline) {
+      // Web platformunda her zaman API kullan
+      if (isWebPlatform || isOnline) {
         return await ApiService.getProviders();
-      } else {
-        final providers = await _localDb.getProviders();
+      } else if (canUseOfflineMode) {
+        final providers = await _localDb!.getProviders();
         return {'providers': providers};
+      } else {
+        throw Exception(
+            'No internet connection and offline mode not available');
       }
     } catch (e) {
-      // Fallback to local data
-      final providers = await _localDb.getProviders();
-      return {'providers': providers};
+      // Web platformunda fallback yok, sadece mobile'da
+      if (canUseOfflineMode) {
+        final providers = await _localDb!.getProviders();
+        return {'providers': providers};
+      } else {
+        rethrow; // Web'de error'u yukarı fırlat
+      }
     }
   }
 
@@ -383,7 +416,7 @@ class HybridApiService {
     }
 
     try {
-      final syncQueue = await _localDb.getSyncQueue();
+      final syncQueue = await _localDb!.getSyncQueue();
       int synced = 0;
       int failed = 0;
 
@@ -417,14 +450,14 @@ class HybridApiService {
           }
         } catch (e) {
           failed++;
-          print('Sync error for item ${item['id']}: $e');
+          debugPrint('Sync error for item ${item['id']}: $e');
         }
       }
 
       if (synced > 0) {
-        await _localDb.clearSyncQueue();
-        await _localDb.setSetting(
-            'last_sync', DateTime.now().toIso8601String());
+        await _localDb!.clearSyncQueue();
+        await _localDb!
+            .setSetting('last_sync', DateTime.now().toIso8601String());
       }
 
       return {
@@ -479,7 +512,7 @@ class HybridApiService {
       }
       return true;
     } catch (e) {
-      print('Appointment sync error: $e');
+      debugPrint('Appointment sync error: $e');
       return false;
     }
   }
@@ -516,7 +549,7 @@ class HybridApiService {
       }
       return true;
     } catch (e) {
-      print('Service sync error: $e');
+      debugPrint('Service sync error: $e');
       return false;
     }
   }
@@ -549,7 +582,7 @@ class HybridApiService {
       }
       return true;
     } catch (e) {
-      print('User sync error: $e');
+      debugPrint('User sync error: $e');
       return false;
     }
   }
@@ -557,14 +590,17 @@ class HybridApiService {
   // ==================== STATUS METHODS ====================
 
   Future<bool> checkApiStatus() async {
-    if (!isOnline) return false;
-    return await ApiService.checkApiStatus();
+    try {
+      return await ApiService.checkApiStatus();
+    } catch (e) {
+      return false;
+    }
   }
 
   Future<Map<String, dynamic>> getConnectionStatus() async {
-    final stats = await _localDb.getDatabaseStats();
-    final syncQueue = await _localDb.getSyncQueue();
-    final lastSync = await _localDb.getSetting('last_sync');
+    final stats = await _localDb!.getDatabaseStats();
+    final syncQueue = await _localDb!.getSyncQueue();
+    final lastSync = await _localDb!.getSetting('last_sync');
 
     return {
       'online': isOnline,
@@ -575,9 +611,9 @@ class HybridApiService {
   }
 
   Future<Map<String, dynamic>> getSystemInfo() async {
-    final stats = await _localDb.getDatabaseStats();
-    final lastSync = await _localDb.getSetting('last_sync');
-    final appVersion = await _localDb.getSetting('app_version');
+    final stats = await _localDb!.getDatabaseStats();
+    final lastSync = await _localDb!.getSetting('last_sync');
+    final appVersion = await _localDb!.getSetting('app_version');
 
     return {
       'app_version': appVersion,

@@ -47,7 +47,7 @@ PORT: (Otomatik oluşturulur)
 - Appointments: `GET/POST https://your-app.onrender.com/appointments`
 
 ### Neden Bu Çalışır:
-1. ❌ PostgreSQL/MySQL bağımlılığı YOK
+1. ❌ PostgreSQL/Supabase bağımlılığı YOK (in-memory SQLite kullanır)
 2. ❌ Derleme gerektiren paket YOK (cryptography, Pillow, bcrypt)
 3. ❌ SQLAlchemy version conflict YOK
 4. ✅ Sadece pure Python packages

@@ -227,7 +227,10 @@ class _ProvidersPageState extends State<ProvidersPage> {
   ];
 
   List<String> get _categories {
-    final categories = _allProviders.map((provider) => provider['category'] as String).toSet().toList();
+    final categories = _allProviders
+        .map((provider) => provider['category'] as String)
+        .toSet()
+        .toList();
     categories.insert(0, 'all');
     return categories;
   }
@@ -237,7 +240,9 @@ class _ProvidersPageState extends State<ProvidersPage> {
 
     // Kategori filtresi
     if (_selectedCategory != 'all') {
-      filtered = filtered.where((provider) => provider['category'] == _selectedCategory).toList();
+      filtered = filtered
+          .where((provider) => provider['category'] == _selectedCategory)
+          .toList();
     }
 
     // Arama filtresi
@@ -245,14 +250,18 @@ class _ProvidersPageState extends State<ProvidersPage> {
       final searchTerm = _searchController.text.toLowerCase();
       filtered = filtered.where((provider) {
         return provider['name'].toString().toLowerCase().contains(searchTerm) ||
-               provider['title'].toString().toLowerCase().contains(searchTerm) ||
-               provider['specialties'].toString().toLowerCase().contains(searchTerm) ||
-               provider['location'].toString().toLowerCase().contains(searchTerm);
+            provider['title'].toString().toLowerCase().contains(searchTerm) ||
+            provider['specialties']
+                .toString()
+                .toLowerCase()
+                .contains(searchTerm) ||
+            provider['location'].toString().toLowerCase().contains(searchTerm);
       }).toList();
     }
 
     // Rating'e göre sırala (yüksekten düşüğe)
-    filtered.sort((a, b) => (b['rating'] as double).compareTo(a['rating'] as double));
+    filtered.sort(
+        (a, b) => (b['rating'] as double).compareTo(a['rating'] as double));
 
     return filtered;
   }
@@ -300,7 +309,13 @@ class _ProvidersPageState extends State<ProvidersPage> {
                     radius: 35,
                     backgroundColor: const Color(0xFF667eea),
                     child: Text(
-                      provider['name'].toString().split(' ').map((n) => n[0]).take(2).join().toUpperCase(),
+                      provider['name']
+                          .toString()
+                          .split(' ')
+                          .map((n) => n[0])
+                          .take(2)
+                          .join()
+                          .toUpperCase(),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 20,
@@ -331,7 +346,8 @@ class _ProvidersPageState extends State<ProvidersPage> {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            const Icon(Icons.star, color: Colors.amber, size: 16),
+                            const Icon(Icons.star,
+                                color: Colors.amber, size: 16),
                             const SizedBox(width: 4),
                             Text(
                               provider['rating'].toString(),
@@ -342,9 +358,12 @@ class _ProvidersPageState extends State<ProvidersPage> {
                             ),
                             const SizedBox(width: 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
-                                color: provider['isAvailable'] ? Colors.green : Colors.red,
+                                color: provider['isAvailable']
+                                    ? Colors.green
+                                    : Colors.red,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
@@ -376,8 +395,10 @@ class _ProvidersPageState extends State<ProvidersPage> {
                       _buildDetailSection('Konum', provider['location']),
                       _buildDetailSection('Telefon', provider['phone']),
                       _buildDetailSection('E-posta', provider['email']),
-                      _buildDetailSection('Çalışma Saatleri', provider['workingHours']),
-                      _buildDetailSection('Çalışma Günleri', provider['workingDays']),
+                      _buildDetailSection(
+                          'Çalışma Saatleri', provider['workingHours']),
+                      _buildDetailSection(
+                          'Çalışma Günleri', provider['workingDays']),
                       _buildSpecialtiesSection(provider['specialties']),
                     ],
                   ),
@@ -390,45 +411,47 @@ class _ProvidersPageState extends State<ProvidersPage> {
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
-                                              onPressed: () async {
-                          final phone = provider['phone'] ?? '';
-                          if (phone.isNotEmpty) {
-                            // Telefon numarasından özel karakterleri temizle
-                            final cleanPhone = phone.replaceAll(RegExp(r'[^\d+]'), '');
-                            // tel: URL scheme kullanarak varsayılan telefon uygulamasını aç
-                            final uri = Uri.parse('tel:$cleanPhone');
-                            try {
-                              // Web platformunda tel: link'i desteklenmez, bu yüzden
-                              // masaüstü/web için alternatif göster
-                              if (Uri.base.scheme == 'http' || Uri.base.scheme == 'https') {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Telefon: $phone'),
-                                    action: SnackBarAction(
-                                      label: 'Kopyala',
-                                      onPressed: () {
-                                        // Clipboard API web'de çalışır
-                                        print('Telefon numarası: $phone');
-                                      },
-                                    ),
-                                  ),
-                                );
-                              }
-                            } catch (e) {
+                      onPressed: () async {
+                        final phone = provider['phone'] ?? '';
+                        if (phone.isNotEmpty) {
+                          // Telefon numarasından özel karakterleri temizle
+                          final cleanPhone =
+                              phone.replaceAll(RegExp(r'[^\d+]'), '');
+                          // tel: URL scheme kullanarak varsayılan telefon uygulamasını aç
+                          try {
+                            // Web platformunda tel: link'i desteklenmez, bu yüzden
+                            // masaüstü/web için alternatif göster
+                            if (Uri.base.scheme == 'http' ||
+                                Uri.base.scheme == 'https') {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('Telefon uygulaması açılamadı: $phone'),
+                                  content: Text('Telefon: $phone'),
+                                  action: SnackBarAction(
+                                    label: 'Kopyala',
+                                    onPressed: () {
+                                      // Clipboard API web'de çalışır
+                                      debugPrint('Telefon numarası: $phone');
+                                    },
+                                  ),
                                 ),
                               );
                             }
-                          } else {
+                          } catch (e) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Telefon numarası bulunamadı'),
+                              SnackBar(
+                                content: Text(
+                                    'Telefon uygulaması açılamadı: $phone'),
                               ),
                             );
                           }
-                        },
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Telefon numarası bulunamadı'),
+                            ),
+                          );
+                        }
+                      },
                       icon: const Icon(Icons.phone),
                       label: const Text('Ara'),
                       style: OutlinedButton.styleFrom(
@@ -440,23 +463,25 @@ class _ProvidersPageState extends State<ProvidersPage> {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                                         child: ElevatedButton.icon(
-                       onPressed: provider['isAvailable'] ? () {
-                         Navigator.of(context).pop();
-                         // Sağlayıcı bilgilerini parametre olarak geç
-                         context.go('/customer/create-appointment?'
-                             'providerId=${provider['id']}&'
-                             'providerName=${Uri.encodeComponent(provider['name'])}&'
-                             'serviceCategory=${Uri.encodeComponent(provider['category'])}');
-                       } : null,
-                       icon: const Icon(Icons.calendar_today),
-                       label: const Text('Randevu Al'),
-                       style: ElevatedButton.styleFrom(
-                         backgroundColor: const Color(0xFF667eea),
-                         foregroundColor: Colors.white,
-                         padding: const EdgeInsets.symmetric(vertical: 12),
-                       ),
-                     ),
+                    child: ElevatedButton.icon(
+                      onPressed: provider['isAvailable']
+                          ? () {
+                              Navigator.of(context).pop();
+                              // Sağlayıcı bilgilerini parametre olarak geç
+                              context.go('/customer/create-appointment?'
+                                  'providerId=${provider['id']}&'
+                                  'providerName=${Uri.encodeComponent(provider['name'])}&'
+                                  'serviceCategory=${Uri.encodeComponent(provider['category'])}');
+                            }
+                          : null,
+                      icon: const Icon(Icons.calendar_today),
+                      label: const Text('Randevu Al'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF667eea),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -511,11 +536,13 @@ class _ProvidersPageState extends State<ProvidersPage> {
             runSpacing: 8,
             children: specialties.map((specialty) {
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: const Color(0xFF667eea).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFF667eea).withValues(alpha: 0.3)),
+                  border: Border.all(
+                      color: const Color(0xFF667eea).withValues(alpha: 0.3)),
                 ),
                 child: Text(
                   specialty.toString(),
@@ -579,7 +606,8 @@ class _ProvidersPageState extends State<ProvidersPage> {
                         TextField(
                           controller: _searchController,
                           decoration: InputDecoration(
-                            hintText: 'Sağlayıcı ara... (isim, uzmanlık, konum)',
+                            hintText:
+                                'Sağlayıcı ara... (isim, uzmanlık, konum)',
                             prefixIcon: const Icon(Icons.search),
                             suffixIcon: _searchController.text.isNotEmpty
                                 ? IconButton(
@@ -609,8 +637,9 @@ class _ProvidersPageState extends State<ProvidersPage> {
                           child: Row(
                             children: _categories.map((category) {
                               final isSelected = _selectedCategory == category;
-                              final displayName = category == 'all' ? 'Tümü' : category;
-                              
+                              final displayName =
+                                  category == 'all' ? 'Tümü' : category;
+
                               return Padding(
                                 padding: const EdgeInsets.only(right: 8),
                                 child: FilterChip(
@@ -621,11 +650,16 @@ class _ProvidersPageState extends State<ProvidersPage> {
                                       _selectedCategory = category;
                                     });
                                   },
-                                  selectedColor: const Color(0xFF667eea).withValues(alpha: 0.2),
+                                  selectedColor: const Color(0xFF667eea)
+                                      .withValues(alpha: 0.2),
                                   checkmarkColor: const Color(0xFF667eea),
                                   labelStyle: TextStyle(
-                                    color: isSelected ? const Color(0xFF667eea) : Colors.grey.shade700,
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    color: isSelected
+                                        ? const Color(0xFF667eea)
+                                        : Colors.grey.shade700,
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
                                   ),
                                 ),
                               );
@@ -719,7 +753,13 @@ class _ProvidersPageState extends State<ProvidersPage> {
                 radius: 30,
                 backgroundColor: const Color(0xFF667eea),
                 child: Text(
-                  provider['name'].toString().split(' ').map((n) => n[0]).take(2).join().toUpperCase(),
+                  provider['name']
+                      .toString()
+                      .split(' ')
+                      .map((n) => n[0])
+                      .take(2)
+                      .join()
+                      .toUpperCase(),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 16,
@@ -780,7 +820,8 @@ class _ProvidersPageState extends State<ProvidersPage> {
                     // Location
                     Row(
                       children: [
-                        Icon(Icons.location_on, size: 16, color: Colors.grey.shade600),
+                        Icon(Icons.location_on,
+                            size: 16, color: Colors.grey.shade600),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
@@ -802,9 +843,11 @@ class _ProvidersPageState extends State<ProvidersPage> {
               Column(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: provider['isAvailable'] ? Colors.green : Colors.red,
+                      color:
+                          provider['isAvailable'] ? Colors.green : Colors.red,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -830,4 +873,4 @@ class _ProvidersPageState extends State<ProvidersPage> {
       ),
     );
   }
-} 
+}

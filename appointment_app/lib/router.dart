@@ -56,7 +56,7 @@ final GoRouter router = GoRouter(
 
     // 🔐 Authentication kontrolü
     if (!authProvider.isAuthenticated) {
-      print('[SECURITY] Unauthorized access attempt to: $currentPath');
+      debugPrint('[SECURITY] Unauthorized access attempt to: $currentPath');
       return '/login';
     }
 
@@ -66,7 +66,7 @@ final GoRouter router = GoRouter(
     // Admin rotaları - sadece admin erişebilir
     if (currentPath.startsWith('/admin')) {
       if (!authProvider.isAdmin) {
-        print(
+        debugPrint(
             '[SECURITY] Non-admin user ${user.email} attempted to access admin route: $currentPath');
         return '/login';
       }
@@ -74,21 +74,21 @@ final GoRouter router = GoRouter(
       // Specific admin permission checks
       if (currentPath.contains('/users') &&
           !authProvider.hasPermission('admin.users.view')) {
-        print(
+        debugPrint(
             '[SECURITY] User ${user.email} lacks permission for users management');
         return '/admin';
       }
 
       if (currentPath.contains('/services') &&
           !authProvider.hasPermission('admin.services.view')) {
-        print(
+        debugPrint(
             '[SECURITY] User ${user.email} lacks permission for services management');
         return '/admin';
       }
 
       if (currentPath.contains('/roles') &&
           !authProvider.hasPermission('admin.roles.view')) {
-        print(
+        debugPrint(
             '[SECURITY] User ${user.email} lacks permission for roles management');
         return '/admin';
       }
@@ -97,7 +97,7 @@ final GoRouter router = GoRouter(
     // Provider rotaları - sadece provider erişebilir
     else if (currentPath.startsWith('/provider')) {
       if (!authProvider.isProvider) {
-        print(
+        debugPrint(
             '[SECURITY] Non-provider user ${user.email} attempted to access provider route: $currentPath');
         return '/login';
       }
@@ -105,14 +105,14 @@ final GoRouter router = GoRouter(
       // Provider permission checks
       if (currentPath.contains('/services') &&
           !authProvider.hasPermission('provider.services.view')) {
-        print(
+        debugPrint(
             '[SECURITY] Provider ${user.email} lacks permission for services management');
         return '/provider';
       }
 
       if (currentPath.contains('/schedule') &&
           !authProvider.hasPermission('provider.schedule.view')) {
-        print(
+        debugPrint(
             '[SECURITY] Provider ${user.email} lacks permission for schedule management');
         return '/provider';
       }
@@ -121,7 +121,7 @@ final GoRouter router = GoRouter(
     // Customer rotaları - sadece customer erişebilir
     else if (currentPath.startsWith('/customer')) {
       if (!authProvider.isCustomer) {
-        print(
+        debugPrint(
             '[SECURITY] Non-customer user ${user.email} attempted to access customer route: $currentPath');
         return '/login';
       }
@@ -129,7 +129,7 @@ final GoRouter router = GoRouter(
       // Customer permission checks
       if (currentPath.contains('/create-appointment') &&
           !authProvider.hasPermission('customer.appointments.create')) {
-        print(
+        debugPrint(
             '[SECURITY] Customer ${user.email} lacks permission to create appointments');
         return '/customer';
       }
@@ -137,12 +137,12 @@ final GoRouter router = GoRouter(
 
     // 🔒 Additional security: Check session validity
     if (authProvider.token == null) {
-      print('[SECURITY] Missing authentication token for user: ${user.email}');
+      debugPrint('[SECURITY] Missing authentication token for user: ${user.email}');
       return '/login';
     }
 
     // ✅ Access granted
-    print(
+    debugPrint(
         '[SECURITY] Access granted to ${user.email} (${user.roleId}) for: $currentPath');
     return null;
   },

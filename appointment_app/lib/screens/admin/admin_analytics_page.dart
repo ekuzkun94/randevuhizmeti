@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import '../../providers/auth_provider.dart';
 import '../../providers/language_provider.dart';
 
 class AdminAnalyticsPage extends StatefulWidget {
@@ -110,8 +109,8 @@ class _AdminAnalyticsPageState extends State<AdminAnalyticsPage> {
   }
 
   Widget _buildSummaryCards() {
-    final totals = analyticsData?['totals'] ?? {};
-    final today = analyticsData?['today'] ?? {};
+    final totals = analyticsData!['totals'] ?? {};
+    final today = analyticsData!['today'] ?? {};
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -191,7 +190,7 @@ class _AdminAnalyticsPageState extends State<AdminAnalyticsPage> {
   }
 
   Widget _buildAppointmentTrendChart() {
-    final trend = analyticsData?['appointment_trend'] as List? ?? [];
+    final trend = analyticsData!['appointment_trend'] as List? ?? [];
 
     return Card(
       elevation: 4,
@@ -258,7 +257,7 @@ class _AdminAnalyticsPageState extends State<AdminAnalyticsPage> {
   }
 
   Widget _buildStatusDistribution() {
-    final statusStats = analyticsData?['status_distribution'] as List? ?? [];
+    final statusStats = analyticsData!['status_distribution'] as List? ?? [];
 
     return Card(
       elevation: 4,
@@ -308,8 +307,7 @@ class _AdminAnalyticsPageState extends State<AdminAnalyticsPage> {
   }
 
   Widget _buildRevenueCards() {
-    final revenue = analyticsData?['revenue'] ?? {};
-    final monthly = analyticsData?['monthly'] ?? {};
+    final revenue = analyticsData!['revenue'] ?? {};
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

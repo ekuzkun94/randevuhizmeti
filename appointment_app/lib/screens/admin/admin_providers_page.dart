@@ -276,7 +276,7 @@ class _AdminProvidersPageState extends State<AdminProvidersPage>
                   '${filteredProviders.length} sağlayıcı listeleniyor',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -285,7 +285,7 @@ class _AdminProvidersPageState extends State<AdminProvidersPage>
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
@@ -301,7 +301,7 @@ class _AdminProvidersPageState extends State<AdminProvidersPage>
             color: Colors.redAccent,
             tooltip: 'Çıkış Yap',
             style: IconButton.styleFrom(
-              backgroundColor: Colors.white.withOpacity(0.1),
+              backgroundColor: Colors.white.withValues(alpha: 0.1),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -320,7 +320,7 @@ class _AdminProvidersPageState extends State<AdminProvidersPage>
           // Search Bar
           Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
             ),
             child: TextField(
@@ -328,9 +328,9 @@ class _AdminProvidersPageState extends State<AdminProvidersPage>
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: 'Sağlayıcı ara...',
-                hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
                 prefixIcon:
-                    Icon(Icons.search, color: Colors.white.withOpacity(0.7)),
+                    Icon(Icons.search, color: Colors.white.withValues(alpha: 0.7)),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide.none,
@@ -380,10 +380,10 @@ class _AdminProvidersPageState extends State<AdminProvidersPage>
             _applyFilters();
           });
         },
-        backgroundColor: Colors.white.withOpacity(0.1),
+        backgroundColor: Colors.white.withValues(alpha: 0.1),
         selectedColor: Colors.blue,
         labelStyle: TextStyle(
-          color: isSelected ? Colors.white : Colors.white.withOpacity(0.8),
+          color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.8),
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         ),
       ),
@@ -414,7 +414,7 @@ class _AdminProvidersPageState extends State<AdminProvidersPage>
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -439,7 +439,7 @@ class _AdminProvidersPageState extends State<AdminProvidersPage>
                 : 'Henüz hiç sağlayıcı eklenmemiş',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.white.withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -475,12 +475,12 @@ class _AdminProvidersPageState extends State<AdminProvidersPage>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.white.withOpacity(0.1),
-            Colors.white.withOpacity(0.05),
+            Colors.white.withValues(alpha: 0.1),
+            Colors.white.withValues(alpha: 0.05),
           ],
         ),
         border: Border.all(
-          color: Colors.white.withOpacity(0.2),
+          color: Colors.white.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -491,7 +491,7 @@ class _AdminProvidersPageState extends State<AdminProvidersPage>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.2),
+                color: statusColor.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -518,7 +518,7 @@ class _AdminProvidersPageState extends State<AdminProvidersPage>
                     provider['email'] ?? 'Email yok',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.white.withOpacity(0.8),
+                      color: Colors.white.withValues(alpha: 0.8),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -528,7 +528,7 @@ class _AdminProvidersPageState extends State<AdminProvidersPage>
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: statusColor.withOpacity(0.2),
+                          color: statusColor.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -543,7 +543,7 @@ class _AdminProvidersPageState extends State<AdminProvidersPage>
                       ),
                       const SizedBox(width: 8),
                       if (rating > 0) ...[
-                        Icon(Icons.star, size: 12, color: Colors.amber),
+                        const Icon(Icons.star, size: 12, color: Colors.amber),
                         const SizedBox(width: 2),
                         Text(
                           rating.toStringAsFixed(1),

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import '../../providers/auth_provider.dart';
 import '../../providers/language_provider.dart';
+import 'dart:async';
 
 class StaffManagementPage extends StatefulWidget {
   const StaffManagementPage({super.key});
@@ -18,6 +18,20 @@ class _StaffManagementPageState extends State<StaffManagementPage>
   List<Map<String, dynamic>> staffList = [];
   List<Map<String, dynamic>> shiftList = [];
   bool isLoading = true;
+
+  // Form controllers for staff
+  final _staffNameController = TextEditingController();
+  final _staffEmailController = TextEditingController();
+  final _staffPositionController = TextEditingController();
+  final _staffDepartmentController = TextEditingController();
+  final _staffSalaryController = TextEditingController();
+
+  // Form controllers for shifts
+  final _shiftDateController = TextEditingController();
+  final _shiftStartTimeController = TextEditingController();
+  final _shiftEndTimeController = TextEditingController();
+  String? _selectedStaffId;
+  String? _selectedShiftType;
 
   @override
   void initState() {
@@ -300,7 +314,7 @@ class _StaffManagementPageState extends State<StaffManagementPage>
             ),
           ],
           onSelected: (value) {
-            _handleShiftAction(shift, value as String);
+            _handleShiftAction(shift, value);
           },
         ),
         isThreeLine: true,
@@ -325,8 +339,11 @@ class _StaffManagementPageState extends State<StaffManagementPage>
           ),
           ElevatedButton(
             onPressed: () {
-              // TODO: Form submit logic
-              Navigator.of(context).pop();
+              if (_tabController.index == 0) {
+                _submitStaffForm();
+              } else {
+                _submitShiftForm();
+              }
             },
             child: const Text('Kaydet'),
           ),
@@ -341,36 +358,42 @@ class _StaffManagementPageState extends State<StaffManagementPage>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const TextField(
-            decoration: InputDecoration(
+          TextField(
+            controller: _staffNameController,
+            decoration: const InputDecoration(
               labelText: 'Ad Soyad',
               prefixIcon: Icon(Icons.person),
             ),
           ),
           const SizedBox(height: 16),
-          const TextField(
-            decoration: InputDecoration(
+          TextField(
+            controller: _staffEmailController,
+            decoration: const InputDecoration(
               labelText: 'Email',
               prefixIcon: Icon(Icons.email),
             ),
+            keyboardType: TextInputType.emailAddress,
           ),
           const SizedBox(height: 16),
-          const TextField(
-            decoration: InputDecoration(
+          TextField(
+            controller: _staffPositionController,
+            decoration: const InputDecoration(
               labelText: 'Pozisyon',
               prefixIcon: Icon(Icons.work),
             ),
           ),
           const SizedBox(height: 16),
-          const TextField(
-            decoration: InputDecoration(
+          TextField(
+            controller: _staffDepartmentController,
+            decoration: const InputDecoration(
               labelText: 'Bölüm',
               prefixIcon: Icon(Icons.business),
             ),
           ),
           const SizedBox(height: 16),
-          const TextField(
-            decoration: InputDecoration(
+          TextField(
+            controller: _staffSalaryController,
+            decoration: const InputDecoration(
               labelText: 'Maaş',
               prefixIcon: Icon(Icons.money),
             ),
@@ -388,6 +411,7 @@ class _StaffManagementPageState extends State<StaffManagementPage>
         mainAxisSize: MainAxisSize.min,
         children: [
           DropdownButtonFormField<String>(
+            value: _selectedStaffId,
             decoration: const InputDecoration(
               labelText: 'Personel',
               prefixIcon: Icon(Icons.person),
@@ -399,33 +423,41 @@ class _StaffManagementPageState extends State<StaffManagementPage>
               );
             }).toList(),
             onChanged: (value) {
-              // TODO: Handle selection
+              setState(() {
+                _selectedStaffId = value;
+              });
             },
           ),
           const SizedBox(height: 16),
-          const TextField(
-            decoration: InputDecoration(
+          TextField(
+            controller: _shiftDateController,
+            decoration: const InputDecoration(
               labelText: 'Tarih (YYYY-MM-DD)',
               prefixIcon: Icon(Icons.calendar_today),
+              hintText: '2024-01-01',
             ),
           ),
           const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
-                child: const TextField(
-                  decoration: InputDecoration(
+                child: TextField(
+                  controller: _shiftStartTimeController,
+                  decoration: const InputDecoration(
                     labelText: 'Başlama (HH:MM)',
                     prefixIcon: Icon(Icons.access_time),
+                    hintText: '09:00',
                   ),
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: const TextField(
-                  decoration: InputDecoration(
+                child: TextField(
+                  controller: _shiftEndTimeController,
+                  decoration: const InputDecoration(
                     labelText: 'Bitiş (HH:MM)',
                     prefixIcon: Icon(Icons.access_time_filled),
+                    hintText: '18:00',
                   ),
                 ),
               ),
@@ -433,6 +465,7 @@ class _StaffManagementPageState extends State<StaffManagementPage>
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(
+            value: _selectedShiftType,
             decoration: const InputDecoration(
               labelText: 'Vardiya Tipi',
               prefixIcon: Icon(Icons.category),
@@ -443,7 +476,9 @@ class _StaffManagementPageState extends State<StaffManagementPage>
               DropdownMenuItem(value: 'holiday', child: Text('Tatil')),
             ],
             onChanged: (value) {
-              // TODO: Handle selection
+              setState(() {
+                _selectedShiftType = value;
+              });
             },
           ),
         ],
@@ -452,31 +487,405 @@ class _StaffManagementPageState extends State<StaffManagementPage>
   }
 
   void _showEditStaffDialog(Map<String, dynamic> staff) {
-    // TODO: Implement edit staff dialog
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Düzenleme özelliği yakında eklenecek')),
+    // Mevcut bilgileri form'a yükle
+    _staffNameController.text = staff['user_name'] ?? '';
+    _staffEmailController.text = staff['user_email'] ?? '';
+    _staffPositionController.text = staff['position'] ?? '';
+    _staffDepartmentController.text = staff['department'] ?? '';
+    _staffSalaryController.text = staff['salary']?.toString() ?? '';
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Personel Düzenle'),
+        content: _buildAddStaffForm(),
+        actions: [
+          TextButton(
+            onPressed: () {
+              _clearStaffForm();
+              Navigator.of(context).pop();
+            },
+            child: const Text('İptal'),
+          ),
+          ElevatedButton(
+            onPressed: () => _updateStaff(staff['id']),
+            child: const Text('Güncelle'),
+          ),
+        ],
+      ),
     );
   }
 
   void _showStaffShifts(Map<String, dynamic> staff) {
-    // TODO: Show staff specific shifts
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${staff['user_name']} vardiyaları gösteriliyor')),
+    // Personele özel vardiyaları filtrele
+    final staffShifts = shiftList
+        .where((shift) => shift['user_id'] == staff['user_id'])
+        .toList();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('${staff['user_name']} - Vardiyalar'),
+        content: SizedBox(
+          width: 400,
+          height: 300,
+          child: staffShifts.isEmpty
+              ? const Center(child: Text('Bu personele ait vardiya bulunamadı'))
+              : ListView.builder(
+                  itemCount: staffShifts.length,
+                  itemBuilder: (context, index) {
+                    final shift = staffShifts[index];
+                    return Card(
+                      child: ListTile(
+                        leading: Icon(
+                          _getShiftStatusIcon(shift['status']),
+                          color: _getShiftStatusColor(shift['status']),
+                        ),
+                        title: Text('${shift['shift_date']}'),
+                        subtitle: Text(
+                          '${shift['start_time']} - ${shift['end_time']}\n'
+                          '${_getShiftTypeLabel(shift['shift_type'])} - ${_getShiftStatusLabel(shift['status'])}',
+                        ),
+                        isThreeLine: true,
+                      ),
+                    );
+                  },
+                ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Kapat'),
+          ),
+        ],
+      ),
     );
   }
 
   void _deleteStaff(String staffId) {
-    // TODO: Implement delete staff
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Silme özelliği yakında eklenecek')),
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Personeli Sil'),
+        content: const Text(
+            'Bu personeli silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('İptal'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              await _performDeleteStaff(staffId);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Sil', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
     );
   }
 
   void _handleShiftAction(Map<String, dynamic> shift, String action) {
-    // TODO: Implement shift status updates
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Vardiya $action işlemi yakında eklenecek')),
+    String newStatus;
+    String actionMessage;
+
+    switch (action) {
+      case 'start':
+        newStatus = 'started';
+        actionMessage = 'başlatıldı';
+        break;
+      case 'complete':
+        newStatus = 'completed';
+        actionMessage = 'tamamlandı';
+        break;
+      case 'cancel':
+        newStatus = 'cancelled';
+        actionMessage = 'iptal edildi';
+        break;
+      case 'edit':
+        _showEditShiftDialog(shift);
+        return;
+      default:
+        return;
+    }
+
+    _updateShiftStatus(shift['id'], newStatus, actionMessage);
+  }
+
+  // Form submission metodları
+  Future<void> _submitStaffForm() async {
+    if (_staffNameController.text.isEmpty ||
+        _staffEmailController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ad Soyad ve Email alanları zorunludur')),
+      );
+      return;
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse('http://localhost:5001/staff'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'user_name': _staffNameController.text,
+          'user_email': _staffEmailController.text,
+          'position': _staffPositionController.text,
+          'department': _staffDepartmentController.text,
+          'salary': _staffSalaryController.text.isNotEmpty
+              ? double.tryParse(_staffSalaryController.text)
+              : null,
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        _clearStaffForm();
+        Navigator.of(context).pop();
+        await _loadStaff();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Personel başarıyla eklendi')),
+        );
+      } else {
+        final errorData = json.decode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content:
+                  Text('Hata: ${errorData['error'] ?? 'Bilinmeyen hata'}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Bağlantı hatası: $e')),
+      );
+    }
+  }
+
+  Future<void> _submitShiftForm() async {
+    if (_selectedStaffId == null ||
+        _shiftDateController.text.isEmpty ||
+        _shiftStartTimeController.text.isEmpty ||
+        _shiftEndTimeController.text.isEmpty ||
+        _selectedShiftType == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tüm alanlar zorunludur')),
+      );
+      return;
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse('http://localhost:5001/shifts'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'user_id': _selectedStaffId,
+          'shift_date': _shiftDateController.text,
+          'start_time': _shiftStartTimeController.text,
+          'end_time': _shiftEndTimeController.text,
+          'shift_type': _selectedShiftType,
+          'status': 'scheduled',
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        _clearShiftForm();
+        Navigator.of(context).pop();
+        await _loadShifts();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Vardiya başarıyla oluşturuldu')),
+        );
+      } else {
+        final errorData = json.decode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content:
+                  Text('Hata: ${errorData['error'] ?? 'Bilinmeyen hata'}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Bağlantı hatası: $e')),
+      );
+    }
+  }
+
+  Future<void> _updateStaff(String staffId) async {
+    try {
+      final response = await http.put(
+        Uri.parse('http://localhost:5001/staff/$staffId'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'user_name': _staffNameController.text,
+          'user_email': _staffEmailController.text,
+          'position': _staffPositionController.text,
+          'department': _staffDepartmentController.text,
+          'salary': _staffSalaryController.text.isNotEmpty
+              ? double.tryParse(_staffSalaryController.text)
+              : null,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        _clearStaffForm();
+        Navigator.of(context).pop();
+        await _loadStaff();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Personel başarıyla güncellendi')),
+        );
+      } else {
+        final errorData = json.decode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content:
+                  Text('Hata: ${errorData['error'] ?? 'Bilinmeyen hata'}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Bağlantı hatası: $e')),
+      );
+    }
+  }
+
+  Future<void> _performDeleteStaff(String staffId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('http://localhost:5001/staff/$staffId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        await _loadStaff();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Personel başarıyla silindi')),
+        );
+      } else {
+        final errorData = json.decode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content:
+                  Text('Hata: ${errorData['error'] ?? 'Bilinmeyen hata'}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Bağlantı hatası: $e')),
+      );
+    }
+  }
+
+  Future<void> _updateShiftStatus(
+      String shiftId, String newStatus, String actionMessage) async {
+    try {
+      final response = await http.put(
+        Uri.parse('http://localhost:5001/shifts/$shiftId'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'status': newStatus}),
+      );
+
+      if (response.statusCode == 200) {
+        await _loadShifts();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Vardiya $actionMessage')),
+        );
+      } else {
+        final errorData = json.decode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content:
+                  Text('Hata: ${errorData['error'] ?? 'Bilinmeyen hata'}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Bağlantı hatası: $e')),
+      );
+    }
+  }
+
+  void _showEditShiftDialog(Map<String, dynamic> shift) {
+    // Form'u mevcut verilerle doldur
+    _selectedStaffId = shift['user_id'];
+    _shiftDateController.text = shift['shift_date'] ?? '';
+    _shiftStartTimeController.text = shift['start_time'] ?? '';
+    _shiftEndTimeController.text = shift['end_time'] ?? '';
+    _selectedShiftType = shift['shift_type'];
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Vardiya Düzenle'),
+        content: _buildAddShiftForm(),
+        actions: [
+          TextButton(
+            onPressed: () {
+              _clearShiftForm();
+              Navigator.of(context).pop();
+            },
+            child: const Text('İptal'),
+          ),
+          ElevatedButton(
+            onPressed: () => _updateShift(shift['id']),
+            child: const Text('Güncelle'),
+          ),
+        ],
+      ),
     );
+  }
+
+  Future<void> _updateShift(String shiftId) async {
+    try {
+      final response = await http.put(
+        Uri.parse('http://localhost:5001/shifts/$shiftId'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'user_id': _selectedStaffId,
+          'shift_date': _shiftDateController.text,
+          'start_time': _shiftStartTimeController.text,
+          'end_time': _shiftEndTimeController.text,
+          'shift_type': _selectedShiftType,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        _clearShiftForm();
+        Navigator.of(context).pop();
+        await _loadShifts();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Vardiya başarıyla güncellendi')),
+        );
+      } else {
+        final errorData = json.decode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content:
+                  Text('Hata: ${errorData['error'] ?? 'Bilinmeyen hata'}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Bağlantı hatası: $e')),
+      );
+    }
+  }
+
+  // Form temizleme metodları
+  void _clearStaffForm() {
+    _staffNameController.clear();
+    _staffEmailController.clear();
+    _staffPositionController.clear();
+    _staffDepartmentController.clear();
+    _staffSalaryController.clear();
+  }
+
+  void _clearShiftForm() {
+    _shiftDateController.clear();
+    _shiftStartTimeController.clear();
+    _shiftEndTimeController.clear();
+    setState(() {
+      _selectedStaffId = null;
+      _selectedShiftType = null;
+    });
   }
 
   String _getShiftTypeLabel(String? type) {
@@ -540,6 +949,14 @@ class _StaffManagementPageState extends State<StaffManagementPage>
   @override
   void dispose() {
     _tabController.dispose();
+    _staffNameController.dispose();
+    _staffEmailController.dispose();
+    _staffPositionController.dispose();
+    _staffDepartmentController.dispose();
+    _staffSalaryController.dispose();
+    _shiftDateController.dispose();
+    _shiftStartTimeController.dispose();
+    _shiftEndTimeController.dispose();
     super.dispose();
   }
 }

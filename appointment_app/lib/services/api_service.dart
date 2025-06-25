@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class ApiService {
@@ -156,10 +158,12 @@ class ApiService {
     try {
       final Map<String, dynamic> requestBody = {};
 
-      if (appointmentDate != null)
+      if (appointmentDate != null) {
         requestBody['appointment_date'] = appointmentDate;
-      if (appointmentTime != null)
+      }
+      if (appointmentTime != null) {
         requestBody['appointment_time'] = appointmentTime;
+      }
       if (notes != null) requestBody['notes'] = notes;
       if (status != null) requestBody['status'] = status;
       if (location != null) requestBody['location'] = location;
@@ -443,10 +447,12 @@ class ApiService {
 
       if (businessName != null) requestBody['business_name'] = businessName;
       if (description != null) requestBody['description'] = description;
-      if (specialization != null)
+      if (specialization != null) {
         requestBody['specialization'] = specialization;
-      if (experienceYears != null)
+      }
+      if (experienceYears != null) {
         requestBody['experience_years'] = experienceYears;
+      }
       if (phone != null) requestBody['phone'] = phone;
       if (address != null) requestBody['address'] = address;
       if (city != null) requestBody['city'] = city;
@@ -656,20 +662,7 @@ class ApiService {
   // ==================== SECURITY HELPERS ====================
 
   // Rate limiting kontrolü
-  static final Map<String, DateTime> _lastRequestTimes = {};
-  static const Duration _minRequestInterval = Duration(milliseconds: 100);
 
-  static bool _canMakeRequest(String endpoint) {
-    final now = DateTime.now();
-    if (_lastRequestTimes.containsKey(endpoint)) {
-      final lastRequest = _lastRequestTimes[endpoint]!;
-      if (now.difference(lastRequest) < _minRequestInterval) {
-        return false;
-      }
-    }
-    _lastRequestTimes[endpoint] = now;
-    return true;
-  }
 
   // IP geoblocking kontrolü (basit)
   static Future<bool> _checkGeolocation() async {
@@ -678,8 +671,4 @@ class ApiService {
   }
 
   // Audit log
-  static void _logSecurityEvent(String event, Map<String, dynamic> details) {
-    print('[SECURITY] $event: ${json.encode(details)}');
-    // Production'da bu logs bir güvenlik sistemine gönderilebilir
-  }
 }

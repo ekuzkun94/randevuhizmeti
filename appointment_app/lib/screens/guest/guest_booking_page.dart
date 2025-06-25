@@ -21,7 +21,6 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
   bool _isLoading = false;
   bool _isLoadingServices = false;
   bool _isLoadingProviders = false;
-  bool _isApiOnline = false;
 
   List<Map<String, dynamic>> _allServices = [];
   List<Map<String, dynamic>> _allProviders = [];
@@ -32,9 +31,24 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
   String? _selectedTime;
 
   final List<String> _timeSlots = [
-    '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-    '12:00', '12:30', '13:00', '13:30', '14:00', '14:30',
-    '15:00', '15:30', '16:00', '16:30', '17:00', '17:30',
+    '09:00',
+    '09:30',
+    '10:00',
+    '10:30',
+    '11:00',
+    '11:30',
+    '12:00',
+    '12:30',
+    '13:00',
+    '13:30',
+    '14:00',
+    '14:30',
+    '15:00',
+    '15:30',
+    '16:00',
+    '16:30',
+    '17:00',
+    '17:30',
   ];
 
   @override
@@ -62,13 +76,10 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
   Future<void> _checkApiStatus() async {
     try {
       final hybridApi = HybridApiService();
-      final isOnline = await hybridApi.checkApiStatus();
       setState(() {
-        _isApiOnline = isOnline;
       });
     } catch (e) {
       setState(() {
-        _isApiOnline = false;
       });
     }
   }
@@ -85,7 +96,9 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
         _allServices = services.map<Map<String, dynamic>>((service) {
           final serviceMap = service as Map<String, dynamic>;
           return {
-            'id': serviceMap['server_id']?.toString() ?? serviceMap['id']?.toString() ?? '',
+            'id': serviceMap['server_id']?.toString() ??
+                serviceMap['id']?.toString() ??
+                '',
             'name': serviceMap['name'] ?? 'Bilinmeyen Hizmet',
             'description': serviceMap['description'] ?? '',
             'duration': '${serviceMap['duration'] ?? 30} dk',
@@ -95,7 +108,7 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
         }).toList();
       });
     } catch (e) {
-      print('Hizmetler yüklenirken hata: $e');
+      debugPrint('Hizmetler yüklenirken hata: $e');
     } finally {
       setState(() => _isLoadingServices = false);
     }
@@ -113,7 +126,9 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
         _allProviders = providers.map<Map<String, dynamic>>((provider) {
           final providerMap = provider as Map<String, dynamic>;
           return {
-            'id': providerMap['server_id']?.toString() ?? providerMap['id']?.toString() ?? '',
+            'id': providerMap['server_id']?.toString() ??
+                providerMap['id']?.toString() ??
+                '',
             'name': providerMap['user_name'] ?? 'Bilinmeyen Provider',
             'business_name': providerMap['business_name'] ?? '',
             'specialization': providerMap['specialization'] ?? '',
@@ -123,7 +138,7 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
         }).toList();
       });
     } catch (e) {
-      print('Providers yüklenirken hata: $e');
+      debugPrint('Providers yüklenirken hata: $e');
     } finally {
       setState(() => _isLoadingProviders = false);
     }
@@ -139,10 +154,12 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
 
     if (selectedServiceData.isEmpty) return _allProviders;
 
-    final serviceProviderId = selectedServiceData['provider_id']?.toString() ?? '';
+    final serviceProviderId =
+        selectedServiceData['provider_id']?.toString() ?? '';
     if (serviceProviderId.isNotEmpty) {
-      return _allProviders.where((provider) =>
-        provider['id'] == serviceProviderId).toList();
+      return _allProviders
+          .where((provider) => provider['id'] == serviceProviderId)
+          .toList();
     }
 
     return _allProviders;
@@ -159,23 +176,26 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
         });
       }
     } catch (e) {
-      print('Randevular yüklenirken hata: $e');
+      debugPrint('Randevular yüklenirken hata: $e');
     }
   }
 
   bool _isTimeSlotOccupied(String timeSlot) {
     if (_selectedProvider == null) return false;
-    
+
     return _existingAppointments.any((appointment) {
-      return appointment['appointment_date'] == DateFormat('yyyy-MM-dd').format(_selectedDate) &&
-             appointment['appointment_time'] == timeSlot &&
-             appointment['provider_id'] == _selectedProvider;
+      return appointment['appointment_date'] ==
+              DateFormat('yyyy-MM-dd').format(_selectedDate) &&
+          appointment['appointment_time'] == timeSlot &&
+          appointment['provider_id'] == _selectedProvider;
     });
   }
 
   Future<void> _createGuestAppointment() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedService == null || _selectedProvider == null || _selectedTime == null) {
+    if (_selectedService == null ||
+        _selectedProvider == null ||
+        _selectedTime == null) {
       _showErrorSnackBar('Lütfen tüm alanları doldurunuz');
       return;
     }
@@ -184,7 +204,7 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
 
     try {
       final hybridApi = HybridApiService();
-      final result = await hybridApi.createAppointment(
+      await hybridApi.createAppointment(
         customerName: _nameController.text.trim(),
         customerEmail: _emailController.text.trim(),
         customerPhone: _phoneController.text.trim(),
@@ -266,7 +286,8 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.email_outlined, color: Colors.blue.shade600, size: 20),
+                  Icon(Icons.email_outlined,
+                      color: Colors.blue.shade600, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -440,7 +461,8 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
               if (value == null || value.trim().isEmpty) {
                 return 'E-mail gerekli';
               }
-              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                  .hasMatch(value)) {
                 return 'Geçerli bir e-mail adresi giriniz';
               }
               return null;
@@ -500,16 +522,16 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
                 prefixIcon: Icon(Icons.medical_services),
                 border: OutlineInputBorder(),
               ),
-                             items: _allServices.map((service) {
-                 return DropdownMenuItem<String>(
-                   value: service['id'],
-                   child: Text(
-                     '${service['name']} - ${service['price']}₺',
-                     style: const TextStyle(fontSize: 14),
-                     overflow: TextOverflow.ellipsis,
-                   ),
-                 );
-               }).toList(),
+              items: _allServices.map((service) {
+                return DropdownMenuItem<String>(
+                  value: service['id'],
+                  child: Text(
+                    '${service['name']} - ${service['price']}₺',
+                    style: const TextStyle(fontSize: 14),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                );
+              }).toList(),
               onChanged: (value) {
                 setState(() {
                   _selectedService = value;
@@ -560,16 +582,16 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
                 prefixIcon: Icon(Icons.person_pin),
                 border: OutlineInputBorder(),
               ),
-                             items: _availableProviders.map((provider) {
-                 return DropdownMenuItem<String>(
-                   value: provider['id'],
-                   child: Text(
-                     '${provider['name']} - ${provider['business_name']}',
-                     style: const TextStyle(fontSize: 14),
-                     overflow: TextOverflow.ellipsis,
-                   ),
-                 );
-               }).toList(),
+              items: _availableProviders.map((provider) {
+                return DropdownMenuItem<String>(
+                  value: provider['id'],
+                  child: Text(
+                    '${provider['name']} - ${provider['business_name']}',
+                    style: const TextStyle(fontSize: 14),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                );
+              }).toList(),
               onChanged: (value) {
                 setState(() {
                   _selectedProvider = value;
@@ -598,13 +620,13 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
             lastDay: DateTime.now().add(const Duration(days: 90)),
             focusedDay: _selectedDate,
             selectedDayPredicate: (day) => isSameDay(_selectedDate, day),
-                         onDaySelected: (selectedDay, focusedDay) {
-               setState(() {
-                 _selectedDate = selectedDay;
-                 _selectedTime = null;
-               });
-               _loadExistingAppointments(); // Yeni tarih için randevuları yükle
-             },
+            onDaySelected: (selectedDay, focusedDay) {
+              setState(() {
+                _selectedDate = selectedDay;
+                _selectedTime = null;
+              });
+              _loadExistingAppointments(); // Yeni tarih için randevuları yükle
+            },
             calendarFormat: CalendarFormat.month,
             headerStyle: const HeaderStyle(
               formatButtonVisible: false,
@@ -625,7 +647,7 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
-                    const SizedBox(height: 8),
+          const SizedBox(height: 8),
           // Bilgi kartı
           Container(
             width: double.infinity,
@@ -644,7 +666,8 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
                     color: Colors.blue.shade100,
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: Icon(Icons.info_outline, size: 16, color: Colors.blue.shade700),
+                  child: Icon(Icons.info_outline,
+                      size: 16, color: Colors.blue.shade700),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -661,73 +684,78 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
             ),
           ),
           Wrap(
-             spacing: 8,
-             runSpacing: 8,
-             children: _timeSlots.map((time) {
-               final isSelected = _selectedTime == time;
-               final isOccupied = _isTimeSlotOccupied(time);
-               final isPastTime = _selectedDate.isAtSameMomentAs(DateTime.now()) && 
-                                  DateTime.now().hour >= int.parse(time.split(':')[0]);
-               
-               Color backgroundColor;
-               Color borderColor;
-               Color textColor;
-               bool isEnabled = !isOccupied && !isPastTime;
-               
-               if (isSelected) {
-                 backgroundColor = const Color(0xFF667eea);
-                 borderColor = const Color(0xFF667eea);
-                 textColor = Colors.white;
-               } else if (isOccupied) {
-                 backgroundColor = Colors.red.shade100;
-                 borderColor = Colors.red;
-                 textColor = Colors.red.shade700;
-               } else if (isPastTime) {
-                 backgroundColor = Colors.grey.shade200;
-                 borderColor = Colors.grey.shade400;
-                 textColor = Colors.grey.shade600;
-               } else {
-                 backgroundColor = Colors.green.shade50;
-                 borderColor = Colors.green;
-                 textColor = Colors.green.shade700;
-               }
-               
-               return GestureDetector(
-                 onTap: isEnabled ? () {
-                   setState(() {
-                     _selectedTime = time;
-                   });
-                 } : null,
-                 child: Container(
-                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                   decoration: BoxDecoration(
-                     color: backgroundColor,
-                     borderRadius: BorderRadius.circular(20),
-                     border: Border.all(color: borderColor),
-                   ),
-                   child: Row(
-                     mainAxisSize: MainAxisSize.min,
-                     children: [
-                       if (isOccupied) ...[
-                         Icon(Icons.close, size: 16, color: textColor),
-                         const SizedBox(width: 4),
-                       ] else if (!isPastTime && !isSelected) ...[
-                         Icon(Icons.check, size: 16, color: textColor),
-                         const SizedBox(width: 4),
-                       ],
-                       Text(
-                         time,
-                         style: TextStyle(
-                           color: textColor,
-                           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                         ),
-                       ),
-                     ],
-                   ),
-                 ),
-               );
-             }).toList(),
-           ),
+            spacing: 8,
+            runSpacing: 8,
+            children: _timeSlots.map((time) {
+              final isSelected = _selectedTime == time;
+              final isOccupied = _isTimeSlotOccupied(time);
+              final isPastTime =
+                  _selectedDate.isAtSameMomentAs(DateTime.now()) &&
+                      DateTime.now().hour >= int.parse(time.split(':')[0]);
+
+              Color backgroundColor;
+              Color borderColor;
+              Color textColor;
+              bool isEnabled = !isOccupied && !isPastTime;
+
+              if (isSelected) {
+                backgroundColor = const Color(0xFF667eea);
+                borderColor = const Color(0xFF667eea);
+                textColor = Colors.white;
+              } else if (isOccupied) {
+                backgroundColor = Colors.red.shade100;
+                borderColor = Colors.red;
+                textColor = Colors.red.shade700;
+              } else if (isPastTime) {
+                backgroundColor = Colors.grey.shade200;
+                borderColor = Colors.grey.shade400;
+                textColor = Colors.grey.shade600;
+              } else {
+                backgroundColor = Colors.green.shade50;
+                borderColor = Colors.green;
+                textColor = Colors.green.shade700;
+              }
+
+              return GestureDetector(
+                onTap: isEnabled
+                    ? () {
+                        setState(() {
+                          _selectedTime = time;
+                        });
+                      }
+                    : null,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: backgroundColor,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: borderColor),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isOccupied) ...[
+                        Icon(Icons.close, size: 16, color: textColor),
+                        const SizedBox(width: 4),
+                      ] else if (!isPastTime && !isSelected) ...[
+                        Icon(Icons.check, size: 16, color: textColor),
+                        const SizedBox(width: 4),
+                      ],
+                      Text(
+                        time,
+                        style: TextStyle(
+                          color: textColor,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
         ],
       ),
     );
@@ -833,4 +861,4 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
       ),
     );
   }
-} 
+}

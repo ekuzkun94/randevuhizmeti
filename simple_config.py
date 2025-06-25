@@ -8,11 +8,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Config:
-    """Base configuration class - SQLite for development"""
+    """Simple configuration for SQLite"""
     
     # Flask ayarları
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
-    DEBUG = os.getenv('FLASK_DEBUG', 'True').lower() == 'true'
+    DEBUG = True
     
     # SQLite Database
     BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -32,42 +32,14 @@ class Config:
         'http://127.0.0.1:5001'
     ]
     
-    # Rate limiting
-    RATELIMIT_STORAGE_URL = "memory://"
-    RATELIMIT_DEFAULT = "100 per hour"
-    
-    # Logging ayarları
-    LOG_LEVEL = os.getenv('LOG_LEVEL', 'DEBUG')
-    LOG_FILE = os.getenv('LOG_FILE', 'app.log')
-    
-    # Security ayarları
-    BCRYPT_LOG_ROUNDS = 12
-    WTF_CSRF_ENABLED = True
-    SESSION_COOKIE_SECURE = not DEBUG
-    SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SAMESITE = 'Lax'
+    # Logging
+    LOG_LEVEL = 'DEBUG'
 
 class DevelopmentConfig(Config):
     """Development configuration"""
-    DEBUG = True
-    LOG_LEVEL = 'DEBUG'
+    pass
 
-class ProductionConfig(Config):
-    """Production configuration"""
-    DEBUG = False
-    SESSION_COOKIE_SECURE = True
-    LOG_LEVEL = 'WARNING'
-
-class TestingConfig(Config):
-    """Testing configuration"""
-    TESTING = True
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
-    WTF_CSRF_ENABLED = False
-
-# Configuration mapping
 config = {
     'development': DevelopmentConfig,
-    'production': ProductionConfig,
-    'testing': TestingConfig,
     'default': DevelopmentConfig
-}
+} 

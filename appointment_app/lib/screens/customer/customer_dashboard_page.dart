@@ -3,12 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:appointment_app/providers/language_provider.dart';
 import 'package:appointment_app/providers/auth_provider.dart';
-import 'package:appointment_app/services/api_service.dart';
 import 'package:http/http.dart' as http;
 import 'create_appointment_page.dart';
-import 'profile_page.dart';
-import 'providers_page.dart';
-import 'ai_reports_page.dart';
 import 'dart:convert';
 import 'dart:async';
 
@@ -42,7 +38,7 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage>
 
   // Chat bot related
   bool _isChatOpen = false;
-  List<Map<String, dynamic>> _chatMessages = [];
+  final List<Map<String, dynamic>> _chatMessages = [];
   final TextEditingController _chatController = TextEditingController();
   bool _isChatLoading = false;
 
@@ -255,19 +251,19 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage>
             child: const Icon(Icons.dashboard, size: 20),
           ),
           const SizedBox(width: 12),
-          Column(
+          const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'ZamanYönet AI',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               Text(
                 'Akıllı Müşteri Paneli',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w400,
                 ),
@@ -433,9 +429,9 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'Hoş Geldiniz! 👋',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF2D3748),
@@ -664,7 +660,6 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage>
     final points = _loyaltyInfo!['points'] ?? 0;
     final tier = _loyaltyInfo!['tier'] ?? 'Yeni Müşteri';
     final benefits = List<String>.from(_loyaltyInfo!['benefits'] ?? []);
-    final progress = _loyaltyInfo!['next_tier_progress'] ?? 0.0;
 
     return Container(
       decoration: BoxDecoration(
@@ -730,9 +725,9 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage>
               ],
             ),
             const SizedBox(height: 16),
-            Text(
+            const Text(
               'Avantajlarınız:',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,

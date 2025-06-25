@@ -132,7 +132,7 @@ class AuthProvider extends ChangeNotifier {
       }
     } catch (e) {
       // Hata durumunda mock kullanıcı sistemine geri dön
-      print('API giriş hatası: $e');
+      debugPrint('API giriş hatası: $e');
       return await _mockLogin(email, password, roleId);
     } finally {
       _setLoading(false);
@@ -478,7 +478,7 @@ class AuthProvider extends ChangeNotifier {
         }
       } catch (e) {
         // API hatası durumunda local güncelleme
-        print('API profil güncelleme hatası: $e');
+        debugPrint('API profil güncelleme hatası: $e');
 
         _currentUser = UserModel(
           id: _currentUser!.id,

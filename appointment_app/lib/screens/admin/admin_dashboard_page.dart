@@ -151,8 +151,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [
-                              Colors.blue.withOpacity(0.3),
-                              Colors.purple.withOpacity(0.3),
+                              Colors.blue.withValues(alpha: 0.3),
+                              Colors.purple.withValues(alpha: 0.3),
                             ],
                           ),
                         ),
@@ -184,7 +184,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
                           color: Colors.redAccent,
                           tooltip: 'Çıkış Yap',
                           style: IconButton.styleFrom(
-                            backgroundColor: Colors.white.withOpacity(0.1),
+                            backgroundColor: Colors.white.withValues(alpha: 0.1),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -300,12 +300,12 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.white.withOpacity(0.1),
-            Colors.white.withOpacity(0.05),
+            Colors.white.withValues(alpha: 0.1),
+            Colors.white.withValues(alpha: 0.05),
           ],
         ),
         border: Border.all(
-          color: Colors.white.withOpacity(0.2),
+          color: Colors.white.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -320,7 +320,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.2),
+                    color: color.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(icon, color: color, size: 24),
@@ -375,7 +375,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
                   title,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                   ),
                 ),
                 Text(
@@ -472,12 +472,12 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              color.withOpacity(0.3),
-              color.withOpacity(0.1),
+              color.withValues(alpha: 0.3),
+              color.withValues(alpha: 0.1),
             ],
           ),
           border: Border.all(
-            color: color.withOpacity(0.5),
+            color: color.withValues(alpha: 0.5),
             width: 1,
           ),
         ),
@@ -577,12 +577,12 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              color.withOpacity(0.2),
-              color.withOpacity(0.05),
+              color.withValues(alpha: 0.2),
+              color.withValues(alpha: 0.05),
             ],
           ),
           border: Border.all(
-            color: color.withOpacity(0.3),
+            color: color.withValues(alpha: 0.3),
             width: 1,
           ),
         ),
@@ -592,7 +592,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.3),
+                color: color.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(icon, color: color, size: 32),
@@ -614,7 +614,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
                     subtitle,
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.white.withValues(alpha: 0.7),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -625,7 +625,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: color.withOpacity(0.2),
+                          color: color.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -737,12 +737,12 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Colors.white.withOpacity(0.1),
-              Colors.white.withOpacity(0.05),
+              Colors.white.withValues(alpha: 0.1),
+              Colors.white.withValues(alpha: 0.05),
             ],
           ),
           border: Border.all(
-            color: Colors.white.withOpacity(0.2),
+            color: Colors.white.withValues(alpha: 0.2),
             width: 1,
           ),
         ),
@@ -756,7 +756,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.2),
+                    color: color.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(icon, color: color, size: 24),
@@ -765,7 +765,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.2),
+                    color: color.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -792,7 +792,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
               subtitle,
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.white.withOpacity(0.7),
+                color: Colors.white.withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: 8),
@@ -820,12 +820,12 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.white.withOpacity(0.1),
-            Colors.white.withOpacity(0.05),
+            Colors.white.withValues(alpha: 0.1),
+            Colors.white.withValues(alpha: 0.05),
           ],
         ),
         border: Border.all(
-          color: Colors.white.withOpacity(0.2),
+          color: Colors.white.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -894,7 +894,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
+              color: color.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: color, size: 16),
@@ -916,7 +916,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
                   subtitle,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -926,7 +926,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
             time,
             style: TextStyle(
               fontSize: 12,
-              color: Colors.white.withOpacity(0.5),
+              color: Colors.white.withValues(alpha: 0.5),
             ),
           ),
         ],

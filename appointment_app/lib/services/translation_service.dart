@@ -1,372 +1,580 @@
 import 'dart:async';
-import 'package:appointment_app/services/mysql_service.dart';
 import 'package:appointment_app/models/language_model.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:appointment_app/config/database_config.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class TranslationService {
-  static final TranslationService _instance = TranslationService._internal();
-  factory TranslationService() => _instance;
+  static TranslationService? _instance;
+  static TranslationService get instance {
+    _instance ??= TranslationService._internal();
+    return _instance!;
+  }
+
   TranslationService._internal();
 
-  final MySQLService _mysqlService = MySQLService.instance;
+  String _currentLanguage = 'tr';
 
   // Cache
-  final Map<String, Map<String, String>> _translations = {};
-  List<LanguageModel> _languages = [];
+  Map<String, Map<String, String>> _translationsCache = {};
+  List<LanguageModel> _availableLanguages = [];
   bool _isInitialized = false;
 
-  // Fallback translations - Web ortamında MySQL çalışmadığında kullanılacak
+  // Fallback translations - Supabase API çalışmadığında kullanılacak
   final Map<String, Map<String, String>> _fallbackTranslations = {
     'tr': {
-      'app_title': 'ZAMANYÖNET',
-      'app_subtitle': 'Modern Randevu Yönetim Sistemi',
-      'welcome_to_appointment_system': 'Randevu Sistemine Hoş Geldiniz',
-      'choose_your_role': 'Rolünüzü seçin',
-      'admin': 'Admin',
-      'admin_description': 'Sistem yönetimi',
-      'provider': 'Hizmet Sağlayıcı',
-      'provider_description': 'Randevu yönetimi',
-      'customer': 'Müşteri',
-      'customer_description': 'Randevu al',
-      'guest': 'Misafir',
-      'guest_description': 'Hızlı randevu',
-      'continue_to_app': 'Devam Et',
-      'quick_booking': 'Hızlı Randevu',
-      'quick_booking_description': 'Kayıt olmadan hızlı randevu alın',
-      'book_now': 'Şimdi Rezervasyon Yap',
+      'app_name': 'ZamanYönet',
+      'welcome': 'Hoş Geldiniz',
       'login': 'Giriş Yap',
-      'welcome_back': 'Tekrar Hoş Geldiniz',
-      'login_subtitle':
-          'Hesabınıza giriş yapın ve randevu yönetiminin keyfini çıkarın',
+      'register': 'Kayıt Ol',
+      'logout': 'Çıkış Yap',
       'email': 'E-posta',
       'password': 'Şifre',
-      'email_required': 'E-posta gerekli',
-      'password_required': 'Şifre gerekli',
-      'forgot_password': 'Şifremi Unuttum',
-      'forgot_password_coming_soon': 'Şifremi unuttum özelliği yakında!',
-      'register': 'Kayıt Ol',
-      'register_now': 'Hemen Kayıt Ol',
-      'new_user': 'Yeni Kullanıcı?',
-      'create_account_desc':
-          'Hemen hesap oluşturun ve platformumuzun avantajlarından yararlanın',
-      'already_have_account': 'Zaten hesabınız var mı?',
-      'dont_have_account': 'Hesabınız yok mu?',
-      'name': 'Ad Soyad',
-      'name_required': 'Ad Soyad gerekli',
-      'select_role': 'Rol Seçin',
-      'role_required': 'Rol seçimi gerekli',
-      'confirm_password': 'Şifre Tekrar',
-      'confirm_password_required': 'Şifre tekrarı gerekli',
-      'passwords_dont_match': 'Şifreler eşleşmiyor',
-      'password_too_short': 'Şifre en az 6 karakter olmalı',
-      'invalid_email': 'Geçerli bir e-posta adresi girin',
-      'email_already_exists': 'Bu e-posta adresi zaten kullanılıyor',
-      'registration_successful': 'Kayıt başarılı! Şimdi giriş yapabilirsiniz.',
-      'registration_error': 'Kayıt hatası',
-      'invalid_credentials': 'Geçersiz email veya şifre',
-      'login_error': 'Giriş hatası',
-      'test_users': 'Test Kullanıcıları:',
-      'dashboard': 'Panel',
-      'users': 'Kullanıcılar',
+      'name': 'Ad',
+      'surname': 'Soyad',
+      'phone': 'Telefon',
       'appointments': 'Randevular',
       'services': 'Hizmetler',
-      'roles': 'Roller',
-      'logout': 'Çıkış',
-      'add_user': 'Kullanıcı Ekle',
-      'edit_user': 'Kullanıcı Düzenle',
-      'delete_user': 'Kullanıcı Sil',
-      'save': 'Kaydet',
+      'providers': 'Sağlayıcılar',
+      'dashboard': 'Dashboard',
+      'profile': 'Profil',
+      'settings': 'Ayarlar',
+      'calendar': 'Takvim',
+      'notifications': 'Bildirimler',
+      'search': 'Ara',
+      'filter': 'Filtrele',
+      'sort': 'Sırala',
       'cancel': 'İptal',
+      'save': 'Kaydet',
       'delete': 'Sil',
       'edit': 'Düzenle',
-      'actions': 'İşlemler',
-      'created_at': 'Oluşturulma',
-      'updated_at': 'Güncellenme',
-      'role': 'Rol',
-      'status': 'Durum',
-      'active': 'Aktif',
-      'inactive': 'Pasif',
-      'search': 'Ara...',
-      'no_data': 'Veri bulunamadı',
-      'loading': 'Yükleniyor...',
+      'add': 'Ekle',
+      'yes': 'Evet',
+      'no': 'Hayır',
+      'ok': 'Tamam',
       'error': 'Hata',
       'success': 'Başarılı',
       'warning': 'Uyarı',
       'info': 'Bilgi',
+      'loading': 'Yükleniyor...',
+      'retry': 'Tekrar Dene',
+      'refresh': 'Yenile',
+      'back': 'Geri',
+      'next': 'İleri',
+      'previous': 'Önceki',
+      'home': 'Ana Sayfa',
+      'about': 'Hakkında',
+      'contact': 'İletişim',
+      'help': 'Yardım',
+      'privacy': 'Gizlilik',
+      'terms': 'Şartlar',
+      'version': 'Sürüm',
+      'language': 'Dil',
+      'theme': 'Tema',
+      'light': 'Açık',
+      'dark': 'Koyu',
+      'system': 'Sistem',
+      'date': 'Tarih',
+      'time': 'Saat',
+      'duration': 'Süre',
+      'price': 'Fiyat',
+      'status': 'Durum',
+      'category': 'Kategori',
+      'description': 'Açıklama',
+      'notes': 'Notlar',
+      'address': 'Adres',
+      'city': 'Şehir',
+      'country': 'Ülke',
+      'website': 'Website',
+      'social_media': 'Sosyal Medya',
+      'rating': 'Değerlendirme',
+      'reviews': 'Yorumlar',
+      'favorites': 'Favoriler',
+      'history': 'Geçmiş',
+      'statistics': 'İstatistikler',
+      'reports': 'Raporlar',
+      'analytics': 'Analiz',
+      'export': 'Dışa Aktar',
+      'import': 'İçe Aktar',
+      'backup': 'Yedekleme',
+      'restore': 'Geri Yükleme',
+      'sync': 'Senkronizasyon',
+      'offline': 'Çevrimdışı',
+      'online': 'Çevrimiçi',
+      'connecting': 'Bağlanıyor...',
+      'connected': 'Bağlandı',
+      'disconnected': 'Bağlantı Kesildi',
+      'network_error': 'Ağ Hatası',
+      'server_error': 'Sunucu Hatası',
+      'timeout_error': 'Zaman Aşımı Hatası',
+      'unknown_error': 'Bilinmeyen Hata',
+      'invalid_credentials': 'Geçersiz Giriş Bilgileri',
+      'account_locked': 'Hesap Kilitli',
+      'account_suspended': 'Hesap Askıya Alındı',
+      'email_not_verified': 'E-posta Doğrulanmamış',
+      'password_reset_sent': 'Şifre Sıfırlama E-postası Gönderildi',
+      'password_reset_success': 'Şifre Başarıyla Sıfırlandı',
+      'registration_success': 'Kayıt Başarılı',
+      'logout_success': 'Çıkış Başarılı',
+      'appointment_created': 'Randevu Oluşturuldu',
+      'appointment_updated': 'Randevu Güncellendi',
+      'appointment_cancelled': 'Randevu İptal Edildi',
+      'appointment_confirmed': 'Randevu Onaylandı',
+      'service_added': 'Hizmet Eklendi',
+      'service_updated': 'Hizmet Güncellendi',
+      'service_deleted': 'Hizmet Silindi',
+      'provider_added': 'Sağlayıcı Eklendi',
+      'provider_updated': 'Sağlayıcı Güncellendi',
+      'provider_deleted': 'Sağlayıcı Silindi',
+      'profile_updated': 'Profil Güncellendi',
+      'settings_saved': 'Ayarlar Kaydedildi',
+      'data_synced': 'Veriler Senkronize Edildi',
+      'backup_created': 'Yedek Oluşturuldu',
+      'backup_restored': 'Yedek Geri Yüklendi',
+      'no_data': 'Veri Bulunamadı',
+      'no_appointments': 'Randevu Bulunamadı',
+      'no_services': 'Hizmet Bulunamadı',
+      'no_providers': 'Sağlayıcı Bulunamadı',
+      'no_notifications': 'Bildirim Bulunamadı',
+      'no_internet': 'İnternet Bağlantısı Yok',
+      'try_again': 'Tekrar Deneyin',
+      'contact_support': 'Destek ile İletişime Geçin',
+      'rate_app': 'Uygulamayı Değerlendirin',
+      'share_app': 'Uygulamayı Paylaşın',
+      'update_available': 'Güncelleme Mevcut',
+      'update_required': 'Güncelleme Gerekli',
+      'maintenance_mode': 'Bakım Modu',
+      'coming_soon': 'Yakında...',
+      'feature_disabled': 'Özellik Devre Dışı',
+      'permission_required': 'İzin Gerekli',
+      'location_permission': 'Konum İzni',
+      'camera_permission': 'Kamera İzni',
+      'storage_permission': 'Depolama İzni',
+      'notification_permission': 'Bildirim İzni',
+      'grant_permission': 'İzin Ver',
+      'deny_permission': 'İzni Reddet',
+      'today': 'Bugün',
+      'tomorrow': 'Yarın',
+      'yesterday': 'Dün',
+      'this_week': 'Bu Hafta',
+      'next_week': 'Gelecek Hafta',
+      'this_month': 'Bu Ay',
+      'next_month': 'Gelecek Ay',
+      'morning': 'Sabah',
+      'afternoon': 'Öğleden Sonra',
+      'evening': 'Akşam',
+      'night': 'Gece',
+      'monday': 'Pazartesi',
+      'tuesday': 'Salı',
+      'wednesday': 'Çarşamba',
+      'thursday': 'Perşembe',
+      'friday': 'Cuma',
+      'saturday': 'Cumartesi',
+      'sunday': 'Pazar',
+      'january': 'Ocak',
+      'february': 'Şubat',
+      'march': 'Mart',
+      'april': 'Nisan',
+      'may': 'Mayıs',
+      'june': 'Haziran',
+      'july': 'Temmuz',
+      'august': 'Ağustos',
+      'september': 'Eylül',
+      'october': 'Ekim',
+      'november': 'Kasım',
+      'december': 'Aralık',
+      'minute': 'Dakika',
+      'hour': 'Saat',
+      'day': 'Gün',
+      'week': 'Hafta',
+      'month': 'Ay',
+      'year': 'Yıl',
+      'male': 'Erkek',
+      'female': 'Kadın',
+      'other': 'Diğer',
+      'pending': 'Beklemede',
+      'confirmed': 'Onaylandı',
+      'completed': 'Tamamlandı',
+      'cancelled': 'İptal Edildi',
+      'active': 'Aktif',
+      'inactive': 'Pasif',
+      'enabled': 'Etkin',
+      'disabled': 'Devre Dışı',
+      'available': 'Müsait',
+      'unavailable': 'Müsait Değil',
+      'busy': 'Meşgul',
+      'free': 'Boş',
+      'open': 'Açık',
+      'closed': 'Kapalı',
+      'public': 'Herkese Açık',
+      'private': 'Özel',
+      'draft': 'Taslak',
+      'published': 'Yayınlandı',
+      'archived': 'Arşivlendi',
+      'deleted': 'Silindi',
+      'low': 'Düşük',
+      'medium': 'Orta',
+      'high': 'Yüksek',
+      'urgent': 'Acil',
+      'normal': 'Normal',
+      'priority': 'Öncelik',
+      'quality': 'Kalite',
+      'quantity': 'Miktar',
+      'total': 'Toplam',
+      'subtotal': 'Ara Toplam',
+      'tax': 'Vergi',
+      'discount': 'İndirim',
+      'payment': 'Ödeme',
+      'invoice': 'Fatura',
+      'receipt': 'Makbuz',
+      'refund': 'İade',
+      'credit': 'Kredi',
+      'debit': 'Borç',
+      'balance': 'Bakiye',
+      'transaction': 'İşlem',
+      'transfer': 'Transfer',
+      'deposit': 'Para Yatırma',
+      'withdrawal': 'Para Çekme',
+      'cash': 'Nakit',
+      'card': 'Kart',
+      'bank': 'Banka',
+      'account': 'Hesap',
     },
     'en': {
-      'app_title': 'TIMEMANAGER',
-      'app_subtitle': 'Modern Appointment Management System',
-      'welcome_to_appointment_system': 'Welcome to Appointment System',
-      'choose_your_role': 'Choose your role',
-      'admin': 'Admin',
-      'admin_description': 'System management',
-      'provider': 'Service Provider',
-      'provider_description': 'Appointment management',
-      'customer': 'Customer',
-      'customer_description': 'Book appointments',
-      'guest': 'Guest',
-      'guest_description': 'Quick booking',
-      'continue_to_app': 'Continue',
-      'quick_booking': 'Quick Booking',
-      'quick_booking_description': 'Book quickly without registration',
-      'book_now': 'Book Now',
+      'app_name': 'TimeManager',
+      'welcome': 'Welcome',
       'login': 'Login',
-      'welcome_back': 'Welcome Back',
-      'login_subtitle':
-          'Sign in to your account and enjoy appointment management',
+      'register': 'Register',
+      'logout': 'Logout',
       'email': 'Email',
       'password': 'Password',
-      'email_required': 'Email is required',
-      'password_required': 'Password is required',
-      'forgot_password': 'Forgot Password',
-      'forgot_password_coming_soon': 'Forgot password feature coming soon!',
-      'register': 'Register',
-      'register_now': 'Register Now',
-      'new_user': 'New User?',
-      'create_account_desc':
-          'Create an account now and enjoy the benefits of our platform',
-      'already_have_account': 'Already have an account?',
-      'dont_have_account': 'Don\'t have an account?',
-      'name': 'Full Name',
-      'name_required': 'Full name is required',
-      'select_role': 'Select Role',
-      'role_required': 'Role selection is required',
-      'confirm_password': 'Confirm Password',
-      'confirm_password_required': 'Password confirmation is required',
-      'passwords_dont_match': 'Passwords don\'t match',
-      'password_too_short': 'Password must be at least 6 characters',
-      'invalid_email': 'Please enter a valid email address',
-      'email_already_exists': 'This email address is already in use',
-      'registration_successful': 'Registration successful! You can now login.',
-      'registration_error': 'Registration error',
-      'invalid_credentials': 'Invalid email or password',
-      'login_error': 'Login error',
-      'test_users': 'Test Users:',
-      'dashboard': 'Dashboard',
-      'users': 'Users',
+      'name': 'Name',
+      'surname': 'Surname',
+      'phone': 'Phone',
       'appointments': 'Appointments',
       'services': 'Services',
-      'roles': 'Roles',
-      'logout': 'Logout',
-      'add_user': 'Add User',
-      'edit_user': 'Edit User',
-      'delete_user': 'Delete User',
-      'save': 'Save',
+      'providers': 'Providers',
+      'dashboard': 'Dashboard',
+      'profile': 'Profile',
+      'settings': 'Settings',
+      'calendar': 'Calendar',
+      'notifications': 'Notifications',
+      'search': 'Search',
+      'filter': 'Filter',
+      'sort': 'Sort',
       'cancel': 'Cancel',
+      'save': 'Save',
       'delete': 'Delete',
       'edit': 'Edit',
-      'actions': 'Actions',
-      'created_at': 'Created',
-      'updated_at': 'Updated',
-      'role': 'Role',
-      'status': 'Status',
-      'active': 'Active',
-      'inactive': 'Inactive',
-      'search': 'Search...',
-      'no_data': 'No data found',
-      'loading': 'Loading...',
+      'add': 'Add',
+      'yes': 'Yes',
+      'no': 'No',
+      'ok': 'OK',
       'error': 'Error',
       'success': 'Success',
       'warning': 'Warning',
       'info': 'Info',
-    },
+      'loading': 'Loading...',
+      'retry': 'Retry',
+      'refresh': 'Refresh',
+      'back': 'Back',
+      'next': 'Next',
+      'previous': 'Previous',
+      'home': 'Home',
+      'about': 'About',
+      'contact': 'Contact',
+      'help': 'Help',
+      'privacy': 'Privacy',
+      'terms': 'Terms',
+      'version': 'Version',
+      'language': 'Language',
+      'theme': 'Theme',
+      'light': 'Light',
+      'dark': 'Dark',
+      'system': 'System',
+      'date': 'Date',
+      'time': 'Time',
+      'duration': 'Duration',
+      'price': 'Price',
+      'status': 'Status',
+      'category': 'Category',
+      'description': 'Description',
+      'notes': 'Notes',
+      'address': 'Address',
+      'city': 'City',
+      'country': 'Country',
+      'website': 'Website',
+      'social_media': 'Social Media',
+      'rating': 'Rating',
+      'reviews': 'Reviews',
+      'favorites': 'Favorites',
+      'history': 'History',
+      'statistics': 'Statistics',
+      'reports': 'Reports',
+      'analytics': 'Analytics',
+      'export': 'Export',
+      'import': 'Import',
+      'backup': 'Backup',
+      'restore': 'Restore',
+      'sync': 'Sync',
+      'offline': 'Offline',
+      'online': 'Online',
+      'connecting': 'Connecting...',
+      'connected': 'Connected',
+      'disconnected': 'Disconnected',
+      'network_error': 'Network Error',
+      'server_error': 'Server Error',
+      'timeout_error': 'Timeout Error',
+      'unknown_error': 'Unknown Error',
+      'invalid_credentials': 'Invalid Credentials',
+      'account_locked': 'Account Locked',
+      'account_suspended': 'Account Suspended',
+      'email_not_verified': 'Email Not Verified',
+      'password_reset_sent': 'Password Reset Email Sent',
+      'password_reset_success': 'Password Reset Successfully',
+      'registration_success': 'Registration Successful',
+      'logout_success': 'Logout Successful',
+      'appointment_created': 'Appointment Created',
+      'appointment_updated': 'Appointment Updated',
+      'appointment_cancelled': 'Appointment Cancelled',
+      'appointment_confirmed': 'Appointment Confirmed',
+      'service_added': 'Service Added',
+      'service_updated': 'Service Updated',
+      'service_deleted': 'Service Deleted',
+      'provider_added': 'Provider Added',
+      'provider_updated': 'Provider Updated',
+      'provider_deleted': 'Provider Deleted',
+      'profile_updated': 'Profile Updated',
+      'settings_saved': 'Settings Saved',
+      'data_synced': 'Data Synced',
+      'backup_created': 'Backup Created',
+      'backup_restored': 'Backup Restored',
+      'no_data': 'No Data Found',
+      'no_appointments': 'No Appointments Found',
+      'no_services': 'No Services Found',
+      'no_providers': 'No Providers Found',
+      'no_notifications': 'No Notifications Found',
+      'no_internet': 'No Internet Connection',
+      'try_again': 'Try Again',
+      'contact_support': 'Contact Support',
+      'rate_app': 'Rate App',
+      'share_app': 'Share App',
+      'update_available': 'Update Available',
+      'update_required': 'Update Required',
+      'maintenance_mode': 'Maintenance Mode',
+      'coming_soon': 'Coming Soon...',
+      'feature_disabled': 'Feature Disabled',
+      'permission_required': 'Permission Required',
+      'location_permission': 'Location Permission',
+      'camera_permission': 'Camera Permission',
+      'storage_permission': 'Storage Permission',
+      'notification_permission': 'Notification Permission',
+      'grant_permission': 'Grant Permission',
+      'deny_permission': 'Deny Permission',
+    }
   };
 
-  // Fallback languages
-  final List<LanguageModel> _fallbackLanguages = [
-    LanguageModel(
-      id: 'tr',
-      name: 'Turkish',
-      nativeName: 'Türkçe',
-      flagEmoji: '🇹🇷',
-      isActive: true,
-      sortOrder: 1,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    ),
-    LanguageModel(
-      id: 'en',
-      name: 'English',
-      nativeName: 'English',
-      flagEmoji: '🇺🇸',
-      isActive: true,
-      sortOrder: 2,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    ),
-  ];
-
-  bool get isInitialized => _isInitialized;
-  List<LanguageModel> get languages =>
-      _languages.isNotEmpty ? _languages : _fallbackLanguages;
+  String get currentLanguage => _currentLanguage;
 
   Future<void> initialize() async {
     if (_isInitialized) return;
 
     try {
-      debugPrint('TranslationService initializing...');
+      // SharedPreferences'tan dil tercihi yükle
+      final prefs = await SharedPreferences.getInstance();
+      _currentLanguage = prefs.getString('language') ?? 'tr';
 
-      // Web ortamında direkt fallback kullan
-      if (kIsWeb) {
-        debugPrint(
-            'Web platform detected, using fallback languages and translations');
-        _languages = List.from(_fallbackLanguages);
-        _translations.addAll(_fallbackTranslations);
-        _isInitialized = true;
-        debugPrint(
-            'TranslationService initialized for web with ${_languages.length} languages');
-        return;
-      }
+      // Supabase API'den çeviri verilerini yüklemeye çalış
+      await _loadFromSupabaseAPI();
 
-      // MySQL'den dilleri yüklemeye çalış
-      await _loadLanguagesFromDatabase();
-
-      // Eğer MySQL'den yüklenemezse fallback kullan
-      if (_languages.isEmpty) {
-        debugPrint('MySQL unavailable, using fallback languages');
-        _languages = List.from(_fallbackLanguages);
-        _translations.addAll(_fallbackTranslations);
-      }
-
-      _isInitialized = true;
-      debugPrint(
-          'TranslationService initialized with ${_languages.length} languages');
+      // Eğer Supabase'den yüklenemezse fallback kullan
     } catch (e) {
-      debugPrint('TranslationService initialization error: $e');
-      // Hata durumunda fallback kullan
-      _languages = List.from(_fallbackLanguages);
-      _translations.addAll(_fallbackTranslations);
-      _isInitialized = true;
+      debugPrint('Supabase API unavailable, using fallback languages');
+      _loadFallbackLanguages();
     }
+
+    _isInitialized = true;
   }
 
-  Future<void> _loadLanguagesFromDatabase() async {
+  Future<void> _loadFromSupabaseAPI() async {
     try {
-      final results = await _mysqlService
-          .query('SELECT * FROM languages WHERE is_active = 1');
+      // Available languages endpoint'i çağır
+      final response = await http.get(
+        Uri.parse('${DatabaseConfig.apiBaseUrl}/translations/languages'),
+        headers: {'Content-Type': 'application/json'},
+      ).timeout(const Duration(seconds: 10));
 
-      _languages = results
-          .map<LanguageModel>((row) => LanguageModel(
-                id: row['id'].toString(),
-                name: row['name'].toString(),
-                nativeName: row['native_name'].toString(),
-                flagEmoji: row['flag_emoji'].toString(),
-                isActive: row['is_active'] == 1,
-                sortOrder: row['sort_order'] as int? ?? 1,
-                createdAt: DateTime.parse(row['created_at'].toString()),
-                updatedAt: DateTime.parse(row['updated_at'].toString()),
-              ))
-          .toList();
-
-      // Her dil için çevirileri yükle
-      for (final language in _languages) {
-        await _loadTranslationsForLanguage(language.id);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        _availableLanguages = (data['languages'] as List)
+            .map((lang) => LanguageModel.fromJson(lang))
+            .toList();
+      } else {
+        throw Exception('Failed to load languages');
       }
     } catch (e) {
-      debugPrint('Database language loading error: $e');
-      rethrow;
+      debugPrint('Failed to load languages from Supabase API: $e');
+      // Fallback languages yükle
+      _loadFallbackLanguages();
     }
   }
 
-  Future<void> _loadTranslationsForLanguage(String languageId) async {
+  void _loadFallbackLanguages() {
+    _availableLanguages = [
+      LanguageModel(
+        id: '1',
+        name: 'Türkçe',
+        nativeName: 'Türkçe',
+        flagEmoji: '🇹🇷',
+        isActive: true,
+        sortOrder: 1,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ),
+      LanguageModel(
+        id: '2',
+        name: 'English',
+        nativeName: 'English',
+        flagEmoji: '🇺🇸',
+        isActive: true,
+        sortOrder: 2,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ),
+    ];
+  }
+
+  Future<void> loadTranslations(String languageCode) async {
+    if (_translationsCache.containsKey(languageCode)) {
+      return; // Zaten cache'de var
+    }
+
     try {
-      final results = await _mysqlService.query('''
-        SELECT translation_key, translation_value 
-        FROM translations 
-        WHERE language_id = ? AND is_active = 1
-      ''', [languageId]);
+      // Supabase API'den çevirileri yükle
+      final response = await http.get(
+        Uri.parse('${DatabaseConfig.apiBaseUrl}/translations/$languageCode'),
+        headers: {'Content-Type': 'application/json'},
+      ).timeout(const Duration(seconds: 10));
 
-      _translations[languageId] = {};
-      for (final row in results) {
-        _translations[languageId]![row['translation_key'].toString()] =
-            row['translation_value'].toString();
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        _translationsCache[languageCode] =
+            Map<String, String>.from(data['translations']);
+      } else {
+        // API'den yüklenemezse fallback kullan
+        _translationsCache[languageCode] =
+            _fallbackTranslations[languageCode] ?? _fallbackTranslations['tr']!;
       }
-
-      debugPrint(
-          'Loaded ${_translations[languageId]!.length} translations from database');
     } catch (e) {
-      debugPrint('Translation loading error for $languageId: $e');
-      // Hata durumunda fallback kullan
-      if (_fallbackTranslations.containsKey(languageId)) {
-        _translations[languageId] =
-            Map.from(_fallbackTranslations[languageId]!);
-        debugPrint('Using fallback translations for language: $languageId');
-      }
+      debugPrint('Failed to load translations from Supabase API: $e');
+      // Fallback çevirileri kullan
+      _translationsCache[languageCode] =
+          _fallbackTranslations[languageCode] ?? _fallbackTranslations['tr']!;
     }
   }
 
-  String translate(String key, {String languageId = 'tr', String? fallback}) {
-    // Önce cache'den bak
-    if (_translations.containsKey(languageId) &&
-        _translations[languageId]!.containsKey(key)) {
-      return _translations[languageId]![key]!;
+  Future<void> setLanguage(String languageCode) async {
+    if (_currentLanguage == languageCode) return;
+
+    _currentLanguage = languageCode;
+
+    // SharedPreferences'a kaydet
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('language', languageCode);
+
+    // Çevirileri yükle
+    await loadTranslations(languageCode);
+  }
+
+  String translate(String key) {
+    final translations = _translationsCache[_currentLanguage];
+    if (translations != null && translations.containsKey(key)) {
+      return translations[key]!;
     }
 
-    // Fallback translation'dan bak
-    if (_fallbackTranslations.containsKey(languageId) &&
-        _fallbackTranslations[languageId]!.containsKey(key)) {
-      return _fallbackTranslations[languageId]![key]!;
+    // Current language'da bulunamazsa Türkçe'ye fallback
+    final turkishTranslations = _translationsCache['tr'];
+    if (turkishTranslations != null && turkishTranslations.containsKey(key)) {
+      return turkishTranslations[key]!;
     }
 
-    // Türkçe fallback dene
-    if (languageId != 'tr' && _fallbackTranslations['tr']!.containsKey(key)) {
-      return _fallbackTranslations['tr']![key]!;
+    // Fallback translations'a bak
+    final fallbackTranslations = _fallbackTranslations[_currentLanguage];
+    if (fallbackTranslations != null && fallbackTranslations.containsKey(key)) {
+      return fallbackTranslations[key]!;
     }
 
-    // Manuel fallback
-    if (fallback != null) {
-      return fallback;
+    // Son çare olarak Türkçe fallback
+    final turkishFallback = _fallbackTranslations['tr'];
+    if (turkishFallback != null && turkishFallback.containsKey(key)) {
+      return turkishFallback[key]!;
     }
 
-    // Son çare olarak key'i döndür
+    // Hiçbir yerde bulunamazsa key'i döndür
     return key;
   }
 
-  Future<void> addTranslation(
-      String languageId, String key, String value) async {
-    try {
-      // Cache'e ekle
-      _translations[languageId] ??= {};
-      _translations[languageId]![key] = value;
+  List<LanguageModel> get availableLanguages => _availableLanguages;
 
-      // Database'e ekle (eğer mümkünse)
-      await _mysqlService.query('''
-        INSERT INTO translations (language_id, translation_key, translation_value, is_active, created_at, updated_at)
-        VALUES (?, ?, ?, 1, NOW(), NOW())
-        ON DUPLICATE KEY UPDATE translation_value = ?, updated_at = NOW()
-      ''', [languageId, key, value, value]);
+  Future<void> addTranslation(
+      String languageCode, String key, String value) async {
+    try {
+      // Supabase API'ye translation ekle
+      await http.post(
+        Uri.parse('${DatabaseConfig.apiBaseUrl}/translations'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${_getAuthToken()}',
+        },
+        body: json.encode({
+          'language_code': languageCode,
+          'key': key,
+          'value': value,
+        }),
+      );
+
+      // Cache'i güncelle
+      if (!_translationsCache.containsKey(languageCode)) {
+        _translationsCache[languageCode] = {};
+      }
+      _translationsCache[languageCode]![key] = value;
     } catch (e) {
-      debugPrint('Add translation error: $e');
-      // Database hatası olsa bile cache'e eklendi
+      debugPrint('Failed to add translation: $e');
+      throw Exception('Translation could not be added');
     }
   }
 
   Future<void> updateTranslation(
-      String languageId, String key, String value) async {
-    await addTranslation(languageId, key, value);
-  }
-
-  Future<void> deleteTranslation(String languageId, String key) async {
+      String languageCode, String key, String value) async {
     try {
-      // Cache'den sil
-      _translations[languageId]?.remove(key);
+      // Supabase API'de translation güncelle
+      await http.put(
+        Uri.parse(
+            '${DatabaseConfig.apiBaseUrl}/translations/$languageCode/$key'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${_getAuthToken()}',
+        },
+        body: json.encode({
+          'value': value,
+        }),
+      );
 
-      // Database'den sil (eğer mümkünse)
-      await _mysqlService.query('''
-        UPDATE translations 
-        SET is_active = 0, updated_at = NOW()
-        WHERE language_id = ? AND translation_key = ?
-      ''', [languageId, key]);
+      // Cache'i güncelle
+      if (_translationsCache.containsKey(languageCode)) {
+        _translationsCache[languageCode]![key] = value;
+      }
     } catch (e) {
-      debugPrint('Delete translation error: $e');
+      debugPrint('Failed to update translation: $e');
+      throw Exception('Translation could not be updated');
     }
   }
 
-  Future<void> reloadTranslations() async {
-    _translations.clear();
-    _languages.clear();
-    _isInitialized = false;
-    await initialize();
+  String _getAuthToken() {
+    // AuthProvider'dan token alınacak
+    // Şimdilik boş string döndürüyoruz
+    return '';
   }
 }

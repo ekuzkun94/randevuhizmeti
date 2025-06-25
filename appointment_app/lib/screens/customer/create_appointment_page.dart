@@ -19,7 +19,8 @@ class CreateAppointmentPage extends StatefulWidget {
   State<CreateAppointmentPage> createState() => _CreateAppointmentPageState();
 }
 
-class _CreateAppointmentPageState extends State<CreateAppointmentPage> with TickerProviderStateMixin {
+class _CreateAppointmentPageState extends State<CreateAppointmentPage>
+    with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _notesController = TextEditingController();
   final _userNameController = TextEditingController();
@@ -27,17 +28,18 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
   final _phoneController = TextEditingController();
   final _searchController = TextEditingController();
   final _providerSearchController = TextEditingController();
-  
+
   late TabController _tabController;
   int _currentTabIndex = 0;
-  
+
   // Ödeme bilgileri
-  String _paymentMethod = 'cash_on_service'; // 'cash_on_service' veya 'online_payment'
+  String _paymentMethod =
+      'cash_on_service'; // 'cash_on_service' veya 'online_payment'
   final _cardNumberController = TextEditingController();
   final _cardHolderController = TextEditingController();
   final _expiryDateController = TextEditingController();
   final _cvvController = TextEditingController();
-  
+
   DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
   DateTime _focusedDay = DateTime.now().add(const Duration(days: 1));
   String? _selectedService;
@@ -47,19 +49,32 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
   bool _isLoading = false;
   bool _isApiOnline = false;
   List<Map<String, dynamic>> _existingAppointments = [];
-  
+
   // Database services
   List<Map<String, dynamic>> _allServices = [];
   bool _isLoadingServices = true;
-  
+
   // Database providers
   List<Map<String, dynamic>> _allProviders = [];
   bool _isLoadingProviders = true;
 
   final List<String> _timeSlots = [
-    '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-    '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
-    '16:00', '16:30', '17:00', '17:30',
+    '09:00',
+    '09:30',
+    '10:00',
+    '10:30',
+    '11:00',
+    '11:30',
+    '13:00',
+    '13:30',
+    '14:00',
+    '14:30',
+    '15:00',
+    '15:30',
+    '16:00',
+    '16:30',
+    '17:00',
+    '17:30',
   ];
 
   // Filtered services
@@ -67,32 +82,34 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
     if (_searchController.text.isEmpty) {
       return _allServices;
     }
-    
+
     final searchTerm = _searchController.text.toLowerCase();
     return _allServices.where((service) {
       return service['name']!.toLowerCase().contains(searchTerm) ||
-             service['category']!.toLowerCase().contains(searchTerm);
+          service['category']!.toLowerCase().contains(searchTerm);
     }).toList();
   }
 
   // Available providers based on selected service
   List<Map<String, dynamic>> get _availableProviders {
     if (_selectedService == null) return _allProviders;
-    
+
     final selectedServiceData = _allServices.firstWhere(
       (service) => service['id'] == _selectedService,
       orElse: () => <String, dynamic>{},
     );
-    
+
     if (selectedServiceData.isEmpty) return _allProviders;
-    
-    final serviceProviderId = selectedServiceData['provider_id']?.toString() ?? '';
+
+    final serviceProviderId =
+        selectedServiceData['provider_id']?.toString() ?? '';
     if (serviceProviderId.isNotEmpty) {
       // Service'teki provider_id ile provider'ların id'sini eşleştir
-      return _allProviders.where((provider) => 
-        provider['id'] == serviceProviderId).toList();
+      return _allProviders
+          .where((provider) => provider['id'] == serviceProviderId)
+          .toList();
     }
-    
+
     return _allProviders;
   }
 
@@ -101,12 +118,14 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
     if (_providerSearchController.text.isEmpty) {
       return _availableProviders;
     }
-    
+
     final searchTerm = _providerSearchController.text.toLowerCase();
     return _availableProviders.where((provider) {
       return provider['name']!.toLowerCase().contains(searchTerm) ||
-             (provider['business_name'] ?? '').toLowerCase().contains(searchTerm) ||
-             (provider['specialization'] ?? '').toLowerCase().contains(searchTerm);
+          (provider['business_name'] ?? '')
+              .toLowerCase()
+              .contains(searchTerm) ||
+          (provider['specialization'] ?? '').toLowerCase().contains(searchTerm);
     }).toList();
   }
 
@@ -170,17 +189,23 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
 
   Future<void> _loadServices() async {
     setState(() => _isLoadingServices = true);
-    
+
     try {
       final hybridApi = HybridApiService();
       final response = await hybridApi.getServices();
       final services = response['services'] as List<dynamic>? ?? [];
-      
+
+      debugPrint('🔍 Services API Response: ${services.length} services found');
+      if (services.isNotEmpty) {
+        debugPrint('🔍 First service: ${services.first}');
+      }
+
       setState(() {
         _allServices = services.map<Map<String, dynamic>>((service) {
           final serviceMap = service as Map<String, dynamic>;
           return {
-            'id': serviceMap['server_id']?.toString() ?? serviceMap['id']?.toString() ?? '',
+            'id': serviceMap['id']?.toString() ??
+                '', // server_id yerine id kullan
             'name': serviceMap['name'] ?? 'Bilinmeyen Hizmet',
             'description': serviceMap['description'] ?? '',
             'duration': '${serviceMap['duration'] ?? 30} dk',
@@ -190,8 +215,10 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
           };
         }).toList();
       });
+
+      debugPrint('✅ Services loaded: ${_allServices.length} services');
     } catch (e) {
-      print('Hizmetler yüklenirken hata: $e');
+      debugPrint('❌ Hizmetler yüklenirken hata: $e');
       setState(() {
         _allServices = [];
       });
@@ -202,19 +229,27 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
 
   Future<void> _loadProviders() async {
     setState(() => _isLoadingProviders = true);
-    
+
     try {
       final hybridApi = HybridApiService();
       final response = await hybridApi.getProviders();
       final providers = response['providers'] as List<dynamic>? ?? [];
-      
+
+      debugPrint(
+          '🔍 Providers API Response: ${providers.length} providers found');
+      if (providers.isNotEmpty) {
+        debugPrint('🔍 First provider: ${providers.first}');
+      }
+
       setState(() {
         _allProviders = providers.map<Map<String, dynamic>>((provider) {
           final providerMap = provider as Map<String, dynamic>;
           return {
-            'id': providerMap['server_id']?.toString() ?? providerMap['id']?.toString() ?? '',
+            'id': providerMap['id']?.toString() ??
+                '', // server_id yerine id kullan
             'user_id': providerMap['user_id']?.toString() ?? '',
-            'name': providerMap['user_name'] ?? 'Bilinmeyen Provider',
+            'name': providerMap['name'] ??
+                'Bilinmeyen Provider', // user_name yerine name kullan
             'business_name': providerMap['business_name'] ?? '',
             'description': providerMap['description'] ?? '',
             'specialization': providerMap['specialization'] ?? '',
@@ -229,8 +264,10 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
           };
         }).toList();
       });
+
+      debugPrint('✅ Providers loaded: ${_allProviders.length} providers');
     } catch (e) {
-      print('Providers yüklenirken hata: $e');
+      debugPrint('❌ Providers yüklenirken hata: $e');
       setState(() {
         _allProviders = [];
       });
@@ -251,27 +288,28 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
         _suggestBestTime();
       }
     } catch (e) {
-      print('Randevular yüklenirken hata: $e');
+      debugPrint('Randevular yüklenirken hata: $e');
     }
   }
 
   void _suggestBestTime() {
     if (_selectedProvider == null) return;
-    
+
     Map<String, int> slotUsage = {};
     for (var time in _timeSlots) {
-      final count = _existingAppointments.where((appt) =>
-        appt['appointment_date'] == DateFormat('yyyy-MM-dd').format(_selectedDate) &&
-        appt['appointment_time'] == time &&
-        appt['provider_id'] == _selectedProvider
-      ).length;
+      final count = _existingAppointments
+          .where((appt) =>
+              appt['appointment_date'] ==
+                  DateFormat('yyyy-MM-dd').format(_selectedDate) &&
+              appt['appointment_time'] == time &&
+              appt['provider_id'] == _selectedProvider)
+          .length;
       slotUsage[time] = count;
     }
-    
-    var bestTime = slotUsage.entries
-        .where((entry) => entry.value == 0)
-        .toList();
-    
+
+    var bestTime =
+        slotUsage.entries.where((entry) => entry.value == 0).toList();
+
     if (bestTime.isNotEmpty) {
       setState(() {
         _suggestedTime = bestTime.first.key;
@@ -281,30 +319,30 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
 
   bool _isTimeSlotOccupied(String timeSlot) {
     if (_selectedProvider == null) return false;
-    
+
     return _existingAppointments.any((appointment) {
-      return appointment['appointment_date'] == DateFormat('yyyy-MM-dd').format(_selectedDate) &&
-             appointment['appointment_time'] == timeSlot &&
-             appointment['provider_id'] == _selectedProvider;
+      return appointment['appointment_date'] ==
+              DateFormat('yyyy-MM-dd').format(_selectedDate) &&
+          appointment['appointment_time'] == timeSlot &&
+          appointment['provider_id'] == _selectedProvider;
     });
   }
 
   bool _isSlotConflicted(String timeSlot) {
     return _existingAppointments.any((appt) =>
-      appt['provider_id'] == _selectedProvider &&
-      appt['appointment_date'] == DateFormat('yyyy-MM-dd').format(_selectedDate) &&
-      appt['appointment_time'] == timeSlot
-    );
+        appt['provider_id'] == _selectedProvider &&
+        appt['appointment_date'] ==
+            DateFormat('yyyy-MM-dd').format(_selectedDate) &&
+        appt['appointment_time'] == timeSlot);
   }
 
   bool _hasAppointmentsOnDay(DateTime day) {
     if (_selectedProvider == null) return false;
-    
+
     final dayStr = DateFormat('yyyy-MM-dd').format(day);
-    return _existingAppointments.any((appt) => 
-      appt['appointment_date'] == dayStr && 
-      appt['provider_id'] == _selectedProvider
-    );
+    return _existingAppointments.any((appt) =>
+        appt['appointment_date'] == dayStr &&
+        appt['provider_id'] == _selectedProvider);
   }
 
   void _goToNextTab() {
@@ -320,12 +358,19 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
       case 1:
         return _selectedService != null; // Sağlayıcı sekmesi
       case 2:
-        return _selectedService != null && _selectedProvider != null; // Tarih/Saat sekmesi
+        return _selectedService != null &&
+            _selectedProvider != null; // Tarih/Saat sekmesi
       case 3:
-        return _selectedService != null && _selectedProvider != null && _selectedTime != null; // Bilgiler sekmesi
+        return _selectedService != null &&
+            _selectedProvider != null &&
+            _selectedTime != null; // Bilgiler sekmesi
       case 4:
-        return _selectedService != null && _selectedProvider != null && _selectedTime != null && 
-               _userNameController.text.isNotEmpty && _emailController.text.isNotEmpty && _phoneController.text.isNotEmpty; // Ödeme sekmesi
+        return _selectedService != null &&
+            _selectedProvider != null &&
+            _selectedTime != null &&
+            _userNameController.text.isNotEmpty &&
+            _emailController.text.isNotEmpty &&
+            _phoneController.text.isNotEmpty; // Ödeme sekmesi
       default:
         return false;
     }
@@ -333,7 +378,9 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
 
   Future<void> _createAppointment() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedService == null || _selectedProvider == null || _selectedTime == null) {
+    if (_selectedService == null ||
+        _selectedProvider == null ||
+        _selectedTime == null) {
       _showErrorSnackBar('Lütfen hizmet, sağlayıcı ve saat seçiniz');
       return;
     }
@@ -357,7 +404,7 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
       );
 
       final hybridApi = HybridApiService();
-      final result = await hybridApi.createAppointment(
+      await hybridApi.createAppointment(
         customerName: _userNameController.text.trim(),
         customerEmail: _emailController.text.trim(),
         customerPhone: _phoneController.text.trim(),
@@ -367,10 +414,18 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
         appointmentTime: _selectedTime!,
         notes: _notesController.text.trim(),
         paymentMethod: _paymentMethod,
-        cardNumber: _paymentMethod == 'online_payment' ? _cardNumberController.text.trim() : null,
-        cardHolder: _paymentMethod == 'online_payment' ? _cardHolderController.text.trim() : null,
-        expiryDate: _paymentMethod == 'online_payment' ? _expiryDateController.text.trim() : null,
-        cvv: _paymentMethod == 'online_payment' ? _cvvController.text.trim() : null,
+        cardNumber: _paymentMethod == 'online_payment'
+            ? _cardNumberController.text.trim()
+            : null,
+        cardHolder: _paymentMethod == 'online_payment'
+            ? _cardHolderController.text.trim()
+            : null,
+        expiryDate: _paymentMethod == 'online_payment'
+            ? _expiryDateController.text.trim()
+            : null,
+        cvv: _paymentMethod == 'online_payment'
+            ? _cvvController.text.trim()
+            : null,
       );
 
       // Backend 201 status code ile başarılı response döndürürse ApiService exception fırlatmaz
@@ -489,7 +544,8 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF667eea).withValues(alpha: 0.3)),
+        border:
+            Border.all(color: const Color(0xFF667eea).withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -556,7 +612,9 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
           ),
           const SizedBox(height: 8),
           _buildSummaryRow(
-            _paymentMethod == 'cash_on_service' ? Icons.money : Icons.credit_card,
+            _paymentMethod == 'cash_on_service'
+                ? Icons.money
+                : Icons.credit_card,
             'Ödeme',
             _paymentMethod == 'cash_on_service' ? 'Yerinde Öde' : 'Şimdi Öde',
             _paymentMethod == 'cash_on_service' ? Colors.orange : Colors.blue,
@@ -566,7 +624,8 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
     );
   }
 
-  Widget _buildSummaryRow(IconData icon, String label, String value, Color color) {
+  Widget _buildSummaryRow(
+      IconData icon, String label, String value, Color color) {
     return Row(
       children: [
         Container(
@@ -638,7 +697,8 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
         key: _formKey,
         child: TabBarView(
           controller: _tabController,
-          physics: const NeverScrollableScrollPhysics(), // Swipe'ı devre dışı bırak
+          physics:
+              const NeverScrollableScrollPhysics(), // Swipe'ı devre dışı bırak
           children: [
             _buildServiceTabContent(),
             _buildProviderTabContent(),
@@ -679,30 +739,33 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
           final isCompleted = _canAccessTab(index + 1);
           final isCurrent = _currentTabIndex == index;
           final isAccessible = _canAccessTab(index);
-          
+
           return Expanded(
             child: GestureDetector(
-              onTap: isAccessible ? () {
-                _tabController.animateTo(index);
-              } : null,
+              onTap: isAccessible
+                  ? () {
+                      _tabController.animateTo(index);
+                    }
+                  : null,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 margin: const EdgeInsets.symmetric(horizontal: 2),
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
                 decoration: BoxDecoration(
-                  color: isCurrent 
-                      ? const Color(0xFF667eea) 
-                      : isCompleted 
-                          ? Colors.green.withValues(alpha: 0.1) 
+                  color: isCurrent
+                      ? const Color(0xFF667eea)
+                      : isCompleted
+                          ? Colors.green.withValues(alpha: 0.1)
                           : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isCurrent 
+                    color: isCurrent
                         ? const Color(0xFF667eea)
-                        : isCompleted 
-                            ? Colors.green 
-                            : isAccessible 
-                                ? Colors.grey.shade300 
+                        : isCompleted
+                            ? Colors.green
+                            : isAccessible
+                                ? Colors.grey.shade300
                                 : Colors.grey.shade200,
                     width: 1,
                   ),
@@ -711,15 +774,15 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      isCompleted 
-                          ? Icons.check_circle 
+                      isCompleted
+                          ? Icons.check_circle
                           : steps[index]['icon'] as IconData,
-                      color: isCurrent 
-                          ? Colors.white 
-                          : isCompleted 
-                              ? Colors.green 
-                              : isAccessible 
-                                  ? const Color(0xFF667eea) 
+                      color: isCurrent
+                          ? Colors.white
+                          : isCompleted
+                              ? Colors.green
+                              : isAccessible
+                                  ? const Color(0xFF667eea)
                                   : Colors.grey.shade400,
                       size: 20,
                     ),
@@ -728,13 +791,14 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
                       steps[index]['title'] as String,
                       style: TextStyle(
                         fontSize: 10,
-                        fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
-                        color: isCurrent 
-                            ? Colors.white 
-                            : isCompleted 
-                                ? Colors.green 
-                                : isAccessible 
-                                    ? const Color(0xFF667eea) 
+                        fontWeight:
+                            isCurrent ? FontWeight.bold : FontWeight.w500,
+                        color: isCurrent
+                            ? Colors.white
+                            : isCompleted
+                                ? Colors.green
+                                : isAccessible
+                                    ? const Color(0xFF667eea)
                                     : Colors.grey.shade400,
                       ),
                       textAlign: TextAlign.center,
@@ -838,7 +902,7 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
 
   Widget _buildServiceCard(Map<String, dynamic> service) {
     final isSelected = _selectedService == service['id'];
-    
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: isSelected ? 4 : 2,
@@ -868,7 +932,9 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
                 width: 50,
                 height: 50,
                 decoration: BoxDecoration(
-                  color: isSelected ? const Color(0xFF667eea) : Colors.grey.shade200,
+                  color: isSelected
+                      ? const Color(0xFF667eea)
+                      : Colors.grey.shade200,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -886,7 +952,9 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: isSelected ? const Color(0xFF667eea) : Colors.black87,
+                        color: isSelected
+                            ? const Color(0xFF667eea)
+                            : Colors.black87,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -903,7 +971,8 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: Colors.blue.shade50,
                             borderRadius: BorderRadius.circular(6),
@@ -919,7 +988,8 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
                         ),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: Colors.green.shade50,
                             borderRadius: BorderRadius.circular(6),
@@ -980,8 +1050,8 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
         children: [
           _buildCustomerInfoSection(),
           const SizedBox(height: 30),
-          if (_userNameController.text.isNotEmpty && 
-              _emailController.text.isNotEmpty && 
+          if (_userNameController.text.isNotEmpty &&
+              _emailController.text.isNotEmpty &&
               _phoneController.text.isNotEmpty) ...[
             Container(
               width: double.infinity,
@@ -996,7 +1066,8 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF667eea).withValues(alpha: 0.3)),
+                border: Border.all(
+                    color: const Color(0xFF667eea).withValues(alpha: 0.3)),
               ),
               child: Column(
                 children: [
@@ -1061,9 +1132,9 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
       (service) => service['id'] == _selectedService,
       orElse: () => <String, dynamic>{},
     );
-    
+
     final price = selectedService['price'] ?? '0 ₺';
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1072,7 +1143,7 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
-        
+
         // Fiyat Kartı
         Container(
           width: double.infinity,
@@ -1130,16 +1201,16 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
             ],
           ),
         ),
-        
+
         const SizedBox(height: 24),
-        
+
         // Ödeme Yöntemi Seçimi
         const Text(
           'Ödeme Yöntemi',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
-        
+
         _buildPaymentMethodCard(
           'cash_on_service',
           'Yerinde Öde',
@@ -1148,7 +1219,7 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
           Colors.orange,
         ),
         const SizedBox(height: 12),
-        
+
         _buildPaymentMethodCard(
           'online_payment',
           'Şimdi Öde',
@@ -1156,7 +1227,7 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
           Icons.credit_card,
           Colors.blue,
         ),
-        
+
         // Kredi kartı formu (sadece "Şimdi Öde" seçildiğinde)
         if (_paymentMethod == 'online_payment') ...[
           const SizedBox(height: 24),
@@ -1166,9 +1237,10 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
     );
   }
 
-  Widget _buildPaymentMethodCard(String value, String title, String subtitle, IconData icon, Color color) {
+  Widget _buildPaymentMethodCard(
+      String value, String title, String subtitle, IconData icon, Color color) {
     final isSelected = _paymentMethod == value;
-    
+
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -1200,7 +1272,9 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: isSelected ? color.withValues(alpha: 0.2) : Colors.grey.shade100,
+                color: isSelected
+                    ? color.withValues(alpha: 0.2)
+                    : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
@@ -1278,7 +1352,6 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
             ],
           ),
           const SizedBox(height: 16),
-          
           TextFormField(
             controller: _cardHolderController,
             decoration: const InputDecoration(
@@ -1287,14 +1360,14 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
               border: OutlineInputBorder(),
             ),
             validator: (value) {
-              if (_paymentMethod == 'online_payment' && (value == null || value.trim().isEmpty)) {
+              if (_paymentMethod == 'online_payment' &&
+                  (value == null || value.trim().isEmpty)) {
                 return 'Kart sahibi adı gerekli';
               }
               return null;
             },
           ),
           const SizedBox(height: 12),
-          
           TextFormField(
             controller: _cardNumberController,
             decoration: const InputDecoration(
@@ -1305,14 +1378,14 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
             ),
             keyboardType: TextInputType.number,
             validator: (value) {
-              if (_paymentMethod == 'online_payment' && (value == null || value.trim().isEmpty)) {
+              if (_paymentMethod == 'online_payment' &&
+                  (value == null || value.trim().isEmpty)) {
                 return 'Kart numarası gerekli';
               }
               return null;
             },
           ),
           const SizedBox(height: 12),
-          
           Row(
             children: [
               Expanded(
@@ -1325,7 +1398,8 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
                     hintText: 'MM/YY',
                   ),
                   validator: (value) {
-                    if (_paymentMethod == 'online_payment' && (value == null || value.trim().isEmpty)) {
+                    if (_paymentMethod == 'online_payment' &&
+                        (value == null || value.trim().isEmpty)) {
                       return 'Son kullanma tarihi gerekli';
                     }
                     return null;
@@ -1345,7 +1419,8 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
                   keyboardType: TextInputType.number,
                   obscureText: true,
                   validator: (value) {
-                    if (_paymentMethod == 'online_payment' && (value == null || value.trim().isEmpty)) {
+                    if (_paymentMethod == 'online_payment' &&
+                        (value == null || value.trim().isEmpty)) {
                       return 'CVV gerekli';
                     }
                     return null;
@@ -1354,7 +1429,6 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
               ),
             ],
           ),
-          
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(12),
@@ -1430,7 +1504,7 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
 
   Widget _buildProviderCard(Map<String, dynamic> provider) {
     final isSelected = _selectedProvider == provider['id'];
-    
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: isSelected ? 4 : 2,
@@ -1457,7 +1531,8 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
             children: [
               CircleAvatar(
                 radius: 25,
-                backgroundColor: isSelected ? const Color(0xFF667eea) : Colors.grey.shade300,
+                backgroundColor:
+                    isSelected ? const Color(0xFF667eea) : Colors.grey.shade300,
                 child: Icon(
                   Icons.person,
                   color: isSelected ? Colors.white : Colors.grey.shade600,
@@ -1473,10 +1548,13 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: isSelected ? const Color(0xFF667eea) : Colors.black87,
+                        color: isSelected
+                            ? const Color(0xFF667eea)
+                            : Colors.black87,
                       ),
                     ),
-                    if (provider['business_name'] != null && provider['business_name']!.isNotEmpty) ...[
+                    if (provider['business_name'] != null &&
+                        provider['business_name']!.isNotEmpty) ...[
                       const SizedBox(height: 2),
                       Text(
                         provider['business_name']!,
@@ -1490,7 +1568,8 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(Icons.star, size: 16, color: Colors.amber.shade600),
+                        Icon(Icons.star,
+                            size: 16, color: Colors.amber.shade600),
                         const SizedBox(width: 4),
                         Text(
                           '${provider['rating']} (${provider['total_reviews']} değerlendirme)',
@@ -1501,10 +1580,12 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
                         ),
                       ],
                     ),
-                    if (provider['specialization'] != null && provider['specialization']!.isNotEmpty) ...[
+                    if (provider['specialization'] != null &&
+                        provider['specialization']!.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
                           color: Colors.orange.shade50,
                           borderRadius: BorderRadius.circular(4),
@@ -1557,7 +1638,7 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-                            color: Colors.grey.withValues(alpha: 0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 10,
           ),
@@ -1637,7 +1718,8 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.lightbulb, size: 14, color: Colors.green.shade600),
+                    Icon(Icons.lightbulb,
+                        size: 14, color: Colors.green.shade600),
                     const SizedBox(width: 4),
                     Text(
                       'Önerilen: $_suggestedTime',
@@ -1671,7 +1753,8 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
                   color: Colors.blue.shade100,
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Icon(Icons.info_outline, size: 16, color: Colors.blue.shade700),
+                child: Icon(Icons.info_outline,
+                    size: 16, color: Colors.blue.shade700),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -1694,14 +1777,14 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
             final isOccupied = _isTimeSlotOccupied(time);
             final isSelected = _selectedTime == time;
             final isSuggested = _suggestedTime == time;
-            final isPastTime = _selectedDate.isAtSameMomentAs(DateTime.now()) && 
-                               DateTime.now().hour >= int.parse(time.split(':')[0]);
-            
+            final isPastTime = _selectedDate.isAtSameMomentAs(DateTime.now()) &&
+                DateTime.now().hour >= int.parse(time.split(':')[0]);
+
             Color backgroundColor;
             Color borderColor;
             Color textColor;
             bool isEnabled = !isOccupied && !isPastTime;
-            
+
             if (isSelected) {
               backgroundColor = const Color(0xFF667eea);
               borderColor = const Color(0xFF667eea);
@@ -1718,21 +1801,24 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
               backgroundColor = Colors.green.shade50;
               borderColor = Colors.green;
               textColor = Colors.green.shade700;
-                         } else {
-               backgroundColor = Colors.green.shade50;
-               borderColor = Colors.green.shade200;
-               textColor = Colors.green.shade600;
-             }
-            
+            } else {
+              backgroundColor = Colors.green.shade50;
+              borderColor = Colors.green.shade200;
+              textColor = Colors.green.shade600;
+            }
+
             return GestureDetector(
-                             onTap: isEnabled ? () {
-                 setState(() {
-                   _selectedTime = time;
-                 });
-                 _goToNextTab(); // Bilgiler sekmesine geç
-               } : null,
+              onTap: isEnabled
+                  ? () {
+                      setState(() {
+                        _selectedTime = time;
+                      });
+                      _goToNextTab(); // Bilgiler sekmesine geç
+                    }
+                  : null,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: backgroundColor,
                   borderRadius: BorderRadius.circular(20),
@@ -1758,7 +1844,9 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
                       time,
                       style: TextStyle(
                         color: textColor,
-                        fontWeight: isSelected || isSuggested ? FontWeight.bold : FontWeight.normal,
+                        fontWeight: isSelected || isSuggested
+                            ? FontWeight.bold
+                            : FontWeight.normal,
                       ),
                     ),
                   ],
@@ -1774,7 +1862,8 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
             const SizedBox(width: 16),
             _buildTimeLegend(Colors.red.shade100, Colors.red.shade300, 'Dolu'),
             const SizedBox(width: 16),
-            _buildTimeLegend(Colors.green.shade50, Colors.green.shade300, 'Önerilen'),
+            _buildTimeLegend(
+                Colors.green.shade50, Colors.green.shade300, 'Önerilen'),
           ],
         ),
       ],
@@ -1915,4 +2004,4 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage> with Tick
       ),
     );
   }
-} 
+}

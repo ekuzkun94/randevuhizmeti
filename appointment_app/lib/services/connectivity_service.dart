@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 class ConnectivityService {
@@ -7,7 +8,8 @@ class ConnectivityService {
   ConnectivityService._internal();
 
   final Connectivity _connectivity = Connectivity();
-  StreamController<bool> connectionStatusController = StreamController<bool>.broadcast();
+  StreamController<bool> connectionStatusController =
+      StreamController<bool>.broadcast();
 
   bool _isOnline = false;
   bool get isOnline => _isOnline;
@@ -17,7 +19,7 @@ class ConnectivityService {
   Future<void> initialize() async {
     // İlk bağlantı durumunu kontrol et
     await _checkConnectionStatus();
-    
+
     // Bağlantı durumu değişikliklerini dinle
     _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
   }
@@ -27,14 +29,14 @@ class ConnectivityService {
       final connectivityResult = await _connectivity.checkConnectivity();
       _updateConnectionStatus(connectivityResult);
     } catch (e) {
-      print('Connectivity check error: $e');
+      debugPrint('Connectivity check error: $e');
       _updateConnectionStatus(ConnectivityResult.none);
     }
   }
 
   void _updateConnectionStatus(ConnectivityResult connectivityResult) {
     final wasOnline = _isOnline;
-    
+
     switch (connectivityResult) {
       case ConnectivityResult.wifi:
       case ConnectivityResult.mobile:
@@ -50,11 +52,12 @@ class ConnectivityService {
     // Durum değiştiyse bildirim gönder
     if (wasOnline != _isOnline) {
       connectionStatusController.add(_isOnline);
-      print('Connection status changed: ${_isOnline ? "Online" : "Offline"}');
+      debugPrint(
+          'Connection status changed: ${_isOnline ? "Online" : "Offline"}');
     }
   }
 
   void dispose() {
     connectionStatusController.close();
   }
-} 
+}

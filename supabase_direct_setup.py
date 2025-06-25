@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-Supabase Direct Database Setup
-MySQL'e bağımlı olmadan direkt Supabase'de tabloları oluşturur
+🚀 Supabase Direct Setup Script
+PostgreSQL bağımlılığı olmadan direkt Supabase'de tabloları oluşturur
 """
 
 import os

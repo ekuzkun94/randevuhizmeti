@@ -1,5 +1,30 @@
 # RENDER.COM DEPLOYMENT FIX
 # Sadece 2 paket - hiç compilation error olmaz!
 
+# ZamanYönet AI Enhanced Dependencies
+# Core Flask packages
 Flask==2.3.3
+Flask-SQLAlchemy==3.0.5
+Flask-CORS==4.0.0
+Flask-JWT-Extended==4.5.2
 gunicorn==21.2.0
+
+# Security & Auth
+bcrypt==4.0.1
+PyJWT==2.8.0
+
+# Utilities
+python-dotenv==1.0.0
+
+# Date & Time
+python-dateutil==2.8.2
+
+# JSON handling
+jsonschema==4.19.0
+
+# Logging
+colorama==0.4.6
+
+# For development only (comment out for production)
+# pytest==7.4.2
+# pytest-flask==1.2.0

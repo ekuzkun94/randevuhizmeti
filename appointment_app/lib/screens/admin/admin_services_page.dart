@@ -254,7 +254,7 @@ class _AdminServicesPageState extends State<AdminServicesPage>
                   '${filteredServices.length} hizmet listeleniyor',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -263,7 +263,7 @@ class _AdminServicesPageState extends State<AdminServicesPage>
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
@@ -279,7 +279,7 @@ class _AdminServicesPageState extends State<AdminServicesPage>
             color: Colors.redAccent,
             tooltip: 'Çıkış Yap',
             style: IconButton.styleFrom(
-              backgroundColor: Colors.white.withOpacity(0.1),
+              backgroundColor: Colors.white.withValues(alpha: 0.1),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -298,7 +298,7 @@ class _AdminServicesPageState extends State<AdminServicesPage>
           // Search Bar
           Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
             ),
             child: TextField(
@@ -306,9 +306,9 @@ class _AdminServicesPageState extends State<AdminServicesPage>
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: 'Hizmet ara...',
-                hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
                 prefixIcon:
-                    Icon(Icons.search, color: Colors.white.withOpacity(0.7)),
+                    Icon(Icons.search, color: Colors.white.withValues(alpha: 0.7)),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide.none,
@@ -321,7 +321,7 @@ class _AdminServicesPageState extends State<AdminServicesPage>
           const SizedBox(height: 16),
 
           // Categories
-          Container(
+          SizedBox(
             height: 100,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
@@ -346,10 +346,10 @@ class _AdminServicesPageState extends State<AdminServicesPage>
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: category['color'].withOpacity(0.2),
+              color: category['color'].withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: category['color'].withOpacity(0.3),
+                color: category['color'].withValues(alpha: 0.3),
                 width: 1,
               ),
             ),
@@ -400,7 +400,7 @@ class _AdminServicesPageState extends State<AdminServicesPage>
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -425,7 +425,7 @@ class _AdminServicesPageState extends State<AdminServicesPage>
                 : 'Henüz hiç hizmet eklenmemiş',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.white.withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -461,12 +461,12 @@ class _AdminServicesPageState extends State<AdminServicesPage>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.white.withOpacity(0.1),
-            Colors.white.withOpacity(0.05),
+            Colors.white.withValues(alpha: 0.1),
+            Colors.white.withValues(alpha: 0.05),
           ],
         ),
         border: Border.all(
-          color: Colors.white.withOpacity(0.2),
+          color: Colors.white.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -481,7 +481,7 @@ class _AdminServicesPageState extends State<AdminServicesPage>
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.2),
+                    color: Colors.blue.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
@@ -518,7 +518,7 @@ class _AdminServicesPageState extends State<AdminServicesPage>
                     service['description'] ?? 'Açıklama yok',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.white.withValues(alpha: 0.7),
                     ),
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
@@ -529,7 +529,7 @@ class _AdminServicesPageState extends State<AdminServicesPage>
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.05),
+                      color: Colors.white.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Column(

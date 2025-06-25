@@ -192,42 +192,7 @@ CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5001", "app:app"]
 FLASK_ENV=production
 SECRET_KEY=your-super-secret-key
 JWT_SECRET_KEY=your-jwt-secret
-MYSQL_HOST=your-db-host
-MYSQL_PASSWORD=your-secure-password
+SUPABASE_URL=https://ugmyyphiqoahludwuzpu.supabase.co
+SUPABASE_ANON_KEY=your-supabase-anon-key
+SUPABASE_PASSWORD=your-secure-password
 ```
-
-## 📈 Monitoring
-
-### Health Check
-```bash
-curl http://localhost:5001/health
-```
-
-### Log Monitoring
-```bash
-tail -f logs/app.log | jq '.'
-```
-
-## 🔮 Gelecek İyileştirmeler
-
-- [ ] **API Documentation** - OpenAPI/Swagger integration
-- [ ] **Caching** - Redis cache implementation
-- [ ] **Message Queue** - Celery for background tasks
-- [ ] **Microservices** - Service decomposition
-- [ ] **GraphQL** - Alternative API layer
-- [ ] **Real-time** - WebSocket support
-- [ ] **Analytics** - Advanced reporting
-- [ ] **Mobile API** - Mobile-specific optimizations
-
-## 📞 Destek
-
-Bu iyileştirmeler hakkında sorularınız için:
-- 📧 Email: support@zamanyonet.com
-- 📚 Documentation: https://docs.zamanyonet.com
-- 🐛 Issues: GitHub repository
-
----
-
-**Version:** 2.0.0  
-**Date:** 2024  
-**Author:** ZamanYönet Development Team 

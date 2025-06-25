@@ -37,22 +37,23 @@ CORS(app, resources={
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Supabase Database Configuration
-SUPABASE_URL = "ugmyyphiqoahludwuzpu.supabase.co"
-SUPABASE_PORT = "5432"
-SUPABASE_DB = "postgres"
-SUPABASE_USER = os.getenv('SUPABASE_USER', 'postgres')
-SUPABASE_PASSWORD = os.getenv('SUPABASE_PASSWORD', '')
+# 🔗 Supabase Configuration (Updated Keys)
+SUPABASE_URL = "https://ugmyyphiqoahludwuzpu.supabase.co"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnbXl5cGhpcW9haGx1ZHd1enB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3ODYxOTUsImV4cCI6MjA2NjM2MjE5NX0.n3FmnmMjVqvodqmnvf1g74pACaZuiZ4SYw7oVMekyoc"
+SUPABASE_SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnbXl5cGhpcW9haGx1ZHd1enB1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MDc4NjE5NSwiZXhwIjoyMDY2MzYyMTk1fQ.Owy1Ps0tWq5JiqMM27vpsrp-N6KJoQvwwFPGCxy98QI"
+SUPABASE_PASSWORD = os.environ.get('SUPABASE_PASSWORD', '*RasT_1385*!')
+
+# Database URL with pooler (Port 6543)
+DATABASE_URL = f"postgresql+pg8000://postgres.ugmyyphiqoahludwuzpu:{SUPABASE_PASSWORD}@aws-0-eu-central-1.pooler.supabase.com:6543/postgres"
 
 def get_db_connection():
-    """Get Supabase database connection"""
+    """Get Supabase database connection via pooler"""
     try:
+        # Use pooler connection string for Supabase
+        connection_string = DATABASE_URL
+        
         connection = psycopg2.connect(
-            host=SUPABASE_URL,
-            port=SUPABASE_PORT,
-            database=SUPABASE_DB,
-            user=SUPABASE_USER,
-            password=SUPABASE_PASSWORD,
+            connection_string,
             cursor_factory=RealDictCursor
         )
         return connection

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:appointment_app/services/api_service.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:async';
 
@@ -291,7 +290,7 @@ class _AdminRolesPageState extends State<AdminRolesPage>
                       : '${users.length} kullanıcı listeleniyor',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -300,7 +299,7 @@ class _AdminRolesPageState extends State<AdminRolesPage>
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
@@ -316,7 +315,7 @@ class _AdminRolesPageState extends State<AdminRolesPage>
             color: Colors.redAccent,
             tooltip: 'Çıkış Yap',
             style: IconButton.styleFrom(
-              backgroundColor: Colors.white.withOpacity(0.1),
+              backgroundColor: Colors.white.withValues(alpha: 0.1),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -331,7 +330,7 @@ class _AdminRolesPageState extends State<AdminRolesPage>
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -372,7 +371,7 @@ class _AdminRolesPageState extends State<AdminRolesPage>
                                 Shadow(
                                   offset: const Offset(0, 1),
                                   blurRadius: 2,
-                                  color: Colors.black.withOpacity(0.5),
+                                  color: Colors.black.withValues(alpha: 0.5),
                                 ),
                               ]
                             : null,
@@ -419,7 +418,7 @@ class _AdminRolesPageState extends State<AdminRolesPage>
                                 Shadow(
                                   offset: const Offset(0, 1),
                                   blurRadius: 2,
-                                  color: Colors.black.withOpacity(0.5),
+                                  color: Colors.black.withValues(alpha: 0.5),
                                 ),
                               ]
                             : null,
@@ -485,12 +484,12 @@ class _AdminRolesPageState extends State<AdminRolesPage>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.white.withOpacity(0.1),
-            Colors.white.withOpacity(0.05),
+            Colors.white.withValues(alpha: 0.1),
+            Colors.white.withValues(alpha: 0.05),
           ],
         ),
         border: Border.all(
-          color: Colors.white.withOpacity(0.2),
+          color: Colors.white.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -500,7 +499,7 @@ class _AdminRolesPageState extends State<AdminRolesPage>
         leading: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: role['color'].withOpacity(0.2),
+            color: role['color'].withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(
@@ -525,7 +524,7 @@ class _AdminRolesPageState extends State<AdminRolesPage>
               role['description'],
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
               ),
             ),
             const SizedBox(height: 8),
@@ -547,7 +546,7 @@ class _AdminRolesPageState extends State<AdminRolesPage>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(0.2),
+        color: Colors.blue.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
@@ -566,7 +565,7 @@ class _AdminRolesPageState extends State<AdminRolesPage>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -621,7 +620,7 @@ class _AdminRolesPageState extends State<AdminRolesPage>
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -658,8 +657,8 @@ class _AdminRolesPageState extends State<AdminRolesPage>
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: hasPermission
-            ? color.withOpacity(0.2)
-            : Colors.grey.withOpacity(0.2),
+            ? color.withValues(alpha: 0.2)
+            : Colors.grey.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
@@ -700,12 +699,12 @@ class _AdminRolesPageState extends State<AdminRolesPage>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.white.withOpacity(0.1),
-            Colors.white.withOpacity(0.05),
+            Colors.white.withValues(alpha: 0.1),
+            Colors.white.withValues(alpha: 0.05),
           ],
         ),
         border: Border.all(
-          color: Colors.white.withOpacity(0.2),
+          color: Colors.white.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -714,7 +713,7 @@ class _AdminRolesPageState extends State<AdminRolesPage>
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: role['color'].withOpacity(0.2),
+              color: role['color'].withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -741,7 +740,7 @@ class _AdminRolesPageState extends State<AdminRolesPage>
                   user['email'] ?? '',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -749,7 +748,7 @@ class _AdminRolesPageState extends State<AdminRolesPage>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: role['color'].withOpacity(0.2),
+                    color: role['color'].withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -795,7 +794,7 @@ class _AdminRolesPageState extends State<AdminRolesPage>
     Map<String, Map<String, bool>> tempPermissions = {};
     if (isEditing) {
       tempPermissions =
-          Map<String, Map<String, bool>>.from(role!['permissions']);
+          Map<String, Map<String, bool>>.from(role['permissions']);
     } else {
       for (String module in permissionModules) {
         tempPermissions[module] = {

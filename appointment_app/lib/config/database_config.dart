@@ -2,12 +2,11 @@ class DatabaseConfig {
   // 🚀 Supabase Production Configuration
   static const String supabaseUrl = 'https://ugmyyphiqoahludwuzpu.supabase.co';
   static const String supabaseAnonKey =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnbXl5cGhpcW9haGx1ZHd1enB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTQwNDYxMzIsImV4cCI6MjAwOTYyMjEzMn0.ZhXyYF8ZQ8YmQlYZxZmKQmF8g7_ZqYpFqZmKQmF8g7Q';
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnbXl5cGhpcW9haGx1ZHd1enB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3ODYxOTUsImV4cCI6MjA2NjM2MjE5NX0.n3FmnmMjVqvodqmnvf1g74pACaZuiZ4SYw7oVMekyoc';
 
-  // 🌐 Production API Configuration
-  static const String apiBaseUrl =
-      'https://zamanyonet-supabase-api.onrender.com';
-  static const String websiteUrl = 'https://zamanyonet-website.onrender.com';
+  // 🌐 Local Development API Configuration
+  static const String apiBaseUrl = 'http://localhost:5001'; // Local development
+  static const String websiteUrl = 'http://localhost:3000';
 
   // 📱 API Endpoints
   static const String apiHealth = '$apiBaseUrl/health';

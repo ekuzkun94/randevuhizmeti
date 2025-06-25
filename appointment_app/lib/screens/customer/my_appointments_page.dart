@@ -61,7 +61,7 @@ class _MyAppointmentsPageState extends State<MyAppointmentsPage> {
                   'duration': '${appointmentMap['duration'] ?? 30} dk',
                 };
               } catch (e) {
-                print('Error parsing appointment: $e');
+                debugPrint('Error parsing appointment: $e');
                 return {
                   'id': appointmentMap['id']?.toString() ?? '',
                   'serviceName': 'Bilinmeyen Hizmet',
@@ -98,7 +98,7 @@ class _MyAppointmentsPageState extends State<MyAppointmentsPage> {
         });
       }
     } catch (e) {
-      print('Randevular yüklenemedi: $e');
+      debugPrint('Randevular yüklenemedi: $e');
       setState(() => _appointments = []);
     } finally {
       setState(() => _isLoading = false);

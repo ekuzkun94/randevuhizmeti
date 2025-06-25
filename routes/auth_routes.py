@@ -177,8 +177,17 @@ def forgot_password():
         )
         password_reset.save()
         
-        # TODO: Email gönderme işlemi burada yapılacak
-        # send_password_reset_email(email, reset_token)
+        # Email gönderme işlemi
+        from utils.email_service import email_service
+        email_sent = email_service.send_password_reset_email(
+            email=email, 
+            reset_token=reset_token,
+            user_name=user.name
+        )
+        
+        if not email_sent:
+            app_logger.log_warning('password_reset_email_failed', 
+                                 f'Failed to send password reset email to {email}')
         
         app_logger.log_business_event('password_reset_requested', {
             'email': email,

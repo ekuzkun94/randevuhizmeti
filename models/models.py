@@ -601,4 +601,245 @@ class PerformanceLog(db.Model):
             except json.JSONDecodeError:
                 data['query_params'] = self.query_params
         
-        return data 
+        return data
+
+# ==================== AI ANALIZ ÖNERİLERİ - YENİ MODELLER ====================
+
+class Business(db.Model, BaseModel):
+    """İşletme modeli - SaaS Multi-tenant yapısı"""
+    __tablename__ = 'businesses'
+    
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    name = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text)
+    owner_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
+    business_type = db.Column(db.String(100))  # salon, clinic, gym, etc.
+    address = db.Column(db.Text)
+    city = db.Column(db.String(100))
+    phone = db.Column(db.String(20))
+    email = db.Column(db.String(255))
+    website = db.Column(db.String(255))
+    
+    # Business settings
+    timezone = db.Column(db.String(50), default='Europe/Istanbul')
+    currency = db.Column(db.String(3), default='TRY')
+    language = db.Column(db.String(5), default='tr_TR')
+    
+    # Subscription & billing
+    subscription_type = db.Column(db.String(20), default='free')  # free, basic, premium
+    subscription_expires = db.Column(db.DateTime)
+    max_providers = db.Column(db.Integer, default=1)
+    max_customers = db.Column(db.Integer, default=100)
+    
+    # Status
+    is_active = db.Column(db.Boolean, default=True)
+    is_verified = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    
+    # Relationships
+    providers = db.relationship('Provider', backref='business', lazy=True)
+    user_businesses = db.relationship('UserBusiness', backref='business', lazy=True, cascade='all, delete-orphan')
+
+class UserBusiness(db.Model, BaseModel):
+    """Kullanıcı-İşletme ilişki tablosu"""
+    __tablename__ = 'user_businesses'
+    
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
+    business_id = db.Column(db.String(36), db.ForeignKey('businesses.id'), nullable=False)
+    role = db.Column(db.String(50), nullable=False)  # owner, admin, provider, customer
+    permissions = db.Column(db.Text)  # JSON format
+    is_active = db.Column(db.Boolean, default=True)
+    joined_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    
+    # Relationships
+    user = db.relationship('User', backref='user_businesses')
+
+class Medication(db.Model, BaseModel):
+    """İlaç takip modeli"""
+    __tablename__ = 'medications'
+    
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
+    business_id = db.Column(db.String(36), db.ForeignKey('businesses.id'))
+    
+    # Medication info
+    name = db.Column(db.String(255), nullable=False)
+    dosage = db.Column(db.String(100))  # 5mg, 1 tablet, etc.
+    frequency = db.Column(db.String(100))  # daily, twice_daily, weekly
+    instructions = db.Column(db.Text)
+    
+    # Schedule
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date)
+    times = db.Column(db.Text)  # JSON: ["08:00", "20:00"]
+    
+    # Status & tracking
+    is_active = db.Column(db.Boolean, default=True)
+    adherence_rate = db.Column(db.Float, default=0.0)  # 0-100 compliance percentage
+    notes = db.Column(db.Text)
+    
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    
+    # Relationships
+    user = db.relationship('User', backref='medications')
+    medication_logs = db.relationship('MedicationLog', backref='medication', lazy=True, cascade='all, delete-orphan')
+
+class MedicationLog(db.Model, BaseModel):
+    """İlaç alım kayıtları"""
+    __tablename__ = 'medication_logs'
+    
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    medication_id = db.Column(db.String(36), db.ForeignKey('medications.id'), nullable=False)
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
+    
+    # Log details
+    scheduled_time = db.Column(db.DateTime, nullable=False)
+    taken_time = db.Column(db.DateTime)
+    status = db.Column(db.String(20), default='pending')  # pending, taken, missed, skipped
+    delay_minutes = db.Column(db.Integer, default=0)
+    notes = db.Column(db.Text)
+    
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    
+    # Relationships
+    user = db.relationship('User', backref='medication_logs')
+
+class Activity(db.Model, BaseModel):
+    """Aktivite takip modeli"""
+    __tablename__ = 'activities'
+    
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
+    business_id = db.Column(db.String(36), db.ForeignKey('businesses.id'))
+    
+    # Activity info
+    name = db.Column(db.String(255), nullable=False)
+    category = db.Column(db.String(100))  # exercise, work, leisure, health
+    description = db.Column(db.Text)
+    
+    # Time tracking
+    date = db.Column(db.Date, nullable=False, index=True)
+    start_time = db.Column(db.DateTime)
+    end_time = db.Column(db.DateTime)
+    duration_minutes = db.Column(db.Integer)
+    
+    # Health & fitness metrics
+    calories_burned = db.Column(db.Integer)
+    steps = db.Column(db.Integer)
+    distance_km = db.Column(db.Float)
+    heart_rate_avg = db.Column(db.Integer)
+    
+    # Status & rating
+    status = db.Column(db.String(20), default='completed')  # planned, in_progress, completed, cancelled
+    energy_level = db.Column(db.Integer)  # 1-10 scale
+    mood_rating = db.Column(db.Integer)  # 1-10 scale
+    notes = db.Column(db.Text)
+    
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    
+    # Relationships
+    user = db.relationship('User', backref='activities')
+
+class Task(db.Model, BaseModel):
+    """Görev takip modeli"""
+    __tablename__ = 'tasks'
+    
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
+    business_id = db.Column(db.String(36), db.ForeignKey('businesses.id'))
+    
+    # Task info
+    title = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text)
+    category = db.Column(db.String(100))  # work, personal, health, admin
+    priority = db.Column(db.String(20), default='medium')  # low, medium, high, urgent
+    
+    # Time management
+    due_date = db.Column(db.DateTime)
+    estimated_duration = db.Column(db.Integer)  # minutes
+    actual_duration = db.Column(db.Integer)  # minutes
+    
+    # Task hierarchy
+    parent_task_id = db.Column(db.String(36), db.ForeignKey('tasks.id'))
+    project = db.Column(db.String(255))
+    tags = db.Column(db.Text)  # JSON array
+    
+    # Status tracking
+    status = db.Column(db.String(20), default='todo')  # todo, in_progress, completed, cancelled, deferred
+    completion_rate = db.Column(db.Integer, default=0)  # 0-100%
+    completed_at = db.Column(db.DateTime)
+    
+    # AI insights
+    difficulty_score = db.Column(db.Integer)  # 1-10 AI predicted difficulty
+    time_prediction = db.Column(db.Integer)  # AI predicted duration in minutes
+    optimal_time_slot = db.Column(db.String(50))  # AI suggested time: "morning", "afternoon", "evening"
+    
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    
+    # Relationships
+    user = db.relationship('User', backref='tasks')
+    subtasks = db.relationship('Task', backref=db.backref('parent_task', remote_side=[id]))
+
+class UserBehavior(db.Model, BaseModel):
+    """AI için kullanıcı davranış verileri"""
+    __tablename__ = 'user_behaviors'
+    
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
+    
+    # Behavior tracking
+    action_type = db.Column(db.String(100), nullable=False)  # appointment_book, medication_take, task_complete
+    action_data = db.Column(db.Text)  # JSON data
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    
+    # Context
+    device_type = db.Column(db.String(50))  # mobile, web, tablet
+    location = db.Column(db.String(100))
+    day_of_week = db.Column(db.Integer)  # 0-6
+    hour_of_day = db.Column(db.Integer)  # 0-23
+    
+    # AI analysis
+    pattern_score = db.Column(db.Float)  # AI calculated pattern relevance
+    anomaly_score = db.Column(db.Float)  # AI detected anomaly level
+    
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    
+    # Relationships
+    user = db.relationship('User', backref='behaviors')
+
+class AIRecommendation(db.Model, BaseModel):
+    """AI önerileri"""
+    __tablename__ = 'ai_recommendations'
+    
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
+    
+    # Recommendation details
+    type = db.Column(db.String(100), nullable=False)  # time_optimization, health_reminder, task_scheduling
+    title = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text)
+    action_data = db.Column(db.Text)  # JSON: what action to take
+    
+    # AI metrics
+    confidence_score = db.Column(db.Float)  # 0-1, AI confidence in recommendation
+    impact_score = db.Column(db.Float)  # 0-1, predicted impact on user productivity
+    priority = db.Column(db.String(20), default='medium')  # low, medium, high
+    
+    # Status
+    status = db.Column(db.String(20), default='pending')  # pending, accepted, declined, expired
+    expires_at = db.Column(db.DateTime)
+    viewed_at = db.Column(db.DateTime)
+    responded_at = db.Column(db.DateTime)
+    
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    
+    # Relationships
+    user = db.relationship('User', backref='ai_recommendations') 

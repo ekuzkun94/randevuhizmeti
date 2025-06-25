@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:appointment_app/services/api_service.dart';
-import 'package:go_router/go_router.dart';
 import 'dart:async';
 
 class AdminAppointmentsPage extends StatefulWidget {
@@ -14,6 +13,7 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  final TextEditingController searchController = TextEditingController();
 
   List<Map<String, dynamic>> appointments = [];
   List<Map<String, dynamic>> filteredAppointments = [];
@@ -128,16 +128,6 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage>
     });
   }
 
-  void _onSearchChanged(String query) {
-    _searchTimer?.cancel();
-    _searchTimer = Timer(const Duration(milliseconds: 300), () {
-      setState(() {
-        searchQuery = query;
-        _applyFilters();
-      });
-    });
-  }
-
   Future<void> _updateAppointmentStatus(
       String appointmentId, String newStatus) async {
     try {
@@ -201,45 +191,6 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage>
     }
   }
 
-  void _logout() async {
-    // Çıkış onay dialogu göster
-    final shouldLogout = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1a1a2e),
-        title: const Text(
-          'Çıkış Yap',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: const Text(
-          'Oturumu kapatmak istediğinizden emin misiniz?',
-          style: TextStyle(color: Colors.white70),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('İptal', style: TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Çıkış Yap'),
-          ),
-        ],
-      ),
-    );
-
-    if (shouldLogout == true) {
-      // Kullanıcı oturumunu kapat
-      if (context.mounted) {
-        context.go('/login');
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -260,13 +211,132 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage>
             opacity: _fadeAnimation,
             child: Column(
               children: [
-                // Header
-                _buildHeader(),
+                // Modern header with search and filters
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      // Title and stats row
+                      Row(
+                        children: [
+                          IconButton(
+                            onPressed: () => Navigator.pop(context),
+                            icon: const Icon(Icons.arrow_back,
+                                color: Colors.white),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Randevu Yönetimi',
+                                  style: TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                Text(
+                                  '${filteredAppointments.length} randevu listeleniyor',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.white.withValues(alpha: 0.7),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.calendar_today,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
 
-                // Filters and Search
-                _buildFiltersAndSearch(),
+                      // Search bar
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            width: 1,
+                          ),
+                        ),
+                        child: TextField(
+                          controller: searchController,
+                          onChanged: (value) {
+                            setState(() {
+                              searchQuery = value;
+                              _applyFilters();
+                            });
+                          },
+                          style: const TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            hintText: 'Müşteri, sağlayıcı veya hizmet ara...',
+                            hintStyle: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.5)),
+                            border: InputBorder.none,
+                            prefixIcon: Icon(Icons.search,
+                                color: Colors.white.withValues(alpha: 0.7)),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
 
-                // Appointments List
+                      // Filter chips
+                      SizedBox(
+                        height: 40,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          children: [
+                            _buildFilterChip('all', 'Tümü', Icons.apps),
+                            ...statusTranslations.entries.map((entry) {
+                              IconData icon;
+                              switch (entry.key) {
+                                case 'pending':
+                                  icon = Icons.hourglass_empty;
+                                  break;
+                                case 'confirmed':
+                                  icon = Icons.check_circle;
+                                  break;
+                                case 'completed':
+                                  icon = Icons.done_all;
+                                  break;
+                                case 'cancelled':
+                                  icon = Icons.cancel;
+                                  break;
+                                case 'in_progress':
+                                  icon = Icons.play_circle;
+                                  break;
+                                default:
+                                  icon = Icons.circle;
+                              }
+                              return _buildFilterChip(
+                                  entry.key, entry.value, icon);
+                            }).toList(),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Appointments list
                 Expanded(
                   child: isLoading
                       ? _buildLoadingState()
@@ -284,118 +354,6 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage>
         backgroundColor: Colors.blue,
         icon: const Icon(Icons.add),
         label: const Text('Yeni Randevu'),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Randevu Yönetimi',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                Text(
-                  '${filteredAppointments.length} randevu listeleniyor',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white.withOpacity(0.7),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.event_note,
-              color: Colors.white,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 12),
-          IconButton(
-            onPressed: _logout,
-            icon: const Icon(Icons.logout_rounded),
-            color: Colors.redAccent,
-            tooltip: 'Çıkış Yap',
-            style: IconButton.styleFrom(
-              backgroundColor: Colors.white.withOpacity(0.1),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFiltersAndSearch() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      child: Column(
-        children: [
-          // Search Bar
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: TextField(
-              onChanged: _onSearchChanged,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: 'Müşteri, hizmet veya sağlayıcı ara...',
-                hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-                prefixIcon:
-                    Icon(Icons.search, color: Colors.white.withOpacity(0.7)),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
-                ),
-                filled: true,
-                fillColor: Colors.transparent,
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Filter Chips
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _buildFilterChip('all', 'Tümü', Icons.apps),
-                _buildFilterChip('pending', 'Beklemede', Icons.hourglass_empty),
-                _buildFilterChip('confirmed', 'Onaylandı', Icons.check_circle),
-                _buildFilterChip(
-                    'in_progress', 'Devam Ediyor', Icons.play_circle),
-                _buildFilterChip('completed', 'Tamamlandı', Icons.done_all),
-                _buildFilterChip('cancelled', 'İptal', Icons.cancel),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -420,10 +378,11 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage>
             _applyFilters();
           });
         },
-        backgroundColor: Colors.white.withOpacity(0.1),
+        backgroundColor: Colors.white.withValues(alpha: 0.1),
         selectedColor: Colors.blue,
         labelStyle: TextStyle(
-          color: isSelected ? Colors.white : Colors.white.withOpacity(0.8),
+          color:
+              isSelected ? Colors.white : Colors.white.withValues(alpha: 0.8),
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         ),
       ),
@@ -454,7 +413,7 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage>
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -479,7 +438,7 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage>
                 : 'Henüz hiç randevu oluşturulmamış',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.white.withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -505,7 +464,6 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage>
     ));
 
     final approvalLevel = appointment['approval_level'] ?? 0;
-    final approvalStatus = appointment['approval_status'] ?? 'pending';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -515,12 +473,12 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.white.withOpacity(0.1),
-            Colors.white.withOpacity(0.05),
+            Colors.white.withValues(alpha: 0.1),
+            Colors.white.withValues(alpha: 0.05),
           ],
         ),
         border: Border.all(
-          color: Colors.white.withOpacity(0.2),
+          color: Colors.white.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -530,7 +488,7 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage>
         leading: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: statusColor.withOpacity(0.2),
+            color: statusColor.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(
@@ -555,20 +513,20 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage>
               appointment['service_name'] ?? 'Hizmet bilgisi yok',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
               ),
             ),
             const SizedBox(height: 4),
             Row(
               children: [
                 Icon(Icons.calendar_today,
-                    size: 14, color: Colors.white.withOpacity(0.6)),
+                    size: 14, color: Colors.white.withValues(alpha: 0.6)),
                 const SizedBox(width: 4),
                 Text(
                   '${appointment['appointment_date']} ${appointment['appointment_time']}',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.white.withOpacity(0.6),
+                    color: Colors.white.withValues(alpha: 0.6),
                   ),
                 ),
               ],
@@ -581,7 +539,7 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.2),
+                color: statusColor.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -599,11 +557,11 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage>
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.2),
+                  color: Colors.orange.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  '${approvalLevel} Onay',
+                  '$approvalLevel Onay',
                   style: const TextStyle(
                     fontSize: 8,
                     color: Colors.orange,
@@ -625,7 +583,7 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -668,13 +626,13 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage>
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: Colors.white.withOpacity(0.6)),
+          Icon(icon, size: 16, color: Colors.white.withValues(alpha: 0.6)),
           const SizedBox(width: 8),
           Text(
             '$label: ',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.white.withOpacity(0.6),
+              color: Colors.white.withValues(alpha: 0.6),
             ),
           ),
           Expanded(
@@ -699,20 +657,20 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage>
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.orange.withOpacity(0.1),
+        color: Colors.orange.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.orange.withOpacity(0.3)),
+        border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
-              const Icon(Icons.approval, color: Colors.orange, size: 16),
-              const SizedBox(width: 8),
+              Icon(Icons.approval, color: Colors.orange, size: 16),
+              SizedBox(width: 8),
               Text(
                 'Onay Durumu',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                   color: Colors.orange,
