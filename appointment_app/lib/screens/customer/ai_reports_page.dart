@@ -345,7 +345,7 @@ class _AIReportsPageState extends State<AIReportsPage>
                 Expanded(
                   child: _buildSummaryMetric(
                     'Yaşam Boyu Değer',
-                    '₺${(analytics['total_lifetime_value'] ?? 0.0).toStringAsFixed(0)}',
+                    '₺${((analytics['total_lifetime_value'] as num?) ?? 0.0).toStringAsFixed(0)}',
                     Icons.attach_money,
                     const Color(0xFF2196F3),
                   ),
@@ -358,7 +358,7 @@ class _AIReportsPageState extends State<AIReportsPage>
                 Expanded(
                   child: _buildSummaryMetric(
                     'Aylık Ortalama',
-                    '${(analytics['average_monthly_visits'] ?? 0.0).toStringAsFixed(1)}',
+                    '${((analytics['average_monthly_visits'] as num?) ?? 0.0).toStringAsFixed(1)}',
                     Icons.trending_up,
                     const Color(0xFFFF9800),
                   ),
@@ -548,8 +548,10 @@ class _AIReportsPageState extends State<AIReportsPage>
 
   Widget _buildTrendsChart() {
     final analytics = _reportData!['analytics'] ?? {};
-    final monthlyTrends =
-        List<Map<String, dynamic>>.from(analytics['monthly_trends'] ?? []);
+    final monthlyTrends = (analytics['monthly_trends'] as List?)
+            ?.map((item) => item as Map<String, dynamic>)
+            .toList() ??
+        <Map<String, dynamic>>[];
 
     if (monthlyTrends.isEmpty) {
       return const SizedBox.shrink();
@@ -666,8 +668,7 @@ class _AIReportsPageState extends State<AIReportsPage>
 
   Widget _buildTopServicesCard() {
     final analytics = _reportData!['analytics'] ?? {};
-    final topServices =
-        Map<String, dynamic>.from(analytics['top_services'] ?? {});
+    final topServices = analytics['top_services'] ?? {};
 
     if (topServices.isEmpty) {
       return const SizedBox.shrink();
@@ -787,8 +788,7 @@ class _AIReportsPageState extends State<AIReportsPage>
 
   Widget _buildPreferredProvidersCard() {
     final analytics = _reportData!['analytics'] ?? {};
-    final preferredProviders =
-        Map<String, dynamic>.from(analytics['preferred_providers'] ?? {});
+    final preferredProviders = analytics['preferred_providers'] ?? {};
 
     if (preferredProviders.isEmpty) {
       return const SizedBox.shrink();
@@ -986,7 +986,9 @@ class _AIReportsPageState extends State<AIReportsPage>
                 Expanded(
                   child: _buildPredictionMetric(
                     'Memnuniyet',
-                    (predictions['satisfaction_score'] ?? 0.0) * 100,
+                    ((predictions['satisfaction_score'] as num?) ?? 0.0)
+                            .toDouble() *
+                        100,
                     Icons.sentiment_very_satisfied,
                   ),
                 ),
@@ -994,7 +996,9 @@ class _AIReportsPageState extends State<AIReportsPage>
                 Expanded(
                   child: _buildPredictionMetric(
                     'Sadakat',
-                    (predictions['next_visit_probability'] ?? 0.0) * 100,
+                    ((predictions['next_visit_probability'] as num?) ?? 0.0)
+                            .toDouble() *
+                        100,
                     Icons.favorite,
                   ),
                 ),
@@ -1137,13 +1141,13 @@ class _AIReportsPageState extends State<AIReportsPage>
               children: [
                 _buildMetricCard(
                   'Yaşam Boyu Değer',
-                  '₺${(analytics['total_lifetime_value'] ?? 0.0).toStringAsFixed(0)}',
+                  '₺${((analytics['total_lifetime_value'] as num?) ?? 0.0).toStringAsFixed(0)}',
                   Icons.monetization_on,
                   const Color(0xFF4CAF50),
                 ),
                 _buildMetricCard(
                   'Aylık Ortalama',
-                  '${(analytics['average_monthly_visits'] ?? 0.0).toStringAsFixed(1)}',
+                  '${((analytics['average_monthly_visits'] as num?) ?? 0.0).toStringAsFixed(1)}',
                   Icons.calendar_view_month,
                   const Color(0xFF2196F3),
                 ),
@@ -1208,17 +1212,19 @@ class _AIReportsPageState extends State<AIReportsPage>
 
   String _getMostUsedService() {
     final analytics = _reportData!['analytics'] ?? {};
-    final topServices =
-        Map<String, dynamic>.from(analytics['top_services'] ?? {});
+    final topServices = analytics['top_services'] ?? {};
 
     if (topServices.isEmpty) return 'Henüz yok';
 
-    return topServices.keys.first;
+    return topServices.keys.first.toString();
   }
 
-  String _getAISuggestion(Map<String, dynamic> predictions) {
-    final satisfaction = (predictions['satisfaction_score'] ?? 0.0) * 100;
-    final retention = (predictions['next_visit_probability'] ?? 0.0) * 100;
+  String _getAISuggestion(dynamic predictions) {
+    final predMap = predictions is Map ? predictions : {};
+    final satisfaction =
+        ((predMap['satisfaction_score'] as num?) ?? 0.0).toDouble() * 100;
+    final retention =
+        ((predMap['next_visit_probability'] as num?) ?? 0.0).toDouble() * 100;
 
     if (satisfaction > 90 && retention > 85) {
       return 'Mükemmel performans! Mevcut hizmet kalitesini sürdürün.';
@@ -1254,11 +1260,12 @@ class TrendChartPainter extends CustomPainter {
 
     final pointPaint = Paint()..style = PaintingStyle.fill;
 
-    // Calculate max values for scaling
-    double maxAppointments =
-        data.map((d) => d['appointments'] as num).reduce(max).toDouble();
+    // Calculate max values for scaling - Safe casting
+    double maxAppointments = data
+        .map((d) => ((d['appointments'] as num?) ?? 0).toDouble())
+        .reduce(max);
     double maxSpending =
-        data.map((d) => d['spending'] as num).reduce(max).toDouble();
+        data.map((d) => ((d['spending'] as num?) ?? 0).toDouble()).reduce(max);
 
     if (maxAppointments == 0) maxAppointments = 1;
     if (maxSpending == 0) maxSpending = 1;
@@ -1269,10 +1276,16 @@ class TrendChartPainter extends CustomPainter {
 
     for (int i = 0; i < data.length; i++) {
       final x = (size.width / (data.length - 1)) * i * animationValue;
-      final appointmentY = size.height -
-          (data[i]['appointments'] / maxAppointments * size.height);
+
+      // Safe casting for chart values
+      final appointmentValue =
+          ((data[i]['appointments'] as num?) ?? 0).toDouble();
+      final spendingValue = ((data[i]['spending'] as num?) ?? 0).toDouble();
+
+      final appointmentY =
+          size.height - (appointmentValue / maxAppointments * size.height);
       final spendingY =
-          size.height - (data[i]['spending'] / maxSpending * size.height);
+          size.height - (spendingValue / maxSpending * size.height);
 
       if (i == 0) {
         appointmentPath.moveTo(x, appointmentY);

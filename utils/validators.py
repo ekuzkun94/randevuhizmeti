@@ -6,6 +6,36 @@ from typing import Dict, Any, List, Tuple, Optional
 from datetime import datetime
 from flask import jsonify
 
+def validate_required_fields(data: Dict[str, Any], required_fields: List[str]) -> Optional[tuple]:
+    """
+    Gerekli alanların varlığını kontrol et
+    
+    Args:
+        data: Kontrol edilecek data dictionary
+        required_fields: Gerekli alan listesi
+    
+    Returns:
+        None eğer tüm alanlar mevcut, aksi takdirde error response tuple
+    """
+    if not data:
+        return jsonify({
+            'success': False,
+            'message': 'Request body boş olamaz'
+        }), 400
+    
+    missing_fields = []
+    for field in required_fields:
+        if field not in data or data[field] is None or data[field] == '':
+            missing_fields.append(field)
+    
+    if missing_fields:
+        return jsonify({
+            'success': False,
+            'message': f'Zorunlu alanlar eksik: {", ".join(missing_fields)}'
+        }), 400
+    
+    return None
+
 def validate_request_data(data: Dict[str, Any], rules: Dict[str, Dict[str, Any]]) -> Tuple[Dict[str, Any], List[str]]:
     """
     Request verilerini belirli kurallara göre validate et
@@ -232,8 +262,7 @@ WORKING_HOURS_VALIDATION_RULES = {
     'start_time': {'required': True, 'type': 'string', 'pattern': r'^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$'},
     'end_time': {'required': True, 'type': 'string', 'pattern': r'^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$'},
     'is_available': {'required': False, 'type': 'boolean', 'default': True}
-}
-
+} 
 def validate_required_fields(data: Dict[str, Any], required_fields: List[str]) -> Optional[tuple]:
     """
     Gerekli alanların varlığını kontrol et
@@ -245,6 +274,8 @@ def validate_required_fields(data: Dict[str, Any], required_fields: List[str]) -
     Returns:
         None eğer tüm alanlar mevcut, aksi takdirde error response tuple
     """
+    from flask import jsonify
+    
     if not data:
         return jsonify({
             'success': False,
@@ -262,4 +293,4 @@ def validate_required_fields(data: Dict[str, Any], required_fields: List[str]) -
             'message': f'Zorunlu alanlar eksik: {", ".join(missing_fields)}'
         }), 400
     
-    return None 
+    return None

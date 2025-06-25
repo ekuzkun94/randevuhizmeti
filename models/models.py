@@ -97,6 +97,7 @@ class Provider(db.Model, BaseModel):
     
     id = db.Column(db.String(36), primary_key=True)
     user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
+    business_id = db.Column(db.String(36), db.ForeignKey('businesses.id'))  # Business relationship fixed
     business_name = db.Column(db.String(255))
     description = db.Column(db.Text)
     specialization = db.Column(db.String(255))
