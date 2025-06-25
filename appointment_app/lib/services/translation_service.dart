@@ -250,6 +250,10 @@ class TranslationService {
       'quick_booking': 'Hızlı Randevu',
       'create_account_desc': 'Hemen hesap oluşturun ve randevularınızı yönetin',
       'register_now': 'Şimdi Kayıt Ol',
+      'test_users': 'Test Kullanıcıları',
+      'welcome_back': 'Tekrar Hoş Geldiniz',
+      'login_subtitle': 'Hesabınıza giriş yapın',
+      'dont_have_account': 'Hesabınız yok mu?',
     },
     'en': {
       'app_name': 'TimeManager',

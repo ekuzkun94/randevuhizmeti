@@ -51,5 +51,8 @@
   "failedToCreateAppointment": "Randevu oluşturulamadı",
   "failedToUpdateAppointment": "Randevu güncellenemedi",
   "failedToDeleteAppointment": "Randevu silinemedi",
-  "dashboard": "Gösterge Paneli"
+  "dashboard": "Gösterge Paneli",
+  "welcome_back": "Tekrar Hoş Geldiniz",
+  "login_subtitle": "Hesabınıza giriş yapın",
+  "dont_have_account": "Hesabınız yok mu?"
 } 
