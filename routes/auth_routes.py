@@ -13,7 +13,7 @@ from utils.validators import validate_request_data
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
 @auth_bp.route('/login', methods=['POST'])
-@rate_limit(limit=5, window=300)  # 5 attempts per 5 minutes
+@rate_limit(limit=20, window=300)  # 20 attempts per 5 minutes
 def login():
     """Kullanıcı girişi"""
     try:
@@ -78,7 +78,7 @@ def login():
         return jsonify({'error': 'Giriş işlemi sırasında hata oluştu'}), 500
 
 @auth_bp.route('/register', methods=['POST'])
-@rate_limit(limit=3, window=600)  # 3 attempts per 10 minutes
+@rate_limit(limit=10, window=600)  # 10 attempts per 10 minutes
 def register():
     """Kullanıcı kaydı"""
     try:

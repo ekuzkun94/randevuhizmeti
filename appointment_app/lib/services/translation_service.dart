@@ -518,6 +518,35 @@ class TranslationService {
 
   List<LanguageModel> get availableLanguages => _availableLanguages;
 
+  List<LanguageModel> get languages => _availableLanguages;
+
+  Future<void> reloadTranslations() async {
+    _translationsCache.clear();
+    await _loadFromSupabaseAPI();
+    await loadTranslations(_currentLanguage);
+  }
+
+  Future<void> deleteTranslation(String languageId, String key) async {
+    try {
+      // Supabase API'den translation sil
+      await http.delete(
+        Uri.parse('${DatabaseConfig.apiBaseUrl}/translations/$languageId/$key'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${_getAuthToken()}',
+        },
+      );
+
+      // Cache'den sil
+      if (_translationsCache.containsKey(languageId)) {
+        _translationsCache[languageId]!.remove(key);
+      }
+    } catch (e) {
+      debugPrint('Failed to delete translation: $e');
+      throw Exception('Translation could not be deleted');
+    }
+  }
+
   Future<void> addTranslation(
       String languageCode, String key, String value) async {
     try {

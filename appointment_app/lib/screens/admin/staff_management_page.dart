@@ -101,8 +101,7 @@ class _StaffManagementPageState extends State<StaffManagementPage>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(languageProvider.translate('staff_management') ??
-            'Personel Yönetimi'),
+        title: Text(languageProvider.translate('staff_management')),
         backgroundColor: theme.primaryColor,
         foregroundColor: Colors.white,
         bottom: TabBar(

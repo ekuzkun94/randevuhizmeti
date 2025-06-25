@@ -549,7 +549,9 @@ class _AIReportsPageState extends State<AIReportsPage>
   Widget _buildTrendsChart() {
     final analytics = _reportData!['analytics'] ?? {};
     final monthlyTrends = (analytics['monthly_trends'] as List?)
-            ?.map((item) => item as Map<String, dynamic>)
+            ?.map((item) => item is Map
+                ? Map<String, dynamic>.from(item)
+                : <String, dynamic>{})
             .toList() ??
         <Map<String, dynamic>>[];
 
@@ -915,7 +917,10 @@ class _AIReportsPageState extends State<AIReportsPage>
   }
 
   Widget _buildPredictionsCard() {
-    final predictions = _reportData!['predictions'] ?? {};
+    final rawPredictions = _reportData!['predictions'];
+    final predictions = rawPredictions is Map
+        ? Map<String, dynamic>.from(rawPredictions)
+        : <String, dynamic>{};
 
     return Container(
       decoration: BoxDecoration(
@@ -1152,15 +1157,15 @@ class _AIReportsPageState extends State<AIReportsPage>
                   const Color(0xFF2196F3),
                 ),
                 _buildMetricCard(
-                  'Hizmet Çeşitliliği',
-                  '${(analytics['top_services'] as Map?)?.length ?? 0}',
-                  Icons.category,
+                  'En Çok Kullanılan Hizmet',
+                  '${(analytics['top_services'] is Map ? (analytics['top_services'] as Map).length : 0)}',
+                  Icons.star,
                   const Color(0xFFFF9800),
                 ),
                 _buildMetricCard(
-                  'Uzman Sayısı',
-                  '${(analytics['preferred_providers'] as Map?)?.length ?? 0}',
-                  Icons.group,
+                  'Tercih Edilen Sağlayıcı',
+                  '${(analytics['preferred_providers'] is Map ? (analytics['preferred_providers'] as Map).length : 0)}',
+                  Icons.person,
                   const Color(0xFF9C27B0),
                 ),
               ],

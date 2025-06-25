@@ -65,8 +65,7 @@ class _AdminAnalyticsPageState extends State<AdminAnalyticsPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(languageProvider.translate('real_time_dashboard') ??
-            'Canlı Dashboard'),
+        title: Text(languageProvider.translate('real_time_dashboard')),
         backgroundColor: theme.primaryColor,
         foregroundColor: Colors.white,
         actions: [

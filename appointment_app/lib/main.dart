@@ -8,9 +8,8 @@ import 'package:appointment_app/services/translation_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   // TranslationService'i başlat
-  final translationService = TranslationService();
+  final translationService = TranslationService.instance;
   await translationService.initialize();
 
   runApp(const MyApp());
