@@ -185,7 +185,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-            languageProvider.translate('forgot_password') ?? 'Şifremi Unuttum'),
+            languageProvider.translate('forgot_password')),
         backgroundColor: theme.primaryColor,
         foregroundColor: Colors.white,
       ),

@@ -120,7 +120,7 @@ class _QRCodePageState extends State<QRCodePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-            languageProvider.translate('qr_code_system') ?? 'QR Kod Sistemi'),
+            languageProvider.translate('qr_code_system')),
         backgroundColor: theme.primaryColor,
         foregroundColor: Colors.white,
       ),

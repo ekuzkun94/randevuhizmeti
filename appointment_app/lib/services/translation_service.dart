@@ -18,9 +18,12 @@ class TranslationService {
   String _currentLanguage = 'tr';
 
   // Cache
-  Map<String, Map<String, String>> _translationsCache = {};
+  final Map<String, Map<String, String>> _translationsCache = {};
   List<LanguageModel> _availableLanguages = [];
   bool _isInitialized = false;
+
+  // Getter for available languages
+  List<LanguageModel> get languages => _availableLanguages;
 
   // Fallback translations - Supabase API çalışmadığında kullanılacak
   final Map<String, Map<String, String>> _fallbackTranslations = {
@@ -241,6 +244,12 @@ class TranslationService {
       'card': 'Kart',
       'bank': 'Banka',
       'account': 'Hesap',
+      'app_title': 'ZamanYönet',
+      'app_subtitle': 'Akıllı Randevu Yönetimi',
+      'welcome_description': 'Zamanınızı daha verimli yönetin',
+      'quick_booking': 'Hızlı Randevu',
+      'create_account_desc': 'Hemen hesap oluşturun ve randevularınızı yönetin',
+      'register_now': 'Şimdi Kayıt Ol',
     },
     'en': {
       'app_name': 'TimeManager',
@@ -373,6 +382,12 @@ class TranslationService {
       'notification_permission': 'Notification Permission',
       'grant_permission': 'Grant Permission',
       'deny_permission': 'Deny Permission',
+      'app_title': 'TimeManager',
+      'app_subtitle': 'Smart Appointment Management',
+      'welcome_description': 'Manage your time more efficiently',
+      'quick_booking': 'Quick Booking',
+      'create_account_desc': 'Create an account and manage your appointments',
+      'register_now': 'Register Now',
     }
   };
 
@@ -517,8 +532,6 @@ class TranslationService {
   }
 
   List<LanguageModel> get availableLanguages => _availableLanguages;
-
-  List<LanguageModel> get languages => _availableLanguages;
 
   Future<void> reloadTranslations() async {
     _translationsCache.clear();

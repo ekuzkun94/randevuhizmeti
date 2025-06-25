@@ -180,6 +180,83 @@ def create_app():
     
     print(f"✅ Registered blueprints: {', '.join(blueprints_registered)}")
     
+    # === TRANSLATION ROUTES ===
+    @app.route('/translations/languages', methods=['GET', 'OPTIONS'])
+    def get_languages():
+        """Get available languages"""
+        if request.method == 'OPTIONS':
+            return '', 200
+        
+        languages = [
+            {
+                'id': 'tr',
+                'name': 'Turkish',
+                'nativeName': 'Türkçe',
+                'flagEmoji': '🇹🇷',
+                'isActive': True,
+                'sortOrder': 1,
+                'createdAt': datetime.now(timezone.utc).isoformat(),
+                'updatedAt': datetime.now(timezone.utc).isoformat()
+            },
+            {
+                'id': 'en',
+                'name': 'English',
+                'nativeName': 'English',
+                'flagEmoji': '🇺🇸',
+                'isActive': True,
+                'sortOrder': 2,
+                'createdAt': datetime.now(timezone.utc).isoformat(),
+                'updatedAt': datetime.now(timezone.utc).isoformat()
+            }
+        ]
+        
+        return jsonify({
+            'status': 'success',
+            'languages': languages
+        })
+
+    @app.route('/translations/tr', methods=['GET', 'OPTIONS'])
+    def get_translations_tr():
+        if request.method == 'OPTIONS':
+            return '', 200
+        return jsonify({
+            'language': 'tr',
+            'translations': {
+                'app_title': 'ZamanYönet',
+                'app_subtitle': 'Akıllı Randevu Yönetimi',
+                'welcome_description': 'Zamanınızı daha verimli yönetin',
+                'quick_booking': 'Hızlı Randevu',
+                'create_account_desc': 'Hemen hesap oluşturun ve randevularınızı yönetin',
+                'register_now': 'Şimdi Kayıt Ol',
+                'welcome_back': 'Tekrar Hoş Geldiniz',
+                'login_subtitle': 'Hesabınıza giriş yapın',
+                'dont_have_account': 'Hesabınız yok mu?',
+                'forgot_password': 'Şifremi Unuttum',
+                'test_users': 'Test Kullanıcıları',
+            }
+        })
+
+    @app.route('/translations/en', methods=['GET', 'OPTIONS'])
+    def get_translations_en():
+        if request.method == 'OPTIONS':
+            return '', 200
+        return jsonify({
+            'language': 'en',
+            'translations': {
+                'app_title': 'TimeManager',
+                'app_subtitle': 'Smart Appointment Management',
+                'welcome_description': 'Manage your time more efficiently',
+                'quick_booking': 'Quick Booking',
+                'create_account_desc': 'Create an account and manage your appointments',
+                'register_now': 'Register Now',
+                'welcome_back': 'Welcome Back',
+                'login_subtitle': 'Sign in to your account',
+                'dont_have_account': "Don't have an account?",
+                'forgot_password': 'Forgot Password',
+                'test_users': 'Test Users',
+            }
+        })
+
     # === AI ROUTES ===
     @app.route('/ai/personalized-dashboard/<customer_id>', methods=['GET', 'OPTIONS'])
     def ai_personalized_dashboard(customer_id):

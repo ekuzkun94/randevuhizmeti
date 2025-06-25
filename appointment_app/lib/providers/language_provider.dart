@@ -112,6 +112,9 @@ class LanguageProvider extends ChangeNotifier {
 
       _currentLanguage = newLanguage;
 
+      // TranslationService'de dili değiştir
+      await _translationService.setLanguage(languageId);
+
       debugPrint('Language changed to: ${_currentLanguage?.name}');
       notifyListeners();
     } catch (e) {
