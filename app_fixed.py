@@ -1,13 +1,31 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+"""
+ZamanYönet AI Enhanced - Main Application
+A Flask-based appointment management system with AI capabilities
+"""
 
 import os
-from flask import Flask, render_template, request, jsonify
-from flask_cors import CORS
-from flask_sqlalchemy import SQLAlchemy
-from flask_jwt_extended import JWTManager
-from dotenv import load_dotenv
 from datetime import datetime, timezone, timedelta
+
+# Import required packages with error handling
+try:
+    from flask import Flask, jsonify
+    from flask_sqlalchemy import SQLAlchemy
+    from flask_jwt_extended import JWTManager
+    from flask_cors import CORS
+    from dotenv import load_dotenv
+except ImportError as e:
+    print(f"Error importing required packages: {e}")
+    print("Please install required packages: pip install flask flask-sqlalchemy flask-jwt-extended flask-cors python-dotenv")
+    raise
+except ImportError as e:
+    print(f"Error importing required packages: {e}")
+    print("Please install required packages: pip install flask flask-sqlalchemy flask-jwt-extended flask-cors python-dotenv")
+    raise
+except ImportError as e:
+    print(f"Error importing required packages: {e}")
+    print("Please install required packages: pip install flask flask-sqlalchemy flask-jwt-extended flask-cors python-dotenv")
+    raise
 
 # Load environment variables
 load_dotenv()

@@ -33,118 +33,125 @@ import 'package:provider/provider.dart';
 final GoRouter router = GoRouter(
   initialLocation: '/',
   redirect: (context, state) {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-    // If still loading, stay on current route
-    if (authProvider.isLoading) {
+      // If still loading, stay on current route
+      if (authProvider.isLoading) {
+        return null;
+      }
+
+      final currentPath = state.matchedLocation;
+
+      // 🔓 Public paths - herkese açık
+      final publicPaths = [
+        '/',
+        '/login',
+        '/register',
+        '/guest-booking',
+        '/forgot-password'
+      ];
+      if (publicPaths.contains(currentPath)) {
+        return null;
+      }
+
+      // 🔐 Authentication kontrolü
+      if (!authProvider.isAuthenticated) {
+        debugPrint('[SECURITY] Unauthorized access attempt to: $currentPath');
+        return '/login';
+      }
+
+      // 🛡️ Role-based access control with permissions
+      final user = authProvider.currentUser!;
+
+      // Admin rotaları - sadece admin erişebilir
+      if (currentPath.startsWith('/admin')) {
+        if (!authProvider.isAdmin) {
+          debugPrint(
+              '[SECURITY] Non-admin user ${user.email} attempted to access admin route: $currentPath');
+          return '/login';
+        }
+
+        // Specific admin permission checks
+        if (currentPath.contains('/users') &&
+            !authProvider.hasPermission('admin.users.view')) {
+          debugPrint(
+              '[SECURITY] User ${user.email} lacks permission for users management');
+          return '/admin';
+        }
+
+        if (currentPath.contains('/services') &&
+            !authProvider.hasPermission('admin.services.view')) {
+          debugPrint(
+              '[SECURITY] User ${user.email} lacks permission for services management');
+          return '/admin';
+        }
+
+        if (currentPath.contains('/roles') &&
+            !authProvider.hasPermission('admin.roles.view')) {
+          debugPrint(
+              '[SECURITY] User ${user.email} lacks permission for roles management');
+          return '/admin';
+        }
+      }
+
+      // Provider rotaları - sadece provider erişebilir
+      else if (currentPath.startsWith('/provider')) {
+        if (!authProvider.isProvider) {
+          debugPrint(
+              '[SECURITY] Non-provider user ${user.email} attempted to access provider route: $currentPath');
+          return '/login';
+        }
+
+        // Provider permission checks
+        if (currentPath.contains('/services') &&
+            !authProvider.hasPermission('provider.services.view')) {
+          debugPrint(
+              '[SECURITY] Provider ${user.email} lacks permission for services management');
+          return '/provider';
+        }
+
+        if (currentPath.contains('/schedule') &&
+            !authProvider.hasPermission('provider.schedule.view')) {
+          debugPrint(
+              '[SECURITY] Provider ${user.email} lacks permission for schedule management');
+          return '/provider';
+        }
+      }
+
+      // Customer rotaları - sadece customer erişebilir
+      else if (currentPath.startsWith('/customer')) {
+        if (!authProvider.isCustomer) {
+          debugPrint(
+              '[SECURITY] Non-customer user ${user.email} attempted to access customer route: $currentPath');
+          return '/login';
+        }
+
+        // Customer permission checks
+        if (currentPath.contains('/create-appointment') &&
+            !authProvider.hasPermission('customer.appointments.create')) {
+          debugPrint(
+              '[SECURITY] Customer ${user.email} lacks permission to create appointments');
+          return '/customer';
+        }
+      }
+
+      // 🔒 Additional security: Check session validity
+      if (authProvider.token == null) {
+        debugPrint(
+            '[SECURITY] Missing authentication token for user: ${user.email}');
+        return '/login';
+      }
+
+      // ✅ Access granted
+      debugPrint(
+          '[SECURITY] Access granted to ${user.email} (${user.roleId}) for: $currentPath');
       return null;
-    }
-
-    final currentPath = state.matchedLocation;
-
-    // 🔓 Public paths - herkese açık
-    final publicPaths = [
-      '/',
-      '/login',
-      '/register',
-      '/guest-booking',
-      '/forgot-password'
-    ];
-    if (publicPaths.contains(currentPath)) {
-      return null;
-    }
-
-    // 🔐 Authentication kontrolü
-    if (!authProvider.isAuthenticated) {
-      debugPrint('[SECURITY] Unauthorized access attempt to: $currentPath');
+    } catch (e) {
+      debugPrint('[ROUTER ERROR] Error in redirect: $e');
+      // Hata durumunda login sayfasına yönlendir
       return '/login';
     }
-
-    // 🛡️ Role-based access control with permissions
-    final user = authProvider.currentUser!;
-
-    // Admin rotaları - sadece admin erişebilir
-    if (currentPath.startsWith('/admin')) {
-      if (!authProvider.isAdmin) {
-        debugPrint(
-            '[SECURITY] Non-admin user ${user.email} attempted to access admin route: $currentPath');
-        return '/login';
-      }
-
-      // Specific admin permission checks
-      if (currentPath.contains('/users') &&
-          !authProvider.hasPermission('admin.users.view')) {
-        debugPrint(
-            '[SECURITY] User ${user.email} lacks permission for users management');
-        return '/admin';
-      }
-
-      if (currentPath.contains('/services') &&
-          !authProvider.hasPermission('admin.services.view')) {
-        debugPrint(
-            '[SECURITY] User ${user.email} lacks permission for services management');
-        return '/admin';
-      }
-
-      if (currentPath.contains('/roles') &&
-          !authProvider.hasPermission('admin.roles.view')) {
-        debugPrint(
-            '[SECURITY] User ${user.email} lacks permission for roles management');
-        return '/admin';
-      }
-    }
-
-    // Provider rotaları - sadece provider erişebilir
-    else if (currentPath.startsWith('/provider')) {
-      if (!authProvider.isProvider) {
-        debugPrint(
-            '[SECURITY] Non-provider user ${user.email} attempted to access provider route: $currentPath');
-        return '/login';
-      }
-
-      // Provider permission checks
-      if (currentPath.contains('/services') &&
-          !authProvider.hasPermission('provider.services.view')) {
-        debugPrint(
-            '[SECURITY] Provider ${user.email} lacks permission for services management');
-        return '/provider';
-      }
-
-      if (currentPath.contains('/schedule') &&
-          !authProvider.hasPermission('provider.schedule.view')) {
-        debugPrint(
-            '[SECURITY] Provider ${user.email} lacks permission for schedule management');
-        return '/provider';
-      }
-    }
-
-    // Customer rotaları - sadece customer erişebilir
-    else if (currentPath.startsWith('/customer')) {
-      if (!authProvider.isCustomer) {
-        debugPrint(
-            '[SECURITY] Non-customer user ${user.email} attempted to access customer route: $currentPath');
-        return '/login';
-      }
-
-      // Customer permission checks
-      if (currentPath.contains('/create-appointment') &&
-          !authProvider.hasPermission('customer.appointments.create')) {
-        debugPrint(
-            '[SECURITY] Customer ${user.email} lacks permission to create appointments');
-        return '/customer';
-      }
-    }
-
-    // 🔒 Additional security: Check session validity
-    if (authProvider.token == null) {
-      debugPrint('[SECURITY] Missing authentication token for user: ${user.email}');
-      return '/login';
-    }
-
-    // ✅ Access granted
-    debugPrint(
-        '[SECURITY] Access granted to ${user.email} (${user.roleId}) for: $currentPath');
-    return null;
   },
   routes: [
     // Public routes
