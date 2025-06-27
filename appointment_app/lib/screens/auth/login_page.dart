@@ -6,6 +6,8 @@ import 'package:appointment_app/providers/language_provider.dart';
 import 'package:appointment_app/providers/theme_provider.dart';
 import 'package:appointment_app/widgets/theme_switcher.dart';
 import 'package:appointment_app/theme/app_theme.dart';
+import 'package:appointment_app/widgets/modern_buttons.dart';
+import 'package:appointment_app/widgets/modern_inputs.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -14,17 +16,56 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _passwordVisible = false;
 
+  late AnimationController _fadeController;
+  late AnimationController _slideController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _fadeController = AnimationController(
+      duration: AppTheme.animationSlow,
+      vsync: this,
+    );
+    _slideController = AnimationController(
+      duration: AppTheme.animationSlow,
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _fadeController,
+      curve: AppTheme.animationCurveNormal,
+    ));
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _slideController,
+      curve: AppTheme.animationCurveNormal,
+    ));
+
+    _fadeController.forward();
+    _slideController.forward();
+  }
+
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _fadeController.dispose();
+    _slideController.dispose();
     super.dispose();
   }
 
@@ -140,11 +181,15 @@ class _LoginPageState extends State<LoginPage> {
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
-            leading: IconButton(
-              icon: Icon(Icons.arrow_back,
-                  color: theme.colorScheme.surface, size: 28),
-              onPressed: () => context.go('/'),
-              tooltip: 'Ana Sayfaya Dön',
+            leading: ModernUI.glassContainer(
+              isDark: isDark,
+              borderRadius: BorderRadius.circular(AppTheme.radius12),
+              child: IconButton(
+                icon: Icon(Icons.arrow_back,
+                    color: theme.colorScheme.surface, size: 24),
+                onPressed: () => context.go('/'),
+                tooltip: 'Ana Sayfaya Dön',
+              ),
             ),
             actions: [
               QuickThemeToggle(
@@ -172,14 +217,21 @@ class _LoginPageState extends State<LoginPage> {
             child: SafeArea(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(AppTheme.spacing24),
-                child: Column(
-                  children: [
-                    _buildHeader(context, languageProvider),
-                    const SizedBox(height: AppTheme.spacing40),
-                    _buildLoginForm(context, languageProvider),
-                    const SizedBox(height: AppTheme.spacing32),
-                    _buildAdditionalActions(context, languageProvider),
-                  ],
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: SlideTransition(
+                    position: _slideAnimation,
+                    child: Column(
+                      children: [
+                        _buildHeader(context, languageProvider, isDark),
+                        const SizedBox(height: AppTheme.spacing40),
+                        _buildLoginForm(context, languageProvider, isDark),
+                        const SizedBox(height: AppTheme.spacing32),
+                        _buildAdditionalActions(
+                            context, languageProvider, isDark),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -189,95 +241,92 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, LanguageProvider languageProvider) {
+  Widget _buildHeader(
+      BuildContext context, LanguageProvider languageProvider, bool isDark) {
     final theme = Theme.of(context);
 
-    return Column(
-      children: [
-        Container(
-          width: 80,
-          height: 80,
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: theme.colorScheme.shadow.withOpacity(0.2),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
+    return ModernUI.glassContainer(
+      isDark: isDark,
+      padding: const EdgeInsets.all(AppTheme.spacing24),
+      child: Column(
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: theme.colorScheme.shadow.withOpacity(0.2),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: ClipOval(
+              child: Image.asset(
+                'assets/images/zamanyonet_logo.png',
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Icon(
+                    Icons.login,
+                    size: 40,
+                    color: theme.colorScheme.primary,
+                  );
+                },
               ),
-            ],
-          ),
-          child: ClipOval(
-            child: Image.asset(
-              'assets/images/zamanyonet_logo.png',
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Icon(
-                  Icons.login,
-                  size: 40,
-                  color: theme.colorScheme.primary,
-                );
-              },
             ),
           ),
-        ),
-        const SizedBox(height: AppTheme.spacing24),
-        Text(
-          languageProvider.translate('login', fallback: 'Giriş Yap'),
-          style: theme.textTheme.headlineMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.surface,
+          const SizedBox(height: AppTheme.spacing24),
+          Text(
+            languageProvider.translate('login', fallback: 'Giriş Yap'),
+            style: theme.textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.surface,
+              letterSpacing: -0.5,
+            ),
           ),
-        ),
-        const SizedBox(height: AppTheme.spacing8),
-        Text(
-          languageProvider.translate('login_subtitle',
-              fallback: 'Hesabınıza giriş yapın'),
-          style: theme.textTheme.bodyLarge?.copyWith(
-            color: theme.colorScheme.surface.withOpacity(0.8),
+          const SizedBox(height: AppTheme.spacing8),
+          Text(
+            languageProvider.translate('login_subtitle',
+                fallback: 'Hesabınıza giriş yapın'),
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: theme.colorScheme.surface.withOpacity(0.8),
+              letterSpacing: 0.25,
+            ),
+            textAlign: TextAlign.center,
           ),
-          textAlign: TextAlign.center,
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildLoginForm(
-      BuildContext context, LanguageProvider languageProvider) {
+      BuildContext context, LanguageProvider languageProvider, bool isDark) {
     final theme = Theme.of(context);
 
-    return Container(
+    return ModernUI.glassContainer(
+      isDark: isDark,
       padding: const EdgeInsets.all(AppTheme.spacing24),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppTheme.radius20),
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.shadow.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
       child: Form(
         key: _formKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            TextFormField(
+            ModernInputs.modernTextField(
               controller: _emailController,
+              label: languageProvider.translate('email', fallback: 'E-posta'),
+              hint: languageProvider.translate('email_hint',
+                  fallback: 'ornek@email.com'),
+              isDark: isDark,
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.next,
-              decoration: InputDecoration(
-                labelText:
-                    languageProvider.translate('email', fallback: 'E-posta'),
-                hintText: languageProvider.translate('email_hint',
-                    fallback: 'ornek@email.com'),
-                prefixIcon: Icon(
-                  Icons.email_outlined,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+              prefixIcon: Icon(
+                Icons.email_outlined,
+                color: isDark
+                    ? AppTheme.darkColorScheme.onSurfaceVariant
+                    : AppTheme.lightColorScheme.onSurfaceVariant,
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -293,30 +342,32 @@ class _LoginPageState extends State<LoginPage> {
               },
             ),
             const SizedBox(height: AppTheme.spacing20),
-            TextFormField(
+            ModernInputs.modernTextField(
               controller: _passwordController,
-              obscureText: !_passwordVisible,
+              label: languageProvider.translate('password', fallback: 'Şifre'),
+              hint: languageProvider.translate('password_hint',
+                  fallback: 'Şifrenizi girin'),
+              isDark: isDark,
+              isPassword: !_passwordVisible,
               textInputAction: TextInputAction.done,
-              decoration: InputDecoration(
-                labelText:
-                    languageProvider.translate('password', fallback: 'Şifre'),
-                hintText: languageProvider.translate('password_hint',
-                    fallback: 'Şifrenizi girin'),
-                prefixIcon: Icon(
-                  Icons.lock_outlined,
-                  color: theme.colorScheme.onSurfaceVariant,
+              prefixIcon: Icon(
+                Icons.lock_outlined,
+                color: isDark
+                    ? AppTheme.darkColorScheme.onSurfaceVariant
+                    : AppTheme.lightColorScheme.onSurfaceVariant,
+              ),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _passwordVisible ? Icons.visibility : Icons.visibility_off,
+                  color: isDark
+                      ? AppTheme.darkColorScheme.onSurfaceVariant
+                      : AppTheme.lightColorScheme.onSurfaceVariant,
                 ),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _passwordVisible ? Icons.visibility : Icons.visibility_off,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _passwordVisible = !_passwordVisible;
-                    });
-                  },
-                ),
+                onPressed: () {
+                  setState(() {
+                    _passwordVisible = !_passwordVisible;
+                  });
+                },
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -331,42 +382,13 @@ class _LoginPageState extends State<LoginPage> {
               },
             ),
             const SizedBox(height: AppTheme.spacing24),
-            SizedBox(
+            ModernButtons.gradientButton(
+              text: languageProvider.translate('login', fallback: 'Giriş Yap'),
+              onPressed: _isLoading ? null : () => _login(),
+              gradientColors: AppTheme.secondaryGradient,
+              icon: Icons.login,
               height: 56,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _login,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primary,
-                  foregroundColor: theme.colorScheme.onPrimary,
-                  elevation: AppTheme.elevation4,
-                  shadowColor: theme.colorScheme.shadow.withOpacity(0.3),
-                ),
-                child: _isLoading
-                    ? SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            theme.colorScheme.onPrimary,
-                          ),
-                        ),
-                      )
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.login, size: 24),
-                          const SizedBox(width: AppTheme.spacing12),
-                          Text(
-                            languageProvider.translate('login',
-                                fallback: 'Giriş Yap'),
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-              ),
+              isLoading: _isLoading,
             ),
           ],
         ),
@@ -375,7 +397,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _buildAdditionalActions(
-      BuildContext context, LanguageProvider languageProvider) {
+      BuildContext context, LanguageProvider languageProvider, bool isDark) {
     final theme = Theme.of(context);
 
     return Column(
@@ -387,7 +409,7 @@ class _LoginPageState extends State<LoginPage> {
                 fallback: 'Şifremi Unuttum'),
             style: theme.textTheme.labelLarge?.copyWith(
               color: theme.colorScheme.surface,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),
@@ -415,24 +437,15 @@ class _LoginPageState extends State<LoginPage> {
           ],
         ),
         const SizedBox(height: AppTheme.spacing24),
-        OutlinedButton.icon(
+        ModernButtons.glassButton(
+          text: languageProvider.translate('back_to_home',
+              fallback: 'Ana Sayfaya Dön'),
           onPressed: () => context.go('/'),
-          icon: const Icon(Icons.home_outlined, size: 20),
-          label: Text(
-            languageProvider.translate('back_to_home',
-                fallback: 'Ana Sayfaya Dön'),
-            style: theme.textTheme.labelLarge,
-          ),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: theme.colorScheme.surface,
-            side: BorderSide(
-              color: theme.colorScheme.surface.withOpacity(0.5),
-              width: 1,
-            ),
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppTheme.spacing24,
-              vertical: AppTheme.spacing12,
-            ),
+          isDark: isDark,
+          icon: Icons.home_outlined,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTheme.spacing24,
+            vertical: AppTheme.spacing12,
           ),
         ),
       ],

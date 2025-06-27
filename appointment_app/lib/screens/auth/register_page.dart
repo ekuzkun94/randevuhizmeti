@@ -5,6 +5,9 @@ import 'package:appointment_app/providers/language_provider.dart';
 import 'package:appointment_app/providers/theme_provider.dart';
 import 'package:appointment_app/widgets/theme_switcher.dart';
 import 'package:appointment_app/theme/app_theme.dart';
+import 'package:appointment_app/widgets/modern_buttons.dart';
+import 'package:appointment_app/widgets/modern_inputs.dart';
+import 'package:appointment_app/widgets/modern_cards.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -13,7 +16,8 @@ class RegisterPage extends StatefulWidget {
   State<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _RegisterPageState extends State<RegisterPage> {
+class _RegisterPageState extends State<RegisterPage>
+    with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -23,6 +27,11 @@ class _RegisterPageState extends State<RegisterPage> {
   String? _selectedRole;
   bool _passwordVisible = false;
   bool _confirmPasswordVisible = false;
+
+  late AnimationController _fadeController;
+  late AnimationController _slideController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   final List<Map<String, String>> _roles = [
     {
@@ -42,11 +51,45 @@ class _RegisterPageState extends State<RegisterPage> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _fadeController = AnimationController(
+      duration: AppTheme.animationSlow,
+      vsync: this,
+    );
+    _slideController = AnimationController(
+      duration: AppTheme.animationSlow,
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _fadeController,
+      curve: AppTheme.animationCurveNormal,
+    ));
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _slideController,
+      curve: AppTheme.animationCurveNormal,
+    ));
+
+    _fadeController.forward();
+    _slideController.forward();
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _fadeController.dispose();
+    _slideController.dispose();
     super.dispose();
   }
 
@@ -141,11 +184,15 @@ class _RegisterPageState extends State<RegisterPage> {
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
-            leading: IconButton(
-              icon: Icon(Icons.arrow_back,
-                  color: theme.colorScheme.surface, size: 28),
-              onPressed: () => context.go('/'),
-              tooltip: 'Ana Sayfaya Dön',
+            leading: ModernUI.glassContainer(
+              isDark: isDark,
+              borderRadius: BorderRadius.circular(AppTheme.radius12),
+              child: IconButton(
+                icon: Icon(Icons.arrow_back,
+                    color: theme.colorScheme.surface, size: 24),
+                onPressed: () => context.go('/'),
+                tooltip: 'Ana Sayfaya Dön',
+              ),
             ),
             actions: [
               QuickThemeToggle(
@@ -173,14 +220,21 @@ class _RegisterPageState extends State<RegisterPage> {
             child: SafeArea(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(AppTheme.spacing24),
-                child: Column(
-                  children: [
-                    _buildHeader(context, languageProvider),
-                    const SizedBox(height: AppTheme.spacing32),
-                    _buildRegisterForm(context, languageProvider),
-                    const SizedBox(height: AppTheme.spacing24),
-                    _buildAdditionalActions(context, languageProvider),
-                  ],
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: SlideTransition(
+                    position: _slideAnimation,
+                    child: Column(
+                      children: [
+                        _buildHeader(context, languageProvider, isDark),
+                        const SizedBox(height: AppTheme.spacing32),
+                        _buildRegisterForm(context, languageProvider, isDark),
+                        const SizedBox(height: AppTheme.spacing24),
+                        _buildAdditionalActions(
+                            context, languageProvider, isDark),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -190,95 +244,93 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, LanguageProvider languageProvider) {
+  Widget _buildHeader(
+      BuildContext context, LanguageProvider languageProvider, bool isDark) {
     final theme = Theme.of(context);
 
-    return Column(
-      children: [
-        Container(
-          width: 80,
-          height: 80,
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: theme.colorScheme.shadow.withOpacity(0.2),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
+    return ModernUI.glassContainer(
+      isDark: isDark,
+      padding: const EdgeInsets.all(AppTheme.spacing24),
+      child: Column(
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: theme.colorScheme.shadow.withOpacity(0.2),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: ClipOval(
+              child: Image.asset(
+                'assets/images/zamanyonet_logo.png',
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Icon(
+                    Icons.person_add,
+                    size: 40,
+                    color: theme.colorScheme.primary,
+                  );
+                },
               ),
-            ],
-          ),
-          child: ClipOval(
-            child: Image.asset(
-              'assets/images/zamanyonet_logo.png',
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Icon(
-                  Icons.person_add,
-                  size: 40,
-                  color: theme.colorScheme.primary,
-                );
-              },
             ),
           ),
-        ),
-        const SizedBox(height: AppTheme.spacing24),
-        Text(
-          languageProvider.translate('register', fallback: 'Kayıt Ol'),
-          style: theme.textTheme.headlineMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.surface,
+          const SizedBox(height: AppTheme.spacing24),
+          Text(
+            languageProvider.translate('register', fallback: 'Kayıt Ol'),
+            style: theme.textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.surface,
+              letterSpacing: -0.5,
+            ),
           ),
-        ),
-        const SizedBox(height: AppTheme.spacing8),
-        Text(
-          languageProvider.translate('register_subtitle',
-              fallback: 'Hesabınızı oluşturun'),
-          style: theme.textTheme.bodyLarge?.copyWith(
-            color: theme.colorScheme.surface.withOpacity(0.8),
+          const SizedBox(height: AppTheme.spacing8),
+          Text(
+            languageProvider.translate('register_subtitle',
+                fallback: 'Hesap oluşturun ve başlayın'),
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: theme.colorScheme.surface.withOpacity(0.8),
+              letterSpacing: 0.25,
+            ),
+            textAlign: TextAlign.center,
           ),
-          textAlign: TextAlign.center,
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildRegisterForm(
-      BuildContext context, LanguageProvider languageProvider) {
+      BuildContext context, LanguageProvider languageProvider, bool isDark) {
     final theme = Theme.of(context);
 
-    return Container(
+    return ModernUI.glassContainer(
+      isDark: isDark,
       padding: const EdgeInsets.all(AppTheme.spacing24),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppTheme.radius20),
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.shadow.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
       child: Form(
         key: _formKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Name Field
-            TextFormField(
+            ModernInputs.modernTextField(
               controller: _nameController,
+              label:
+                  languageProvider.translate('full_name', fallback: 'Ad Soyad'),
+              hint: languageProvider.translate('full_name_hint',
+                  fallback: 'Adınız ve soyadınız'),
+              isDark: isDark,
+              keyboardType: TextInputType.name,
               textInputAction: TextInputAction.next,
-              decoration: InputDecoration(
-                labelText: languageProvider.translate('full_name',
-                    fallback: 'Ad Soyad'),
-                hintText: languageProvider.translate('full_name_hint',
-                    fallback: 'Adınız ve soyadınız'),
-                prefixIcon: Icon(
-                  Icons.person_outlined,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+              prefixIcon: Icon(
+                Icons.person_outline,
+                color: isDark
+                    ? AppTheme.darkColorScheme.onSurfaceVariant
+                    : AppTheme.lightColorScheme.onSurfaceVariant,
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -287,27 +339,25 @@ class _RegisterPageState extends State<RegisterPage> {
                 }
                 if (value.length < 2) {
                   return languageProvider.translate('name_min_length',
-                      fallback: 'Ad en az 2 karakter olmalı');
+                      fallback: 'Ad soyad en az 2 karakter olmalı');
                 }
                 return null;
               },
             ),
             const SizedBox(height: AppTheme.spacing20),
-
-            // Email Field
-            TextFormField(
+            ModernInputs.modernTextField(
               controller: _emailController,
+              label: languageProvider.translate('email', fallback: 'E-posta'),
+              hint: languageProvider.translate('email_hint',
+                  fallback: 'ornek@email.com'),
+              isDark: isDark,
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.next,
-              decoration: InputDecoration(
-                labelText:
-                    languageProvider.translate('email', fallback: 'E-posta'),
-                hintText: languageProvider.translate('email_hint',
-                    fallback: 'ornek@email.com'),
-                prefixIcon: Icon(
-                  Icons.email_outlined,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+              prefixIcon: Icon(
+                Icons.email_outlined,
+                color: isDark
+                    ? AppTheme.darkColorScheme.onSurfaceVariant
+                    : AppTheme.lightColorScheme.onSurfaceVariant,
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -323,74 +373,75 @@ class _RegisterPageState extends State<RegisterPage> {
               },
             ),
             const SizedBox(height: AppTheme.spacing20),
-
-            // Password Field
-            TextFormField(
+            ModernInputs.modernTextField(
               controller: _passwordController,
-              obscureText: !_passwordVisible,
+              label: languageProvider.translate('password', fallback: 'Şifre'),
+              hint: languageProvider.translate('password_hint',
+                  fallback: 'Şifrenizi girin'),
+              isDark: isDark,
+              isPassword: !_passwordVisible,
               textInputAction: TextInputAction.next,
-              decoration: InputDecoration(
-                labelText:
-                    languageProvider.translate('password', fallback: 'Şifre'),
-                hintText: languageProvider.translate('password_hint',
-                    fallback: 'Şifrenizi girin'),
-                prefixIcon: Icon(
-                  Icons.lock_outlined,
-                  color: theme.colorScheme.onSurfaceVariant,
+              prefixIcon: Icon(
+                Icons.lock_outlined,
+                color: isDark
+                    ? AppTheme.darkColorScheme.onSurfaceVariant
+                    : AppTheme.lightColorScheme.onSurfaceVariant,
+              ),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _passwordVisible ? Icons.visibility : Icons.visibility_off,
+                  color: isDark
+                      ? AppTheme.darkColorScheme.onSurfaceVariant
+                      : AppTheme.lightColorScheme.onSurfaceVariant,
                 ),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _passwordVisible ? Icons.visibility : Icons.visibility_off,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _passwordVisible = !_passwordVisible;
-                    });
-                  },
-                ),
+                onPressed: () {
+                  setState(() {
+                    _passwordVisible = !_passwordVisible;
+                  });
+                },
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return languageProvider.translate('password_required',
                       fallback: 'Şifre gerekli');
                 }
-                if (value.length < 6) {
+                if (value.length < 3) {
                   return languageProvider.translate('password_min_length',
-                      fallback: 'Şifre en az 6 karakter olmalı');
+                      fallback: 'Şifre en az 3 karakter olmalı');
                 }
                 return null;
               },
             ),
             const SizedBox(height: AppTheme.spacing20),
-
-            // Confirm Password Field
-            TextFormField(
+            ModernInputs.modernTextField(
               controller: _confirmPasswordController,
-              obscureText: !_confirmPasswordVisible,
+              label: languageProvider.translate('confirm_password',
+                  fallback: 'Şifre Tekrar'),
+              hint: languageProvider.translate('confirm_password_hint',
+                  fallback: 'Şifrenizi tekrar girin'),
+              isDark: isDark,
+              isPassword: !_confirmPasswordVisible,
               textInputAction: TextInputAction.done,
-              decoration: InputDecoration(
-                labelText: languageProvider.translate('confirm_password',
-                    fallback: 'Şifre Tekrar'),
-                hintText: languageProvider.translate('confirm_password_hint',
-                    fallback: 'Şifrenizi tekrar girin'),
-                prefixIcon: Icon(
-                  Icons.lock_outlined,
-                  color: theme.colorScheme.onSurfaceVariant,
+              prefixIcon: Icon(
+                Icons.lock_outlined,
+                color: isDark
+                    ? AppTheme.darkColorScheme.onSurfaceVariant
+                    : AppTheme.lightColorScheme.onSurfaceVariant,
+              ),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _confirmPasswordVisible
+                      ? Icons.visibility
+                      : Icons.visibility_off,
+                  color: isDark
+                      ? AppTheme.darkColorScheme.onSurfaceVariant
+                      : AppTheme.lightColorScheme.onSurfaceVariant,
                 ),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _confirmPasswordVisible
-                        ? Icons.visibility
-                        : Icons.visibility_off,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _confirmPasswordVisible = !_confirmPasswordVisible;
-                    });
-                  },
-                ),
+                onPressed: () {
+                  setState(() {
+                    _confirmPasswordVisible = !_confirmPasswordVisible;
+                  });
+                },
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -405,48 +456,16 @@ class _RegisterPageState extends State<RegisterPage> {
               },
             ),
             const SizedBox(height: AppTheme.spacing24),
-
-            // Role Selection
-            _buildRoleSelection(context, languageProvider),
-            const SizedBox(height: AppTheme.spacing32),
-
-            // Register Button
-            SizedBox(
+            _buildRoleSelection(context, languageProvider, isDark),
+            const SizedBox(height: AppTheme.spacing24),
+            ModernButtons.gradientButton(
+              text:
+                  languageProvider.translate('register', fallback: 'Kayıt Ol'),
+              onPressed: _isLoading ? null : () => _register(),
+              gradientColors: AppTheme.sunsetGradient,
+              icon: Icons.person_add,
               height: 56,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _register,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primary,
-                  foregroundColor: theme.colorScheme.onPrimary,
-                  elevation: AppTheme.elevation4,
-                  shadowColor: theme.colorScheme.shadow.withOpacity(0.3),
-                ),
-                child: _isLoading
-                    ? SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            theme.colorScheme.onPrimary,
-                          ),
-                        ),
-                      )
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.person_add, size: 24),
-                          const SizedBox(width: AppTheme.spacing12),
-                          Text(
-                            languageProvider.translate('register',
-                                fallback: 'Kayıt Ol'),
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-              ),
+              isLoading: _isLoading,
             ),
           ],
         ),
@@ -455,7 +474,7 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Widget _buildRoleSelection(
-      BuildContext context, LanguageProvider languageProvider) {
+      BuildContext context, LanguageProvider languageProvider, bool isDark) {
     final theme = Theme.of(context);
 
     return Column(
@@ -463,106 +482,109 @@ class _RegisterPageState extends State<RegisterPage> {
       children: [
         Text(
           languageProvider.translate('select_role', fallback: 'Rol Seçin'),
-          style: theme.textTheme.titleMedium?.copyWith(
+          style: TextStyle(
+            fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: theme.colorScheme.onSurface,
+            color: isDark
+                ? AppTheme.darkColorScheme.onSurface
+                : AppTheme.lightColorScheme.onSurface,
           ),
         ),
         const SizedBox(height: AppTheme.spacing12),
-        ..._roles
-            .map((role) => _buildRoleCard(context, role, languageProvider)),
+        Row(
+          children: _roles.map((role) {
+            final isSelected = _selectedRole == role['id'];
+            return Expanded(
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: AppTheme.spacing4),
+                child: ModernCards.glassCard(
+                  isDark: isDark,
+                  padding: const EdgeInsets.all(AppTheme.spacing16),
+                  onTap: () {
+                    setState(() {
+                      _selectedRole = role['id'];
+                    });
+                  },
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.radius12),
+                          color: isSelected
+                              ? (isDark
+                                  ? AppTheme.darkColorScheme.primary
+                                  : AppTheme.lightColorScheme.primary)
+                              : (isDark
+                                  ? AppTheme
+                                      .darkColorScheme.surfaceContainerHighest
+                                  : AppTheme.lightColorScheme
+                                      .surfaceContainerHighest),
+                        ),
+                        child: Center(
+                          child: Text(
+                            role['icon']!,
+                            style: const TextStyle(fontSize: 24),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: AppTheme.spacing8),
+                      Text(
+                        role['displayName']!,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: isSelected
+                              ? (isDark
+                                  ? AppTheme.darkColorScheme.primary
+                                  : AppTheme.lightColorScheme.primary)
+                              : (isDark
+                                  ? AppTheme.darkColorScheme.onSurface
+                                  : AppTheme.lightColorScheme.onSurface),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: AppTheme.spacing4),
+                      Text(
+                        role['description']!,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark
+                              ? AppTheme.darkColorScheme.onSurfaceVariant
+                              : AppTheme.lightColorScheme.onSurfaceVariant,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        if (_selectedRole == null)
+          Padding(
+            padding: const EdgeInsets.only(top: AppTheme.spacing8),
+            child: Text(
+              languageProvider.translate('role_required',
+                  fallback: 'Lütfen bir rol seçin'),
+              style: TextStyle(
+                fontSize: 12,
+                color: isDark
+                    ? AppTheme.darkColorScheme.error
+                    : AppTheme.lightColorScheme.error,
+              ),
+            ),
+          ),
       ],
     );
   }
 
-  Widget _buildRoleCard(BuildContext context, Map<String, String> role,
-      LanguageProvider languageProvider) {
-    final theme = Theme.of(context);
-    final isSelected = _selectedRole == role['id'];
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppTheme.spacing12),
-      child: InkWell(
-        onTap: () {
-          setState(() {
-            _selectedRole = role['id'];
-          });
-        },
-        borderRadius: BorderRadius.circular(AppTheme.radius12),
-        child: Container(
-          padding: const EdgeInsets.all(AppTheme.spacing16),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? theme.colorScheme.primaryContainer
-                : theme.colorScheme.surfaceVariant,
-            borderRadius: BorderRadius.circular(AppTheme.radius12),
-            border: Border.all(
-              color: isSelected
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.outline.withOpacity(0.3),
-              width: isSelected ? 2 : 1,
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.surface,
-                  borderRadius: BorderRadius.circular(AppTheme.radius8),
-                ),
-                child: Center(
-                  child: Text(
-                    role['icon']!,
-                    style: const TextStyle(fontSize: 24),
-                  ),
-                ),
-              ),
-              const SizedBox(width: AppTheme.spacing16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      role['displayName']!,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: isSelected
-                            ? theme.colorScheme.onPrimaryContainer
-                            : theme.colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: AppTheme.spacing4),
-                    Text(
-                      role['description']!,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: isSelected
-                            ? theme.colorScheme.onPrimaryContainer
-                                .withOpacity(0.8)
-                            : theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (isSelected)
-                Icon(
-                  Icons.check_circle,
-                  color: theme.colorScheme.primary,
-                  size: 24,
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildAdditionalActions(
-      BuildContext context, LanguageProvider languageProvider) {
+      BuildContext context, LanguageProvider languageProvider, bool isDark) {
     final theme = Theme.of(context);
 
     return Column(
@@ -590,24 +612,15 @@ class _RegisterPageState extends State<RegisterPage> {
           ],
         ),
         const SizedBox(height: AppTheme.spacing24),
-        OutlinedButton.icon(
+        ModernButtons.glassButton(
+          text: languageProvider.translate('back_to_home',
+              fallback: 'Ana Sayfaya Dön'),
           onPressed: () => context.go('/'),
-          icon: const Icon(Icons.home_outlined, size: 20),
-          label: Text(
-            languageProvider.translate('back_to_home',
-                fallback: 'Ana Sayfaya Dön'),
-            style: theme.textTheme.labelLarge,
-          ),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: theme.colorScheme.surface,
-            side: BorderSide(
-              color: theme.colorScheme.surface.withOpacity(0.5),
-              width: 1,
-            ),
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppTheme.spacing24,
-              vertical: AppTheme.spacing12,
-            ),
+          isDark: isDark,
+          icon: Icons.home_outlined,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTheme.spacing24,
+            vertical: AppTheme.spacing12,
           ),
         ),
       ],

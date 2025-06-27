@@ -31,7 +31,7 @@ class ThemeSwitcher extends StatelessWidget {
             decoration: BoxDecoration(
               color: backgroundColor ??
                   (isDark
-                      ? theme.colorScheme.surfaceVariant
+                      ? theme.colorScheme.surfaceContainerHighest
                       : theme.colorScheme.primaryContainer),
               borderRadius: BorderRadius.circular(AppTheme.radius12),
               boxShadow: [
@@ -103,7 +103,7 @@ class ThemeSwitcher extends StatelessWidget {
             decoration: BoxDecoration(
               color: isSelected
                   ? theme.colorScheme.primary
-                  : theme.colorScheme.surfaceVariant,
+                  : theme.colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(AppTheme.radius8),
             ),
             child: Icon(
@@ -167,7 +167,7 @@ class QuickThemeToggle extends StatelessWidget {
             decoration: BoxDecoration(
               color: backgroundColor ??
                   (isDark
-                      ? theme.colorScheme.surfaceVariant
+                      ? theme.colorScheme.surfaceContainerHighest
                       : theme.colorScheme.primaryContainer),
               borderRadius: BorderRadius.circular(AppTheme.radius16),
               boxShadow: [
@@ -237,7 +237,7 @@ class ThemeInfoCard extends StatelessWidget {
                     const Spacer(),
                     ThemeSwitcher(
                       size: 32,
-                      backgroundColor: theme.colorScheme.surfaceVariant,
+                      backgroundColor: theme.colorScheme.surfaceContainerHighest,
                     ),
                   ],
                 ),

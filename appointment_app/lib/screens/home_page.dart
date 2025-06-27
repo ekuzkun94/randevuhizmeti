@@ -5,9 +5,60 @@ import 'package:appointment_app/providers/language_provider.dart';
 import 'package:appointment_app/providers/theme_provider.dart';
 import 'package:appointment_app/widgets/theme_switcher.dart';
 import 'package:appointment_app/theme/app_theme.dart';
+import 'package:appointment_app/widgets/modern_buttons.dart';
+import 'package:appointment_app/widgets/modern_cards.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
+  late AnimationController _fadeController;
+  late AnimationController _slideController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _fadeController = AnimationController(
+      duration: AppTheme.animationSlow,
+      vsync: this,
+    );
+    _slideController = AnimationController(
+      duration: AppTheme.animationSlow,
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _fadeController,
+      curve: AppTheme.animationCurveNormal,
+    ));
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _slideController,
+      curve: AppTheme.animationCurveNormal,
+    ));
+
+    _fadeController.forward();
+    _slideController.forward();
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    _slideController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,24 +113,30 @@ class HomePage extends StatelessWidget {
             child: SafeArea(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(AppTheme.spacing24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // Header
-                    _buildHeader(context, languageProvider, themeProvider),
-                    const SizedBox(height: AppTheme.spacing56),
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: SlideTransition(
+                    position: _slideAnimation,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Header
+                        _buildHeader(context, languageProvider, themeProvider),
+                        const SizedBox(height: AppTheme.spacing56),
 
-                    // Main content
-                    _buildMainContent(context, languageProvider),
-                    const SizedBox(height: AppTheme.spacing40),
+                        // Main content
+                        _buildMainContent(context, languageProvider, isDark),
+                        const SizedBox(height: AppTheme.spacing40),
 
-                    // Action buttons
-                    _buildActionButtons(context, languageProvider),
-                    const SizedBox(height: AppTheme.spacing40),
+                        // Action buttons
+                        _buildActionButtons(context, languageProvider, isDark),
+                        const SizedBox(height: AppTheme.spacing40),
 
-                    // Footer
-                    _buildFooter(context, languageProvider),
-                  ],
+                        // Footer
+                        _buildFooter(context, languageProvider, isDark),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -92,154 +149,160 @@ class HomePage extends StatelessWidget {
   Widget _buildHeader(BuildContext context, LanguageProvider languageProvider,
       ThemeProvider themeProvider) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        // Logo
-        Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: theme.colorScheme.shadow.withOpacity(0.2),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
+    return ModernUI.glassContainer(
+      isDark: isDark,
+      padding: const EdgeInsets.all(AppTheme.spacing16),
+      margin: EdgeInsets.zero,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Logo
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: theme.colorScheme.shadow.withOpacity(0.2),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ClipOval(
+              child: Image.asset(
+                'assets/images/zamanyonet_logo.png',
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Icon(
+                    Icons.calendar_today,
+                    size: 32,
+                    color: theme.colorScheme.primary,
+                  );
+                },
+              ),
+            ),
+          ),
+
+          // Sağ taraf - Dil ve tema seçenekleri
+          Row(
+            children: [
+              // Dil seçeneği
+              ModernUI.glassContainer(
+                isDark: isDark,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppTheme.spacing12,
+                    vertical: AppTheme.spacing8),
+                child: DropdownButton<String>(
+                  value: languageProvider.currentLanguage?.id ?? 'tr',
+                  dropdownColor: theme.colorScheme.surface.withOpacity(0.95),
+                  icon: Icon(Icons.expand_more,
+                      color: theme.colorScheme.surface, size: 20),
+                  underline: Container(),
+                  style:
+                      TextStyle(color: theme.colorScheme.surface, fontSize: 14),
+                  items: languageProvider.availableLanguages.map((language) {
+                    return DropdownMenuItem<String>(
+                      value: language.id,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(language.flagEmoji,
+                              style: const TextStyle(fontSize: 16)),
+                          const SizedBox(width: AppTheme.spacing8),
+                          Text(
+                            language.nativeName,
+                            style: TextStyle(
+                              color: theme.colorScheme.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (languageId) {
+                    if (languageId != null) {
+                      languageProvider.setLanguageById(languageId);
+                    }
+                  },
+                  selectedItemBuilder: (BuildContext context) {
+                    return languageProvider.availableLanguages.map((language) {
+                      return Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(language.flagEmoji,
+                              style: const TextStyle(fontSize: 16)),
+                          const SizedBox(width: AppTheme.spacing8),
+                          Text(
+                            language.id.toUpperCase(),
+                            style: TextStyle(
+                              color: theme.colorScheme.surface,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      );
+                    }).toList();
+                  },
+                ),
+              ),
+
+              const SizedBox(width: AppTheme.spacing12),
+
+              // Tema değiştirici
+              QuickThemeToggle(
+                size: 40,
+                backgroundColor: theme.colorScheme.surface.withOpacity(0.2),
+                iconColor: theme.colorScheme.surface,
               ),
             ],
           ),
-          child: ClipOval(
-            child: Image.asset(
-              'assets/images/zamanyonet_logo.png',
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Icon(
-                  Icons.calendar_today,
-                  size: 32,
-                  color: theme.colorScheme.primary,
-                );
-              },
-            ),
-          ),
-        ),
-
-        // Sağ taraf - Dil ve tema seçenekleri
-        Row(
-          children: [
-            // Dil seçeneği
-            Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: AppTheme.spacing12, vertical: AppTheme.spacing8),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(AppTheme.radius20),
-                border: Border.all(
-                    color: theme.colorScheme.surface.withOpacity(0.3)),
-              ),
-              child: DropdownButton<String>(
-                value: languageProvider.currentLanguage?.id ?? 'tr',
-                dropdownColor: theme.colorScheme.surface.withOpacity(0.95),
-                icon: Icon(Icons.expand_more,
-                    color: theme.colorScheme.surface, size: 20),
-                underline: Container(),
-                style:
-                    TextStyle(color: theme.colorScheme.surface, fontSize: 14),
-                items: languageProvider.availableLanguages.map((language) {
-                  return DropdownMenuItem<String>(
-                    value: language.id,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(language.flagEmoji,
-                            style: const TextStyle(fontSize: 16)),
-                        const SizedBox(width: AppTheme.spacing8),
-                        Text(
-                          language.nativeName,
-                          style: TextStyle(
-                            color: theme.colorScheme.onSurface,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-                onChanged: (languageId) {
-                  if (languageId != null) {
-                    languageProvider.setLanguageById(languageId);
-                  }
-                },
-                selectedItemBuilder: (BuildContext context) {
-                  return languageProvider.availableLanguages.map((language) {
-                    return Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(language.flagEmoji,
-                            style: const TextStyle(fontSize: 16)),
-                        const SizedBox(width: AppTheme.spacing8),
-                        Text(
-                          language.id.toUpperCase(),
-                          style: TextStyle(
-                            color: theme.colorScheme.surface,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    );
-                  }).toList();
-                },
-              ),
-            ),
-
-            const SizedBox(width: AppTheme.spacing12),
-
-            // Tema değiştirici
-            QuickThemeToggle(
-              size: 40,
-              backgroundColor: theme.colorScheme.surface.withOpacity(0.2),
-              iconColor: theme.colorScheme.surface,
-            ),
-          ],
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildMainContent(
-      BuildContext context, LanguageProvider languageProvider) {
+      BuildContext context, LanguageProvider languageProvider, bool isDark) {
     final theme = Theme.of(context);
 
     return Column(
       children: [
-        // Logo büyük
-        Container(
-          width: 120,
-          height: 120,
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: theme.colorScheme.shadow.withOpacity(0.2),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
+        // Logo büyük - Glassmorphism container içinde
+        ModernUI.glassContainer(
+          isDark: isDark,
+          padding: const EdgeInsets.all(AppTheme.spacing20),
+          child: Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: theme.colorScheme.shadow.withOpacity(0.2),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: ClipOval(
+              child: Image.asset(
+                'assets/images/zamanyonet_logo.png',
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Icon(
+                    Icons.schedule,
+                    size: 60,
+                    color: theme.colorScheme.primary,
+                  );
+                },
               ),
-            ],
-          ),
-          child: ClipOval(
-            child: Image.asset(
-              'assets/images/zamanyonet_logo.png',
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Icon(
-                  Icons.schedule,
-                  size: 60,
-                  color: theme.colorScheme.primary,
-                );
-              },
             ),
           ),
         ),
@@ -251,6 +314,7 @@ class HomePage extends StatelessWidget {
           style: theme.textTheme.displaySmall?.copyWith(
             fontWeight: FontWeight.bold,
             color: theme.colorScheme.surface,
+            letterSpacing: -1.0,
           ),
           textAlign: TextAlign.center,
         ),
@@ -262,20 +326,16 @@ class HomePage extends StatelessWidget {
               fallback: 'Modern Randevu Yönetim Sistemi'),
           style: theme.textTheme.titleMedium?.copyWith(
             color: theme.colorScheme.surface.withOpacity(0.8),
+            letterSpacing: 0.5,
           ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: AppTheme.spacing24),
 
-        // Açıklama
-        Container(
+        // Açıklama - Glassmorphism card
+        ModernUI.glassContainer(
+          isDark: isDark,
           padding: const EdgeInsets.all(AppTheme.spacing20),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(AppTheme.radius16),
-            border:
-                Border.all(color: theme.colorScheme.surface.withOpacity(0.2)),
-          ),
           child: Text(
             languageProvider.translate('welcome_description',
                 fallback:
@@ -293,148 +353,54 @@ class HomePage extends StatelessWidget {
   }
 
   Widget _buildActionButtons(
-      BuildContext context, LanguageProvider languageProvider) {
-    final theme = Theme.of(context);
-
+      BuildContext context, LanguageProvider languageProvider, bool isDark) {
     return Column(
       children: [
-        // Giriş Yap butonu
-        SizedBox(
+        // Giriş Yap butonu - Gradient button
+        ModernButtons.gradientButton(
+          text: languageProvider.translate('login', fallback: 'Giriş Yap'),
+          onPressed: () => context.go('/login'),
+          gradientColors: AppTheme.secondaryGradient,
+          icon: Icons.login,
           width: double.infinity,
           height: 56,
-          child: ElevatedButton(
-            onPressed: () => context.go('/login'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: theme.colorScheme.surface,
-              foregroundColor: theme.colorScheme.primary,
-              elevation: AppTheme.elevation8,
-              shadowColor: theme.colorScheme.shadow.withOpacity(0.3),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.login, size: 24),
-                const SizedBox(width: AppTheme.spacing12),
-                Text(
-                  languageProvider.translate('login', fallback: 'Giriş Yap'),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
         ),
         const SizedBox(height: AppTheme.spacing16),
 
-        // Hızlı Randevu butonu
-        SizedBox(
+        // Hızlı Randevu butonu - Glass button
+        ModernButtons.glassButton(
+          text: languageProvider.translate('quick_booking',
+              fallback: 'Hızlı Randevu'),
+          onPressed: () => context.go('/guest-booking'),
+          isDark: isDark,
+          icon: Icons.flash_on,
           width: double.infinity,
           height: 56,
-          child: OutlinedButton(
-            onPressed: () => context.go('/guest-booking'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: theme.colorScheme.surface,
-              side: BorderSide(color: theme.colorScheme.surface, width: 2),
-              elevation: AppTheme.elevation4,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.flash_on, size: 24),
-                const SizedBox(width: AppTheme.spacing12),
-                Text(
-                  languageProvider.translate('quick_booking',
-                      fallback: 'Hızlı Randevu'),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
         ),
         const SizedBox(height: AppTheme.spacing16),
 
-        // Kayıt ol kartı
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(AppTheme.spacing20),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(AppTheme.radius16),
-            border:
-                Border.all(color: theme.colorScheme.surface.withOpacity(0.3)),
-          ),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(AppTheme.spacing8),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surface.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(AppTheme.radius8),
-                    ),
-                    child: Icon(
-                      Icons.person_add_outlined,
-                      color: theme.colorScheme.surface,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: AppTheme.spacing12),
-                  Expanded(
-                    child: Text(
-                      languageProvider.translate('create_account_desc',
-                          fallback:
-                              'Hemen hesap oluşturun ve platformumuzun avantajlarından yararlanın'),
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: theme.colorScheme.surface,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppTheme.spacing16),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () => context.go('/register'),
-                  icon: const Icon(Icons.app_registration, size: 20),
-                  label: Text(
-                    languageProvider.translate('register_now',
-                        fallback: 'Hemen Kayıt Ol'),
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: theme.colorScheme.surface,
-                    side:
-                        BorderSide(color: theme.colorScheme.surface, width: 2),
-                    padding: const EdgeInsets.symmetric(
-                        vertical: AppTheme.spacing12),
-                  ),
-                ),
-              ),
-            ],
-          ),
+        // Kayıt ol kartı - Modern card
+        ModernCards.infoCard(
+          title: languageProvider.translate('create_account',
+              fallback: 'Hesap Oluşturun'),
+          subtitle: languageProvider.translate('create_account_desc',
+              fallback:
+                  'Hemen hesap oluşturun ve platformumuzun avantajlarından yararlanın'),
+          icon: Icons.person_add_outlined,
+          isDark: isDark,
+          onTap: () => context.go('/register'),
         ),
       ],
     );
   }
 
-  Widget _buildFooter(BuildContext context, LanguageProvider languageProvider) {
+  Widget _buildFooter(
+      BuildContext context, LanguageProvider languageProvider, bool isDark) {
     final theme = Theme.of(context);
 
-    return Container(
+    return ModernUI.glassContainer(
+      isDark: isDark,
       padding: const EdgeInsets.all(AppTheme.spacing24),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(AppTheme.radius16),
-      ),
       child: Column(
         children: [
           Row(
