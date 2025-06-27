@@ -167,4 +167,26 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get dashboard => 'Gösterge Paneli';
+
+  @override
+  String get forgot_password => 'Şifremi Unuttum';
+
+  @override
+  String get no_account => 'Hesabınız yok mu?';
+
+  @override
+  String get back_to_home => 'Ana Sayfaya Dön';
+
+  @override
+  String get email_hint => 'E-posta adresinizi girin';
+
+  @override
+  String get password_hint => 'Şifrenizi girin';
+
+  @override
+  String get create_account => 'Hesap Oluşturun';
+
+  @override
+  String get create_account_desc =>
+      'Hemen hesap oluşturun ve randevularınızı yönetin';
 }

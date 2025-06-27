@@ -131,7 +131,11 @@ class LanguageProvider extends ChangeNotifier {
       return fallback ?? key;
     }
 
-    return _translationService.translate(key);
+    final translated = _translationService.translate(key);
+    if (translated == key && fallback != null) {
+      return fallback;
+    }
+    return translated;
   }
 
   // Kısa versiyon

@@ -51,5 +51,12 @@
   "failedToCreateAppointment": "Failed to create appointment",
   "failedToUpdateAppointment": "Failed to update appointment",
   "failedToDeleteAppointment": "Failed to delete appointment",
-  "dashboard": "Dashboard"
+  "dashboard": "Dashboard",
+  "forgot_password": "Forgot Password",
+  "no_account": "Don't have an account?",
+  "back_to_home": "Back to Home",
+  "email_hint": "Enter your email address",
+  "password_hint": "Enter your password",
+  "create_account": "Create Account",
+  "create_account_desc": "Create an account now and manage your appointments"
 } 

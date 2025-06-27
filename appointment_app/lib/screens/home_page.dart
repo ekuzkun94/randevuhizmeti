@@ -238,7 +238,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                               style: const TextStyle(fontSize: 16)),
                           const SizedBox(width: AppTheme.spacing8),
                           Text(
-                            language.id.toUpperCase(),
+                            language.nativeName,
                             style: TextStyle(
                               color: theme.colorScheme.surface,
                               fontSize: 14,

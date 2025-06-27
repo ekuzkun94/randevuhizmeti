@@ -3,6 +3,10 @@ import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:appointment_app/services/hybrid_api_service.dart';
 import 'package:go_router/go_router.dart';
+import 'package:appointment_app/theme/app_theme.dart';
+import 'package:appointment_app/widgets/modern_buttons.dart';
+import 'package:appointment_app/widgets/modern_inputs.dart';
+import 'package:appointment_app/widgets/modern_cards.dart';
 
 class GuestBookingPage extends StatefulWidget {
   const GuestBookingPage({super.key});
@@ -11,7 +15,8 @@ class GuestBookingPage extends StatefulWidget {
   State<GuestBookingPage> createState() => _GuestBookingPageState();
 }
 
-class _GuestBookingPageState extends State<GuestBookingPage> {
+class _GuestBookingPageState extends State<GuestBookingPage>
+    with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -21,6 +26,11 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
   bool _isLoading = false;
   bool _isLoadingServices = false;
   bool _isLoadingProviders = false;
+
+  late AnimationController _fadeController;
+  late AnimationController _slideController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   List<Map<String, dynamic>> _allServices = [];
   List<Map<String, dynamic>> _allProviders = [];
@@ -54,7 +64,38 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
   @override
   void initState() {
     super.initState();
+    _initializeAnimations();
     _initializeData();
+  }
+
+  void _initializeAnimations() {
+    _fadeController = AnimationController(
+      duration: AppTheme.animationSlow,
+      vsync: this,
+    );
+    _slideController = AnimationController(
+      duration: AppTheme.animationNormal,
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _fadeController,
+      curve: AppTheme.animationCurveNormal,
+    ));
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _slideController,
+      curve: AppTheme.animationCurveNormal,
+    ));
+
+    _fadeController.forward();
+    _slideController.forward();
   }
 
   @override
@@ -63,6 +104,8 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
     _emailController.dispose();
     _phoneController.dispose();
     _notesController.dispose();
+    _fadeController.dispose();
+    _slideController.dispose();
     super.dispose();
   }
 
@@ -76,11 +119,9 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
   Future<void> _checkApiStatus() async {
     try {
       final hybridApi = HybridApiService();
-      setState(() {
-      });
+      setState(() {});
     } catch (e) {
-      setState(() {
-      });
+      setState(() {});
     }
   }
 
@@ -334,92 +375,99 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: isDark
+          ? AppTheme.darkColorScheme.background
+          : AppTheme.lightColorScheme.background,
       appBar: AppBar(
         title: const Text('Hızlı Randevu'),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: ModernUI.glassContainer(
+          isDark: isDark,
+          borderRadius: BorderRadius.circular(AppTheme.radius12),
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => context.go('/'),
+            tooltip: 'Ana Sayfaya Dön',
+          ),
+        ),
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+              colors: AppTheme.primaryGradient,
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
           ),
         ),
       ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildWelcomeCard(),
-              const SizedBox(height: 20),
-              _buildPersonalInfoSection(),
-              const SizedBox(height: 20),
-              _buildServiceSection(),
-              const SizedBox(height: 20),
-              if (_selectedService != null) ...[
-                _buildProviderSection(),
-                const SizedBox(height: 20),
-              ],
-              if (_selectedProvider != null) ...[
-                _buildDateTimeSection(),
-                const SizedBox(height: 20),
-              ],
-              if (_selectedTime != null) ...[
-                _buildNotesSection(),
-                const SizedBox(height: 30),
-                _buildCreateButton(),
-              ],
-            ],
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(AppTheme.spacing16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildWelcomeCard(isDark),
+                  const SizedBox(height: AppTheme.spacing20),
+                  _buildPersonalInfoSection(isDark),
+                  const SizedBox(height: AppTheme.spacing20),
+                  _buildServiceSection(isDark),
+                  const SizedBox(height: AppTheme.spacing20),
+                  if (_selectedService != null) ...[
+                    _buildProviderSection(isDark),
+                    const SizedBox(height: AppTheme.spacing20),
+                  ],
+                  if (_selectedProvider != null) ...[
+                    _buildDateTimeSection(isDark),
+                    const SizedBox(height: AppTheme.spacing20),
+                  ],
+                  if (_selectedTime != null) ...[
+                    _buildNotesSection(isDark),
+                    const SizedBox(height: AppTheme.spacing24),
+                    _buildCreateButton(isDark),
+                  ],
+                ],
+              ),
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildWelcomeCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF667eea), Color(0xFF764ba2)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.blue.withValues(alpha: 0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+  Widget _buildWelcomeCard(bool isDark) {
+    return ModernUI.glassContainer(
+      isDark: isDark,
+      padding: const EdgeInsets.all(AppTheme.spacing24),
       child: const Column(
         children: [
           Icon(Icons.flash_on, size: 48, color: Colors.white),
-          SizedBox(height: 12),
+          SizedBox(height: AppTheme.spacing12),
           Text(
             'Hızlı Randevu',
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
               color: Colors.white,
+              letterSpacing: -0.5,
             ),
           ),
-          SizedBox(height: 8),
+          SizedBox(height: AppTheme.spacing8),
           Text(
             'Kayıt olmadan hızlı randevu alın',
             style: TextStyle(
               fontSize: 16,
               color: Colors.white70,
+              letterSpacing: 0.25,
             ),
             textAlign: TextAlign.center,
           ),
@@ -428,18 +476,46 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
     );
   }
 
-  Widget _buildPersonalInfoSection() {
-    return _buildSectionCard(
-      title: 'Kişisel Bilgiler',
-      icon: Icons.person,
+  Widget _buildPersonalInfoSection(bool isDark) {
+    return ModernUI.glassContainer(
+      isDark: isDark,
+      padding: const EdgeInsets.all(AppTheme.spacing24),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          TextFormField(
+          Row(
+            children: [
+              Icon(
+                Icons.person,
+                color: isDark
+                    ? AppTheme.darkColorScheme.primary
+                    : AppTheme.lightColorScheme.primary,
+                size: 24,
+              ),
+              const SizedBox(width: AppTheme.spacing8),
+              Text(
+                'Kişisel Bilgiler',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isDark
+                      ? AppTheme.darkColorScheme.onSurface
+                      : AppTheme.lightColorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppTheme.spacing20),
+          ModernInputs.modernTextField(
             controller: _nameController,
-            decoration: const InputDecoration(
-              labelText: 'Ad Soyad',
-              prefixIcon: Icon(Icons.person_outline),
-              border: OutlineInputBorder(),
+            label: 'Ad Soyad',
+            hint: 'Adınız ve soyadınız',
+            isDark: isDark,
+            prefixIcon: Icon(
+              Icons.person_outline,
+              color: isDark
+                  ? AppTheme.darkColorScheme.onSurfaceVariant
+                  : AppTheme.lightColorScheme.onSurfaceVariant,
             ),
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
@@ -448,15 +524,19 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
               return null;
             },
           ),
-          const SizedBox(height: 16),
-          TextFormField(
+          const SizedBox(height: AppTheme.spacing16),
+          ModernInputs.modernTextField(
             controller: _emailController,
-            decoration: const InputDecoration(
-              labelText: 'E-mail',
-              prefixIcon: Icon(Icons.email_outlined),
-              border: OutlineInputBorder(),
-            ),
+            label: 'E-mail',
+            hint: 'ornek@email.com',
+            isDark: isDark,
             keyboardType: TextInputType.emailAddress,
+            prefixIcon: Icon(
+              Icons.email_outlined,
+              color: isDark
+                  ? AppTheme.darkColorScheme.onSurfaceVariant
+                  : AppTheme.lightColorScheme.onSurfaceVariant,
+            ),
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
                 return 'E-mail gerekli';
@@ -468,15 +548,19 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
               return null;
             },
           ),
-          const SizedBox(height: 16),
-          TextFormField(
+          const SizedBox(height: AppTheme.spacing16),
+          ModernInputs.modernTextField(
             controller: _phoneController,
-            decoration: const InputDecoration(
-              labelText: 'Telefon',
-              prefixIcon: Icon(Icons.phone_outlined),
-              border: OutlineInputBorder(),
-            ),
+            label: 'Telefon',
+            hint: 'Telefon numaranız',
+            isDark: isDark,
             keyboardType: TextInputType.phone,
+            prefixIcon: Icon(
+              Icons.phone_outlined,
+              color: isDark
+                  ? AppTheme.darkColorScheme.onSurfaceVariant
+                  : AppTheme.lightColorScheme.onSurfaceVariant,
+            ),
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
                 return 'Telefon numarası gerekli';
@@ -489,7 +573,7 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
     );
   }
 
-  Widget _buildServiceSection() {
+  Widget _buildServiceSection(bool isDark) {
     return _buildSectionCard(
       title: 'Hizmet Seçimi',
       icon: Icons.medical_services,
@@ -549,7 +633,7 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
     );
   }
 
-  Widget _buildProviderSection() {
+  Widget _buildProviderSection(bool isDark) {
     return _buildSectionCard(
       title: 'Sağlayıcı Seçimi',
       icon: Icons.person_pin,
@@ -608,7 +692,7 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
     );
   }
 
-  Widget _buildDateTimeSection() {
+  Widget _buildDateTimeSection(bool isDark) {
     return _buildSectionCard(
       title: 'Tarih ve Saat',
       icon: Icons.calendar_today,
@@ -761,19 +845,50 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
     );
   }
 
-  Widget _buildNotesSection() {
-    return _buildSectionCard(
-      title: 'Notlar (Opsiyonel)',
-      icon: Icons.note_outlined,
-      child: TextFormField(
-        controller: _notesController,
-        decoration: const InputDecoration(
-          labelText: 'Notlarınız',
-          prefixIcon: Icon(Icons.note_outlined),
-          border: OutlineInputBorder(),
-          alignLabelWithHint: true,
-        ),
-        maxLines: 3,
+  Widget _buildNotesSection(bool isDark) {
+    return ModernUI.glassContainer(
+      isDark: isDark,
+      padding: const EdgeInsets.all(AppTheme.spacing24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.note_outlined,
+                color: isDark
+                    ? AppTheme.darkColorScheme.primary
+                    : AppTheme.lightColorScheme.primary,
+                size: 24,
+              ),
+              const SizedBox(width: AppTheme.spacing8),
+              Text(
+                'Notlar (Opsiyonel)',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isDark
+                      ? AppTheme.darkColorScheme.onSurface
+                      : AppTheme.lightColorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppTheme.spacing20),
+          ModernInputs.modernTextField(
+            controller: _notesController,
+            label: 'Notlarınız',
+            hint: 'Randevu ile ilgili notlarınız...',
+            isDark: isDark,
+            maxLines: 3,
+            prefixIcon: Icon(
+              Icons.note_outlined,
+              color: isDark
+                  ? AppTheme.darkColorScheme.onSurfaceVariant
+                  : AppTheme.lightColorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -828,37 +943,14 @@ class _GuestBookingPageState extends State<GuestBookingPage> {
     );
   }
 
-  Widget _buildCreateButton() {
-    return SizedBox(
-      width: double.infinity,
+  Widget _buildCreateButton(bool isDark) {
+    return ModernButtons.gradientButton(
+      text: 'Randevu Oluştur',
+      onPressed: _isLoading ? null : () => _createGuestAppointment(),
+      gradientColors: AppTheme.primaryGradient,
+      icon: Icons.calendar_month,
       height: 56,
-      child: ElevatedButton(
-        onPressed: _isLoading ? null : _createGuestAppointment,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF667eea),
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          elevation: 8,
-        ),
-        child: _isLoading
-            ? const CircularProgressIndicator(color: Colors.white)
-            : const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.calendar_month, size: 24),
-                  SizedBox(width: 12),
-                  Text(
-                    'Randevu Oluştur',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-      ),
+      isLoading: _isLoading,
     );
   }
 }

@@ -54,5 +54,12 @@
   "dashboard": "Gösterge Paneli",
   "welcome_back": "Tekrar Hoş Geldiniz",
   "login_subtitle": "Hesabınıza giriş yapın",
-  "dont_have_account": "Hesabınız yok mu?"
+  "dont_have_account": "Hesabınız yok mu?",
+  "forgot_password": "Şifremi Unuttum",
+  "no_account": "Hesabınız yok mu?",
+  "back_to_home": "Ana Sayfaya Dön",
+  "email_hint": "E-posta adresinizi girin",
+  "password_hint": "Şifrenizi girin",
+  "create_account": "Hesap Oluşturun",
+  "create_account_desc": "Hemen hesap oluşturun ve randevularınızı yönetin"
 } 

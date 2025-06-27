@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import '../services/hybrid_api_service.dart';
 import '../services/api_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../config/database_config.dart';
 
 class AuthProvider extends ChangeNotifier {
   UserModel? _currentUser;
@@ -65,6 +67,12 @@ class AuthProvider extends ChangeNotifier {
         ],
       };
 
+  // Supabase client
+  final SupabaseClient _supabase = SupabaseClient(
+    DatabaseConfig.supabaseUrl,
+    DatabaseConfig.supabaseAnonKey,
+  );
+
   AuthProvider() {
     _initializeAuth();
   }
@@ -95,44 +103,41 @@ class AuthProvider extends ChangeNotifier {
       _setLoading(true);
       _clearError();
 
-      // API'ye giriş isteği gönder
-      final hybridApi = HybridApiService();
-      final response = await hybridApi.login(email, password);
-
-      if (response['user'] != null) {
-        final userData = response['user'];
-
-        // Mock token oluştur (API'de token sistemi henüz yok)
-        _token = _generateMockToken({
-          'id': userData['id'],
-          'email': userData['email'],
-          'roleId': userData['role_id'],
-        });
-        _refreshToken = _generateMockRefreshToken();
-
+      // --- Supabase Auth ---
+      final response = await _supabase.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+      final session = response.session;
+      final user = response.user;
+      if (session != null && user != null) {
+        _token = session.accessToken;
+        _refreshToken = session.refreshToken;
         _currentUser = UserModel(
-          id: userData['id'],
-          name: userData['name'],
-          email: userData['email'],
-          roleId: userData['role_id'],
-          createdAt: DateTime.parse(userData['created_at']),
-          updatedAt: DateTime.parse(userData['updated_at']),
+          id: user.id,
+          name: user.userMetadata?['name'] ?? '',
+          email: user.email ?? '',
+          roleId: roleId, // You may want to fetch role from user metadata or DB
+          createdAt: user.createdAt != null
+              ? DateTime.parse(user.createdAt!)
+              : DateTime.now(),
+          updatedAt: user.updatedAt != null
+              ? DateTime.parse(user.updatedAt!)
+              : DateTime.now(),
         );
-
         await _storeAuth();
         _startSessionTimer();
         _startRefreshTimer();
-
         _setLoading(false);
         notifyListeners();
         return true;
       } else {
-        _setError(response['error'] ?? 'Giriş başarısız');
+        _setError('Supabase: Giriş başarısız');
         return false;
       }
     } catch (e) {
+      debugPrint('Supabase giriş hatası: $e');
       // Hata durumunda mock kullanıcı sistemine geri dön
-      debugPrint('API giriş hatası: $e');
       return await _mockLogin(email, password, roleId);
     } finally {
       _setLoading(false);

@@ -663,7 +663,6 @@ class ApiService {
 
   // Rate limiting kontrolü
 
-
   // IP geoblocking kontrolü (basit)
   static Future<bool> _checkGeolocation() async {
     // Production'da gerçek geolocation API'si kullanılabilir
@@ -671,4 +670,460 @@ class ApiService {
   }
 
   // Audit log
+
+  // ==================== STAFF ====================
+
+  // Tüm staff üyelerini getir
+  static Future<List<Map<String, dynamic>>> getStaff() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/staff'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception('Staff listesi alınamadı: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Bağlantı hatası: $e');
+    }
+  }
+
+  // Provider'a ait staff üyelerini getir
+  static Future<List<Map<String, dynamic>>> getStaffByProvider(
+      String providerId) async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+            '$baseUrl/staff?provider_id=eq.$providerId&is_active=eq.true'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception(
+            'Provider staff listesi alınamadı: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Bağlantı hatası: $e');
+    }
+  }
+
+  // Staff üyesi detayını getir
+  static Future<Map<String, dynamic>> getStaffById(String staffId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/staff?id=eq.$staffId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        if (data.isNotEmpty) {
+          return data.first;
+        } else {
+          throw Exception('Staff üyesi bulunamadı');
+        }
+      } else {
+        throw Exception('Staff detayı alınamadı: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Bağlantı hatası: $e');
+    }
+  }
+
+  // Yeni staff üyesi ekle
+  static Future<Map<String, dynamic>> createStaff({
+    required String providerId,
+    String? userId,
+    required String firstName,
+    required String lastName,
+    required String position,
+    String? specialization,
+    int experienceYears = 0,
+    String? phone,
+    String? email,
+    String? bio,
+    String? photoUrl,
+    double rating = 0.0,
+    int totalReviews = 0,
+    bool isActive = true,
+    bool isAvailable = true,
+    Map<String, dynamic>? workingHours,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/staff'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'provider_id': providerId,
+          'user_id': userId,
+          'first_name': firstName,
+          'last_name': lastName,
+          'position': position,
+          'specialization': specialization,
+          'experience_years': experienceYears,
+          'phone': phone,
+          'email': email,
+          'bio': bio,
+          'photo_url': photoUrl,
+          'rating': rating,
+          'total_reviews': totalReviews,
+          'is_active': isActive,
+          'is_available': isAvailable,
+          'working_hours': workingHours,
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        return json.decode(response.body);
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['error'] ?? 'Staff üyesi oluşturulamadı');
+      }
+    } catch (e) {
+      throw Exception('Bağlantı hatası: $e');
+    }
+  }
+
+  // Staff üyesi güncelle
+  static Future<Map<String, dynamic>> updateStaff({
+    required String staffId,
+    String? firstName,
+    String? lastName,
+    String? position,
+    String? specialization,
+    int? experienceYears,
+    String? phone,
+    String? email,
+    String? bio,
+    String? photoUrl,
+    double? rating,
+    int? totalReviews,
+    bool? isActive,
+    bool? isAvailable,
+    Map<String, dynamic>? workingHours,
+  }) async {
+    try {
+      final Map<String, dynamic> requestBody = {};
+
+      if (firstName != null) requestBody['first_name'] = firstName;
+      if (lastName != null) requestBody['last_name'] = lastName;
+      if (position != null) requestBody['position'] = position;
+      if (specialization != null)
+        requestBody['specialization'] = specialization;
+      if (experienceYears != null)
+        requestBody['experience_years'] = experienceYears;
+      if (phone != null) requestBody['phone'] = phone;
+      if (email != null) requestBody['email'] = email;
+      if (bio != null) requestBody['bio'] = bio;
+      if (photoUrl != null) requestBody['photo_url'] = photoUrl;
+      if (rating != null) requestBody['rating'] = rating;
+      if (totalReviews != null) requestBody['total_reviews'] = totalReviews;
+      if (isActive != null) requestBody['is_active'] = isActive;
+      if (isAvailable != null) requestBody['is_available'] = isAvailable;
+      if (workingHours != null) requestBody['working_hours'] = workingHours;
+
+      final response = await http.put(
+        Uri.parse('$baseUrl/staff?id=eq.$staffId'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(requestBody),
+      );
+
+      final responseData = json.decode(response.body);
+
+      if (response.statusCode == 200) {
+        return responseData;
+      } else {
+        return {'error': responseData['error'] ?? 'Staff üyesi güncellenemedi'};
+      }
+    } catch (e) {
+      return {'error': 'Bağlantı hatası: $e'};
+    }
+  }
+
+  // Staff üyesi sil
+  static Future<Map<String, dynamic>> deleteStaff(String staffId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/staff?id=eq.$staffId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      final responseData = json.decode(response.body);
+
+      if (response.statusCode == 200) {
+        return responseData;
+      } else {
+        return {'error': responseData['error'] ?? 'Staff üyesi silinemedi'};
+      }
+    } catch (e) {
+      return {'error': 'Bağlantı hatası: $e'};
+    }
+  }
+
+  // Staff üyesi müsaitlik durumunu güncelle
+  static Future<Map<String, dynamic>> updateStaffAvailability({
+    required String staffId,
+    required bool isAvailable,
+  }) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/staff?id=eq.$staffId'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'is_available': isAvailable,
+        }),
+      );
+
+      final responseData = json.decode(response.body);
+
+      if (response.statusCode == 200) {
+        return responseData;
+      } else {
+        return {
+          'error': responseData['error'] ?? 'Müsaitlik durumu güncellenemedi'
+        };
+      }
+    } catch (e) {
+      return {'error': 'Bağlantı hatası: $e'};
+    }
+  }
+
+  // Staff üyesi puanını güncelle
+  static Future<Map<String, dynamic>> updateStaffRating({
+    required String staffId,
+    required double rating,
+    required int totalReviews,
+  }) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/staff?id=eq.$staffId'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'rating': rating,
+          'total_reviews': totalReviews,
+        }),
+      );
+
+      final responseData = json.decode(response.body);
+
+      if (response.statusCode == 200) {
+        return responseData;
+      } else {
+        return {'error': responseData['error'] ?? 'Puan güncellenemedi'};
+      }
+    } catch (e) {
+      return {'error': 'Bağlantı hatası: $e'};
+    }
+  }
+
+  // ==================== STAFF-SERVICES RELATIONSHIP ====================
+
+  // Staff'ın sunduğu hizmetleri getir
+  static Future<List<Map<String, dynamic>>> getStaffServices(
+      String staffId) async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+            '$baseUrl/staff_services?staff_id=eq.$staffId&is_active=eq.true'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception('Staff hizmetleri alınamadı: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Bağlantı hatası: $e');
+    }
+  }
+
+  // Belirli bir hizmeti sunan staff üyelerini getir
+  static Future<List<Map<String, dynamic>>> getStaffByService(
+      String serviceName) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/rpc/get_staff_by_service'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'service_name_param': serviceName}),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception(
+            'Hizmet için staff listesi alınamadı: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Bağlantı hatası: $e');
+    }
+  }
+
+  // Staff üyesinin sunduğu hizmetleri detaylı getir
+  static Future<List<Map<String, dynamic>>> getServicesByStaff(
+      String staffId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/rpc/get_services_by_staff'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'staff_id_param': staffId}),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception(
+            'Staff hizmetleri detayı alınamadı: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Bağlantı hatası: $e');
+    }
+  }
+
+  // Staff-Service ilişkisi ekle
+  static Future<Map<String, dynamic>> createStaffService({
+    required String staffId,
+    required String serviceId,
+    bool isPrimary = false,
+    String experienceLevel = 'intermediate',
+    double priceModifier = 1.0,
+    bool isActive = true,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/staff_services'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'staff_id': staffId,
+          'service_id': serviceId,
+          'is_primary': isPrimary,
+          'experience_level': experienceLevel,
+          'price_modifier': priceModifier,
+          'is_active': isActive,
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        return json.decode(response.body);
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(
+            errorData['error'] ?? 'Staff-Service ilişkisi oluşturulamadı');
+      }
+    } catch (e) {
+      throw Exception('Bağlantı hatası: $e');
+    }
+  }
+
+  // Staff-Service ilişkisi güncelle
+  static Future<Map<String, dynamic>> updateStaffService({
+    required String staffServiceId,
+    bool? isPrimary,
+    String? experienceLevel,
+    double? priceModifier,
+    bool? isActive,
+  }) async {
+    try {
+      final Map<String, dynamic> requestBody = {};
+
+      if (isPrimary != null) requestBody['is_primary'] = isPrimary;
+      if (experienceLevel != null)
+        requestBody['experience_level'] = experienceLevel;
+      if (priceModifier != null) requestBody['price_modifier'] = priceModifier;
+      if (isActive != null) requestBody['is_active'] = isActive;
+
+      final response = await http.put(
+        Uri.parse('$baseUrl/staff_services?id=eq.$staffServiceId'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(requestBody),
+      );
+
+      final responseData = json.decode(response.body);
+
+      if (response.statusCode == 200) {
+        return responseData;
+      } else {
+        return {
+          'error':
+              responseData['error'] ?? 'Staff-Service ilişkisi güncellenemedi'
+        };
+      }
+    } catch (e) {
+      return {'error': 'Bağlantı hatası: $e'};
+    }
+  }
+
+  // Staff-Service ilişkisi sil
+  static Future<Map<String, dynamic>> deleteStaffService(
+      String staffServiceId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/staff_services?id=eq.$staffServiceId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      final responseData = json.decode(response.body);
+
+      if (response.statusCode == 200) {
+        return responseData;
+      } else {
+        return {
+          'error': responseData['error'] ?? 'Staff-Service ilişkisi silinemedi'
+        };
+      }
+    } catch (e) {
+      return {'error': 'Bağlantı hatası: $e'};
+    }
+  }
+
+  // Staff ile birlikte hizmetlerini getir (view kullanarak)
+  static Future<List<Map<String, dynamic>>> getStaffWithServices() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/staff_with_services'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception(
+            'Staff ve hizmetleri alınamadı: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Bağlantı hatası: $e');
+    }
+  }
+
+  // Belirli bir provider'ın staff'ını hizmetleriyle birlikte getir
+  static Future<List<Map<String, dynamic>>> getStaffWithServicesByProvider(
+      String providerId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/staff_with_services?provider_id=eq.$providerId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception(
+            'Provider staff ve hizmetleri alınamadı: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Bağlantı hatası: $e');
+    }
+  }
 }

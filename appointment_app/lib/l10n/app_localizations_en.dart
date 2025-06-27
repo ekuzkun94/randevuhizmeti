@@ -168,4 +168,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dashboard => 'Dashboard';
+
+  @override
+  String get forgot_password => 'Forgot Password';
+
+  @override
+  String get no_account => 'Don\'t have an account?';
+
+  @override
+  String get back_to_home => 'Back to Home';
+
+  @override
+  String get email_hint => 'Enter your email address';
+
+  @override
+  String get password_hint => 'Enter your password';
+
+  @override
+  String get create_account => 'Create Account';
+
+  @override
+  String get create_account_desc =>
+      'Create an account now and manage your appointments';
 }

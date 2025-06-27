@@ -4,6 +4,8 @@ import 'package:uuid/uuid.dart';
 import 'api_service.dart';
 import 'local_database_service.dart';
 import 'connectivity_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../config/database_config.dart';
 
 class HybridApiService {
   static final HybridApiService _instance = HybridApiService._internal();
@@ -13,6 +15,12 @@ class HybridApiService {
   final LocalDatabaseService? _localDb = kIsWeb ? null : LocalDatabaseService();
   final ConnectivityService _connectivity = ConnectivityService();
   final Uuid _uuid = const Uuid();
+
+  // Supabase client
+  final SupabaseClient _supabase = SupabaseClient(
+    DatabaseConfig.supabaseUrl,
+    DatabaseConfig.supabaseAnonKey,
+  );
 
   bool get isOnline => _connectivity.isOnline;
   bool get isWebPlatform => kIsWeb;
@@ -184,26 +192,54 @@ class HybridApiService {
 
     try {
       if (isOnline) {
-        return await ApiService.createAppointment(
-          customerId: customerId,
-          customerName: customerName,
-          customerEmail: customerEmail,
-          customerPhone: customerPhone,
-          providerId: providerId,
-          serviceId: serviceId,
-          appointmentDate: appointmentDate,
-          appointmentTime: appointmentTime,
-          notes: notes,
-          isGuest: isGuest,
-          duration: duration,
-          location: location,
-          price: price,
-          paymentMethod: paymentMethod,
-          cardNumber: cardNumber,
-          cardHolder: cardHolder,
-          expiryDate: expiryDate,
-          cvv: cvv,
-        );
+        // --- Supabase Insert ---
+        final response = await _supabase
+            .from('appointments')
+            .insert({
+              'customer_id': customerId,
+              'customer_name': customerName,
+              'customer_email': customerEmail,
+              'customer_phone': customerPhone,
+              'provider_id': providerId,
+              'service_id': serviceId,
+              'appointment_date': appointmentDate,
+              'appointment_time': appointmentTime,
+              'notes': notes,
+              'duration': duration ?? 30,
+              'price': price ?? 0.0,
+              'payment_method': paymentMethod ?? 'cash_on_service',
+              'payment_status':
+                  paymentMethod == 'online_payment' ? 'paid' : 'pending',
+              'is_guest': isGuest ? 1 : 0,
+              'status': 'confirmed',
+            })
+            .select()
+            .single();
+        if (response != null) {
+          return {'appointment': response, 'supabase': true};
+        } else {
+          // Fallback to API
+          return await ApiService.createAppointment(
+            customerId: customerId,
+            customerName: customerName,
+            customerEmail: customerEmail,
+            customerPhone: customerPhone,
+            providerId: providerId,
+            serviceId: serviceId,
+            appointmentDate: appointmentDate,
+            appointmentTime: appointmentTime,
+            notes: notes,
+            isGuest: isGuest,
+            duration: duration,
+            location: location,
+            price: price,
+            paymentMethod: paymentMethod,
+            cardNumber: cardNumber,
+            cardHolder: cardHolder,
+            expiryDate: expiryDate,
+            cvv: cvv,
+          );
+        }
       } else {
         // Offline appointment creation
         final serverId = _uuid.v4();
@@ -309,9 +345,10 @@ class HybridApiService {
 
   Future<Map<String, dynamic>> getServices() async {
     try {
-      // Web platformunda her zaman API kullan
-      if (isWebPlatform || isOnline) {
-        return await ApiService.getServices();
+      if (isOnline) {
+        // Supabase'den çek
+        final response = await _supabase.from('services').select();
+        return {'services': response};
       } else if (canUseOfflineMode) {
         final services = await _localDb!.getServices();
         return {'services': services};
@@ -320,12 +357,11 @@ class HybridApiService {
             'No internet connection and offline mode not available');
       }
     } catch (e) {
-      // Web platformunda fallback yok, sadece mobile'da
       if (canUseOfflineMode) {
         final services = await _localDb!.getServices();
         return {'services': services};
       } else {
-        rethrow; // Web'de error'u yukarı fırlat
+        rethrow;
       }
     }
   }
@@ -387,9 +423,9 @@ class HybridApiService {
 
   Future<Map<String, dynamic>> getProviders() async {
     try {
-      // Web platformunda her zaman API kullan
-      if (isWebPlatform || isOnline) {
-        return await ApiService.getProviders();
+      if (isOnline) {
+        final response = await _supabase.from('providers').select();
+        return {'providers': response};
       } else if (canUseOfflineMode) {
         final providers = await _localDb!.getProviders();
         return {'providers': providers};
@@ -398,12 +434,11 @@ class HybridApiService {
             'No internet connection and offline mode not available');
       }
     } catch (e) {
-      // Web platformunda fallback yok, sadece mobile'da
       if (canUseOfflineMode) {
         final providers = await _localDb!.getProviders();
         return {'providers': providers};
       } else {
-        rethrow; // Web'de error'u yukarı fırlat
+        rethrow;
       }
     }
   }
@@ -591,7 +626,9 @@ class HybridApiService {
 
   Future<bool> checkApiStatus() async {
     try {
-      return await ApiService.checkApiStatus();
+      // Supabase'e basit bir istek at
+      await _supabase.from('services').select().limit(1);
+      return true;
     } catch (e) {
       return false;
     }
