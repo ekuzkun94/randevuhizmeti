@@ -105,13 +105,14 @@ class _AdminProvidersPageState extends State<AdminProvidersPage>
     setState(() => isLoading = true);
     try {
       final response = await ApiService.getProviders();
-      if (response.containsKey('providers')) {
-        setState(() {
-          providers = List<Map<String, dynamic>>.from(response['providers']);
-          _applyFilters();
-          isLoading = false;
-        });
-      }
+      setState(() {
+        providers = response
+            .map<Map<String, dynamic>>(
+                (provider) => Map<String, dynamic>.from(provider))
+            .toList();
+        _applyFilters();
+        isLoading = false;
+      });
     } catch (e) {
       setState(() => isLoading = false);
       if (mounted) {
@@ -328,9 +329,10 @@ class _AdminProvidersPageState extends State<AdminProvidersPage>
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: 'Sağlayıcı ara...',
-                hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
-                prefixIcon:
-                    Icon(Icons.search, color: Colors.white.withValues(alpha: 0.7)),
+                hintStyle:
+                    TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+                prefixIcon: Icon(Icons.search,
+                    color: Colors.white.withValues(alpha: 0.7)),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide.none,
@@ -383,7 +385,8 @@ class _AdminProvidersPageState extends State<AdminProvidersPage>
         backgroundColor: Colors.white.withValues(alpha: 0.1),
         selectedColor: Colors.blue,
         labelStyle: TextStyle(
-          color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.8),
+          color:
+              isSelected ? Colors.white : Colors.white.withValues(alpha: 0.8),
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         ),
       ),

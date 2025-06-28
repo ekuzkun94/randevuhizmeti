@@ -65,6 +65,16 @@ class AuthProvider extends ChangeNotifier {
           'customer.profile.edit',
           'customer.providers.view',
         ],
+        'customer': [
+          // Customer (string roleId)
+          'customer.dashboard',
+          'customer.appointments.view',
+          'customer.appointments.create',
+          'customer.appointments.cancel',
+          'customer.profile.view',
+          'customer.profile.edit',
+          'customer.providers.view',
+        ],
       };
 
   // Supabase client
@@ -84,40 +94,52 @@ class AuthProvider extends ChangeNotifier {
   // Permission kontrolü
   bool hasPermission(String permission) {
     if (_currentUser == null) return false;
-
-    final userPermissions = rolePermissions[_currentUser!.roleId] ?? [];
+    final userRoleId = _currentUser!.roleId.toString();
+    final userPermissions = rolePermissions[userRoleId] ?? [];
+    print(
+        '[DEBUG] hasPermission: userRoleId=$userRoleId, permissions=$userPermissions, checking=$permission');
     return userPermissions.contains(permission);
   }
 
   // Role kontrolü
   bool hasRole(String roleId) {
-    return _currentUser?.roleId == roleId;
+    if (_currentUser == null) return false;
+    print(
+        '[DEBUG] hasRole: currentUser.roleId=${_currentUser!.roleId}, checking=$roleId');
+    return _currentUser!.roleId.toString() == roleId.toString();
   }
 
   bool get isAdmin => hasRole('1');
   bool get isProvider => hasRole('2');
-  bool get isCustomer => hasRole('3');
+  bool get isCustomer => hasRole('3') || hasRole('customer');
 
   Future<bool> login(String email, String password, String roleId) async {
     try {
+      print('🔐 Login başlatılıyor: $email');
       _setLoading(true);
       _clearError();
 
       // --- Supabase Auth ---
+      print('🔐 Supabase auth deneniyor...');
       final response = await _supabase.auth.signInWithPassword(
         email: email,
         password: password,
       );
       final session = response.session;
       final user = response.user;
+
+      print(
+          '🔐 Supabase response: session=${session != null}, user=${user != null}');
+
       if (session != null && user != null) {
+        print('🔐 Supabase başarılı!');
         _token = session.accessToken;
         _refreshToken = session.refreshToken;
         _currentUser = UserModel(
           id: user.id,
           name: user.userMetadata?['name'] ?? '',
           email: user.email ?? '',
-          roleId: roleId, // You may want to fetch role from user metadata or DB
+          roleId: user.userMetadata?['role'] ?? roleId,
           createdAt: user.createdAt != null
               ? DateTime.parse(user.createdAt!)
               : DateTime.now(),
@@ -125,6 +147,8 @@ class AuthProvider extends ChangeNotifier {
               ? DateTime.parse(user.updatedAt!)
               : DateTime.now(),
         );
+        print(
+            '[DEBUG] Login sonrası currentUser.roleId: [33m${_currentUser?.roleId}[0m');
         await _storeAuth();
         _startSessionTimer();
         _startRefreshTimer();
@@ -132,136 +156,21 @@ class AuthProvider extends ChangeNotifier {
         notifyListeners();
         return true;
       } else {
-        _setError('Supabase: Giriş başarısız');
+        // Başarısız login
+        _setError('E-posta veya şifre hatalı. Lütfen tekrar deneyin.');
+        _setLoading(false);
         return false;
       }
-    } catch (e) {
-      debugPrint('Supabase giriş hatası: $e');
-      // Hata durumunda mock kullanıcı sistemine geri dön
-      return await _mockLogin(email, password, roleId);
-    } finally {
+    } on AuthApiException catch (e) {
+      print('Supabase giriş hatası: $e');
+      _setError('E-posta veya şifre hatalı. Lütfen tekrar deneyin.');
       _setLoading(false);
-    }
-  }
-
-  // Enhanced mock giriş sistemi
-  Future<bool> _mockLogin(String email, String password, String roleId) async {
-    try {
-      _setLoading(true);
-      _clearError();
-
-      // Güvenlik: Email format kontrolü
-      if (!_isValidEmail(email)) {
-        _setError('Geçerli bir e-posta adresi giriniz');
-        return false;
-      }
-
-      // Güvenlik: Şifre uzunluk kontrolü
-      if (password.length < 3) {
-        _setError('Şifre en az 3 karakter olmalıdır');
-        return false;
-      }
-
-      final testUsers = {
-        'admin@example.com': {
-          'id': 'admin-001',
-          'name': 'Admin User',
-          'email': 'admin@example.com',
-          'roleId': '1',
-          'password': 'admin123'
-        },
-        'ahmet@example.com': {
-          'id': 'provider-001',
-          'name': 'Dr. Ahmet Yılmaz',
-          'email': 'ahmet@example.com',
-          'roleId': '2',
-          'password': 'provider123'
-        },
-        'mehmet@example.com': {
-          'id': 'customer-001',
-          'name': 'Mehmet Kaya',
-          'email': 'mehmet@example.com',
-          'roleId': '3',
-          'password': 'customer123'
-        },
-        // Hızlı test için kısa alternatifler
-        'a@a.com': {
-          'id': 'admin-001',
-          'name': 'Admin User',
-          'email': 'a@a.com',
-          'roleId': '1',
-          'password': '123'
-        },
-        'p@p.com': {
-          'id': 'provider-001',
-          'name': 'Dr. Ahmet Yılmaz',
-          'email': 'p@p.com',
-          'roleId': '2',
-          'password': '123'
-        },
-        'c@c.com': {
-          'id': 'customer-001',
-          'name': 'Mehmet Kaya',
-          'email': 'c@c.com',
-          'roleId': '3',
-          'password': '123'
-        },
-        'customer@example.com': {
-          'id': 'customer-123',
-          'name': 'Customer User',
-          'email': 'customer@example.com',
-          'roleId': '3',
-          'password': 'customer123'
-        },
-        'provider@example.com': {
-          'id': 'provider-123',
-          'name': 'Dr. Provider User',
-          'email': 'provider@example.com',
-          'roleId': '2',
-          'password': 'provider123'
-        },
-      };
-
-      if (testUsers.containsKey(email) &&
-          testUsers[email]!['password'] == password) {
-        final userData = testUsers[email]!;
-
-        // RoleId kontrolü
-        if (roleId.isNotEmpty && userData['roleId'] != roleId) {
-          _setError('Bu role ile giriş yetkiniz yok');
-          return false;
-        }
-
-        // Mock JWT token oluştur
-        _token = _generateMockToken(userData);
-        _refreshToken = _generateMockRefreshToken();
-
-        _currentUser = UserModel(
-          id: userData['id']!,
-          name: userData['name']!,
-          email: userData['email']!,
-          roleId: userData['roleId']!,
-          password: userData['password']!,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        );
-
-        await _storeAuth();
-        _startSessionTimer();
-        _startRefreshTimer();
-
-        _setLoading(false);
-        notifyListeners();
-        return true;
-      } else {
-        _setError('Geçersiz e-posta veya şifre');
-        return false;
-      }
-    } catch (e) {
-      _setError(e.toString());
       return false;
-    } finally {
+    } catch (e) {
+      print('Login sırasında hata: $e');
+      _setError('Bir hata oluştu. Lütfen tekrar deneyin.');
       _setLoading(false);
+      return false;
     }
   }
 

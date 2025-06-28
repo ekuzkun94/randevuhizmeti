@@ -90,13 +90,14 @@ class _AdminServicesPageState extends State<AdminServicesPage>
     setState(() => isLoading = true);
     try {
       final response = await ApiService.getServices();
-      if (response.containsKey('services')) {
-        setState(() {
-          services = List<Map<String, dynamic>>.from(response['services']);
-          _applyFilters();
-          isLoading = false;
-        });
-      }
+      setState(() {
+        services = response
+            .map<Map<String, dynamic>>(
+                (service) => Map<String, dynamic>.from(service))
+            .toList();
+        _applyFilters();
+        isLoading = false;
+      });
     } catch (e) {
       setState(() => isLoading = false);
       if (mounted) {
@@ -306,9 +307,10 @@ class _AdminServicesPageState extends State<AdminServicesPage>
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: 'Hizmet ara...',
-                hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
-                prefixIcon:
-                    Icon(Icons.search, color: Colors.white.withValues(alpha: 0.7)),
+                hintStyle:
+                    TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+                prefixIcon: Icon(Icons.search,
+                    color: Colors.white.withValues(alpha: 0.7)),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide.none,

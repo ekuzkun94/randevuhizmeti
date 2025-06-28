@@ -2,9 +2,10 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import '../config/database_config.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://127.0.0.1:5001';
+  static const String baseUrl = '${DatabaseConfig.supabaseUrl}/rest/v1';
 
   // Kullanıcı girişi
   static Future<Map<String, dynamic>> login(
@@ -220,21 +221,20 @@ class ApiService {
 
   // ==================== SERVICES ====================
 
-  // Tüm hizmetleri getir
-  static Future<Map<String, dynamic>> getServices() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/services'),
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      if (response.statusCode == 200) {
-        return json.decode(response.body);
-      } else {
-        throw Exception('Hizmetler alınamadı: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Bağlantı hatası: $e');
+  // Supabase REST API ile tüm hizmetleri getir
+  static Future<List<dynamic>> getServices() async {
+    final url = Uri.parse('$baseUrl/services?select=*');
+    final response = await http.get(
+      url,
+      headers: {
+        'apikey': DatabaseConfig.supabaseAnonKey,
+        'Authorization': 'Bearer ${DatabaseConfig.supabaseAnonKey}',
+      },
+    );
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Supabase services alınamadı: ${response.statusCode}');
     }
   }
 
@@ -395,20 +395,19 @@ class ApiService {
   // ==================== PROVIDERS ====================
 
   // Tüm provider'ları getir
-  static Future<Map<String, dynamic>> getProviders() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/providers'),
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      if (response.statusCode == 200) {
-        return json.decode(response.body);
-      } else {
-        throw Exception('Provider\'lar alınamadı: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Bağlantı hatası: $e');
+  static Future<List<dynamic>> getProviders() async {
+    final url = Uri.parse('$baseUrl/providers?select=*');
+    final response = await http.get(
+      url,
+      headers: {
+        'apikey': DatabaseConfig.supabaseAnonKey,
+        'Authorization': 'Bearer ${DatabaseConfig.supabaseAnonKey}',
+      },
+    );
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Supabase providers alınamadı: ${response.statusCode}');
     }
   }
 
@@ -695,22 +694,23 @@ class ApiService {
   // Provider'a ait staff üyelerini getir
   static Future<List<Map<String, dynamic>>> getStaffByProvider(
       String providerId) async {
-    try {
-      final response = await http.get(
-        Uri.parse(
-            '$baseUrl/staff?provider_id=eq.$providerId&is_active=eq.true'),
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return data.cast<Map<String, dynamic>>();
-      } else {
-        throw Exception(
-            'Provider staff listesi alınamadı: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Bağlantı hatası: $e');
+    final url = Uri.parse(
+        '${DatabaseConfig.supabaseUrl}/rest/v1/staff?provider_id=eq.$providerId&is_active=eq.true');
+    final response = await http.get(
+      url,
+      headers: {
+        'apikey': DatabaseConfig.supabaseAnonKey,
+        'Authorization': 'Bearer ${DatabaseConfig.supabaseAnonKey}',
+      },
+    );
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data
+          .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
+          .toList();
+    } else {
+      throw Exception(
+          'Supabase staff (by provider) alınamadı: ${response.statusCode}');
     }
   }
 
@@ -812,22 +812,48 @@ class ApiService {
     try {
       final Map<String, dynamic> requestBody = {};
 
-      if (firstName != null) requestBody['first_name'] = firstName;
-      if (lastName != null) requestBody['last_name'] = lastName;
-      if (position != null) requestBody['position'] = position;
-      if (specialization != null)
+      if (firstName != null) {
+        requestBody['first_name'] = firstName;
+      }
+      if (lastName != null) {
+        requestBody['last_name'] = lastName;
+      }
+      if (position != null) {
+        requestBody['position'] = position;
+      }
+      if (specialization != null) {
         requestBody['specialization'] = specialization;
-      if (experienceYears != null)
+      }
+      if (experienceYears != null) {
         requestBody['experience_years'] = experienceYears;
-      if (phone != null) requestBody['phone'] = phone;
-      if (email != null) requestBody['email'] = email;
-      if (bio != null) requestBody['bio'] = bio;
-      if (photoUrl != null) requestBody['photo_url'] = photoUrl;
-      if (rating != null) requestBody['rating'] = rating;
-      if (totalReviews != null) requestBody['total_reviews'] = totalReviews;
-      if (isActive != null) requestBody['is_active'] = isActive;
-      if (isAvailable != null) requestBody['is_available'] = isAvailable;
-      if (workingHours != null) requestBody['working_hours'] = workingHours;
+      }
+      if (phone != null) {
+        requestBody['phone'] = phone;
+      }
+      if (email != null) {
+        requestBody['email'] = email;
+      }
+      if (bio != null) {
+        requestBody['bio'] = bio;
+      }
+      if (photoUrl != null) {
+        requestBody['photo_url'] = photoUrl;
+      }
+      if (rating != null) {
+        requestBody['rating'] = rating;
+      }
+      if (totalReviews != null) {
+        requestBody['total_reviews'] = totalReviews;
+      }
+      if (isActive != null) {
+        requestBody['is_active'] = isActive;
+      }
+      if (isAvailable != null) {
+        requestBody['is_available'] = isAvailable;
+      }
+      if (workingHours != null) {
+        requestBody['working_hours'] = workingHours;
+      }
 
       final response = await http.put(
         Uri.parse('$baseUrl/staff?id=eq.$staffId'),
@@ -948,23 +974,27 @@ class ApiService {
 
   // Belirli bir hizmeti sunan staff üyelerini getir
   static Future<List<Map<String, dynamic>>> getStaffByService(
-      String serviceName) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/rpc/get_staff_by_service'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({'service_name_param': serviceName}),
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return data.cast<Map<String, dynamic>>();
-      } else {
-        throw Exception(
-            'Hizmet için staff listesi alınamadı: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Bağlantı hatası: $e');
+      String serviceId) async {
+    final url = Uri.parse(
+        '${DatabaseConfig.supabaseUrl}/rest/v1/staff_services?service_id=eq.$serviceId&is_active=eq.true&select=staff(*)');
+    final response = await http.get(
+      url,
+      headers: {
+        'apikey': DatabaseConfig.supabaseAnonKey,
+        'Authorization': 'Bearer ${DatabaseConfig.supabaseAnonKey}',
+      },
+    );
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      // Her kayıttaki staff alanını döndür
+      return data
+          .map<Map<String, dynamic>>(
+              (e) => Map<String, dynamic>.from(e['staff'] ?? {}))
+          .where((e) => e.isNotEmpty)
+          .toList();
+    } else {
+      throw Exception(
+          'Supabase staff (by service) alınamadı: ${response.statusCode}');
     }
   }
 
@@ -1036,11 +1066,18 @@ class ApiService {
     try {
       final Map<String, dynamic> requestBody = {};
 
-      if (isPrimary != null) requestBody['is_primary'] = isPrimary;
-      if (experienceLevel != null)
+      if (isPrimary != null) {
+        requestBody['is_primary'] = isPrimary;
+      }
+      if (experienceLevel != null) {
         requestBody['experience_level'] = experienceLevel;
-      if (priceModifier != null) requestBody['price_modifier'] = priceModifier;
-      if (isActive != null) requestBody['is_active'] = isActive;
+      }
+      if (priceModifier != null) {
+        requestBody['price_modifier'] = priceModifier;
+      }
+      if (isActive != null) {
+        requestBody['is_active'] = isActive;
+      }
 
       final response = await http.put(
         Uri.parse('$baseUrl/staff_services?id=eq.$staffServiceId'),
@@ -1124,6 +1161,61 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Bağlantı hatası: $e');
+    }
+  }
+
+  // Bir servise ait provider'ları getir (junction tablosu üzerinden)
+  static Future<List<Map<String, dynamic>>> getProvidersByService(
+      String serviceId) async {
+    final url = Uri.parse(
+        '${DatabaseConfig.supabaseUrl}/rest/v1/service_providers?service_id=eq.$serviceId&is_active=eq.true&select=providers(*)');
+    final response = await http.get(
+      url,
+      headers: {
+        'apikey': DatabaseConfig.supabaseAnonKey,
+        'Authorization': 'Bearer ${DatabaseConfig.supabaseAnonKey}',
+      },
+    );
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      // Her kayıttaki providers alanını döndür
+      return data
+          .map<Map<String, dynamic>>(
+              (e) => Map<String, dynamic>.from(e['providers'] ?? {}))
+          .where((e) => e.isNotEmpty)
+          .toList();
+    } else {
+      throw Exception(
+          'Supabase providers (by service) alınamadı: ${response.statusCode}');
+    }
+  }
+
+  // Provider ve servise göre staff'ı getir (hem provider hem de servis filtresi)
+  static Future<List<Map<String, dynamic>>> getStaffByProviderAndService(
+      String providerId, String serviceId) async {
+    final url = Uri.parse(
+        '${DatabaseConfig.supabaseUrl}/rest/v1/staff_services?service_id=eq.$serviceId&is_active=eq.true&select=staff(*)');
+    final response = await http.get(
+      url,
+      headers: {
+        'apikey': DatabaseConfig.supabaseAnonKey,
+        'Authorization': 'Bearer ${DatabaseConfig.supabaseAnonKey}',
+      },
+    );
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      // Her kayıttaki staff alanını döndür ve provider_id'ye göre filtrele
+      final allStaff = data
+          .map<Map<String, dynamic>>(
+              (e) => Map<String, dynamic>.from(e['staff'] ?? {}))
+          .where((e) => e.isNotEmpty)
+          .toList();
+      return allStaff
+          .where((staff) => staff['provider_id'] == providerId)
+          .toList();
+    } else {
+      throw Exception(
+          'Supabase staff (by provider and service) alınamadı: ${response.statusCode}');
     }
   }
 }

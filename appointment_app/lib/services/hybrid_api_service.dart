@@ -345,24 +345,11 @@ class HybridApiService {
 
   Future<Map<String, dynamic>> getServices() async {
     try {
-      if (isOnline) {
-        // Supabase'den çek
-        final response = await _supabase.from('services').select();
-        return {'services': response};
-      } else if (canUseOfflineMode) {
-        final services = await _localDb!.getServices();
-        return {'services': services};
-      } else {
-        throw Exception(
-            'No internet connection and offline mode not available');
-      }
+      // Her zaman Supabase'den veri çek
+      final response = await _supabase.from('services').select();
+      return {'services': response};
     } catch (e) {
-      if (canUseOfflineMode) {
-        final services = await _localDb!.getServices();
-        return {'services': services};
-      } else {
-        rethrow;
-      }
+      rethrow;
     }
   }
 
@@ -423,23 +410,11 @@ class HybridApiService {
 
   Future<Map<String, dynamic>> getProviders() async {
     try {
-      if (isOnline) {
-        final response = await _supabase.from('providers').select();
-        return {'providers': response};
-      } else if (canUseOfflineMode) {
-        final providers = await _localDb!.getProviders();
-        return {'providers': providers};
-      } else {
-        throw Exception(
-            'No internet connection and offline mode not available');
-      }
+      // Her zaman Supabase'den veri çek
+      final response = await _supabase.from('providers').select();
+      return {'providers': response};
     } catch (e) {
-      if (canUseOfflineMode) {
-        final providers = await _localDb!.getProviders();
-        return {'providers': providers};
-      } else {
-        rethrow;
-      }
+      rethrow;
     }
   }
 

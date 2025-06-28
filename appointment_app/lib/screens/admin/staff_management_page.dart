@@ -45,8 +45,7 @@ class _StaffManagementPageState extends State<StaffManagementPage>
     try {
       // Load providers first
       final providersResponse = await ApiService.getProviders();
-      final providersData = providersResponse['data'] as List<dynamic>? ?? [];
-      final providers = providersData
+      final providers = providersResponse
           .map((json) => provider_model.Provider.fromJson(json))
           .toList();
 
@@ -56,9 +55,10 @@ class _StaffManagementPageState extends State<StaffManagementPage>
 
       // Load services
       final servicesResponse = await ApiService.getServices();
-      final servicesData = servicesResponse['data'] as List<dynamic>? ?? [];
-      final services =
-          servicesData.map((json) => json as Map<String, dynamic>).toList();
+      final services = servicesResponse
+          .map<Map<String, dynamic>>(
+              (service) => Map<String, dynamic>.from(service))
+          .toList();
 
       setState(() {
         _providers = providers;
@@ -346,8 +346,7 @@ class _AddStaffDialogState extends State<_AddStaffDialog> {
   Future<void> _loadProviders() async {
     try {
       final providersResponse = await ApiService.getProviders();
-      final providersData = providersResponse['data'] as List<dynamic>? ?? [];
-      final providers = providersData
+      final providers = providersResponse
           .map((json) => provider_model.Provider.fromJson(json))
           .toList();
       setState(() {
@@ -543,8 +542,7 @@ class _EditStaffDialogState extends State<_EditStaffDialog> {
   Future<void> _loadProviders() async {
     try {
       final providersResponse = await ApiService.getProviders();
-      final providersData = providersResponse['data'] as List<dynamic>? ?? [];
-      final providers = providersData
+      final providers = providersResponse
           .map((json) => provider_model.Provider.fromJson(json))
           .toList();
       setState(() {

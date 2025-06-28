@@ -265,6 +265,74 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage>
             },
           ),
           const SizedBox(width: AppTheme.spacing8),
+          PopupMenuButton<String>(
+            icon: Icon(
+              Icons.more_vert,
+              color: isDark
+                  ? AppTheme.darkColorScheme.onSurface
+                  : AppTheme.lightColorScheme.onSurface,
+            ),
+            onSelected: (value) {
+              switch (value) {
+                case 'profile':
+                  context.go('/customer/profile');
+                  break;
+                case 'logout':
+                  _showLogoutDialog(context, languageProvider);
+                  break;
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem<String>(
+                value: 'profile',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.person_outline,
+                      color: isDark
+                          ? AppTheme.darkColorScheme.onSurface
+                          : AppTheme.lightColorScheme.onSurface,
+                      size: 20,
+                    ),
+                    const SizedBox(width: AppTheme.spacing8),
+                    Text(
+                      languageProvider.translate('profile', fallback: 'Profil'),
+                      style: TextStyle(
+                        color: isDark
+                            ? AppTheme.darkColorScheme.onSurface
+                            : AppTheme.lightColorScheme.onSurface,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.logout,
+                      color: isDark
+                          ? AppTheme.darkColorScheme.error
+                          : AppTheme.lightColorScheme.error,
+                      size: 20,
+                    ),
+                    const SizedBox(width: AppTheme.spacing8),
+                    Text(
+                      languageProvider.translate('logout',
+                          fallback: 'Çıkış Yap'),
+                      style: TextStyle(
+                        color: isDark
+                            ? AppTheme.darkColorScheme.error
+                            : AppTheme.lightColorScheme.error,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: AppTheme.spacing8),
         ],
       ),
       body: _isLoading
@@ -983,5 +1051,45 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage>
             ? AppTheme.darkColorScheme.primary
             : AppTheme.lightColorScheme.primary;
     }
+  }
+
+  void _showLogoutDialog(
+      BuildContext context, LanguageProvider languageProvider) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          languageProvider.translate('logout_confirmation',
+              fallback: 'Çıkış Yapmak İstediğinize Emin Misiniz?'),
+        ),
+        content: Text(
+          languageProvider.translate('logout_message',
+              fallback: 'Çıkış yapmak, oturumunuzu sonlandıracaktır.'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              languageProvider.translate('cancel', fallback: 'İptal'),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _logout();
+            },
+            child: Text(
+              languageProvider.translate('logout', fallback: 'Çıkış Yap'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _logout() {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    authProvider.signOut();
+    context.go('/login');
   }
 }
