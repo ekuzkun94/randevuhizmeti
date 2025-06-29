@@ -380,8 +380,8 @@ class _GuestBookingPageState extends State<GuestBookingPage>
 
     return Scaffold(
       backgroundColor: isDark
-          ? AppTheme.darkColorScheme.background
-          : AppTheme.lightColorScheme.background,
+          ? AppTheme.darkColorScheme.surface
+          : AppTheme.lightColorScheme.surface,
       appBar: AppBar(
         title: const Text('Hızlı Randevu'),
         backgroundColor: Colors.transparent,

@@ -596,14 +596,14 @@ class AppTheme {
 
     // Switch Theme - Modern style
     switchTheme: SwitchThemeData(
-      thumbColor: MaterialStateProperty.resolveWith((states) {
-        if (states.contains(MaterialState.selected)) {
+      thumbColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
           return lightColorScheme.primary;
         }
         return lightColorScheme.outline;
       }),
-      trackColor: MaterialStateProperty.resolveWith((states) {
-        if (states.contains(MaterialState.selected)) {
+      trackColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
           return lightColorScheme.primaryContainer;
         }
         return lightColorScheme.surfaceContainerHighest;
@@ -826,14 +826,14 @@ class AppTheme {
 
     // Switch Theme - Modern style
     switchTheme: SwitchThemeData(
-      thumbColor: MaterialStateProperty.resolveWith((states) {
-        if (states.contains(MaterialState.selected)) {
+      thumbColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
           return darkColorScheme.primary;
         }
         return darkColorScheme.outline;
       }),
-      trackColor: MaterialStateProperty.resolveWith((states) {
-        if (states.contains(MaterialState.selected)) {
+      trackColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
           return darkColorScheme.primaryContainer;
         }
         return darkColorScheme.surfaceContainerHighest;

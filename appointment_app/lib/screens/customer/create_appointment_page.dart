@@ -250,7 +250,7 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage>
     try {
       final hybridApi = HybridApiService();
       final response = await hybridApi.getProviders();
-      debugPrint('🟢 RAW PROVIDERS RESPONSE: ' + response.toString());
+      debugPrint('🟢 RAW PROVIDERS RESPONSE: $response');
       final providers = response['providers'] as List<dynamic>? ?? [];
 
       debugPrint(
@@ -1227,10 +1227,10 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage>
         return Card(
           color: isSelected ? Colors.blue.shade50 : null,
           child: ListTile(
-            leading: CircleAvatar(child: Icon(Icons.person)),
+            leading: const CircleAvatar(child: Icon(Icons.person)),
             title: Text(staff.fullName),
             subtitle: Text(staff.position),
-            trailing: isSelected ? Icon(Icons.check, color: Colors.blue) : null,
+            trailing: isSelected ? const Icon(Icons.check, color: Colors.blue) : null,
             onTap: () {
               setState(() {
                 _selectedStaff = staff.id;

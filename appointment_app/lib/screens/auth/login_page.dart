@@ -312,7 +312,7 @@ class _LoginPageState extends State<LoginPage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.lock_outline, color: Colors.red, size: 22),
+                    const Icon(Icons.lock_outline, color: Colors.red, size: 22),
                     const SizedBox(width: 8),
                     Flexible(
                       child: Text(
@@ -487,7 +487,7 @@ class _LoginPageState extends State<LoginPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.lock_outline, color: Colors.red, size: 22),
+                const Icon(Icons.lock_outline, color: Colors.red, size: 22),
                 const SizedBox(width: 8),
                 Flexible(
                   child: Text(
@@ -544,11 +544,11 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return AppLocalizations.of(context)!.emailError;
+                      return AppLocalizations.of(context).emailError;
                     }
                     if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,63}')
                         .hasMatch(value)) {
-                      return AppLocalizations.of(context)!.invalidEmail;
+                      return AppLocalizations.of(context).invalidEmail;
                     }
                     return null;
                   },

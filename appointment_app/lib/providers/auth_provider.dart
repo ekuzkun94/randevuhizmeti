@@ -141,7 +141,7 @@ class AuthProvider extends ChangeNotifier {
           email: user.email ?? '',
           roleId: user.userMetadata?['role'] ?? roleId,
           createdAt: user.createdAt != null
-              ? DateTime.parse(user.createdAt!)
+              ? DateTime.parse(user.createdAt)
               : DateTime.now(),
           updatedAt: user.updatedAt != null
               ? DateTime.parse(user.updatedAt!)

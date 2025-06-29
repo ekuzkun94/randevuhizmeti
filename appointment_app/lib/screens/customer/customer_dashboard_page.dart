@@ -236,8 +236,8 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage>
 
     return Scaffold(
       backgroundColor: isDark
-          ? AppTheme.darkColorScheme.background
-          : AppTheme.lightColorScheme.background,
+          ? AppTheme.darkColorScheme.surface
+          : AppTheme.lightColorScheme.surface,
       appBar: AppBar(
         title: Text(
           languageProvider.translate('dashboard', fallback: 'Dashboard'),
@@ -429,7 +429,7 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage>
               Container(
                 width: 60,
                 height: 60,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
                     colors: AppTheme.primaryGradient,
@@ -554,7 +554,7 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage>
                 padding: const EdgeInsets.all(AppTheme.spacing20),
                 child: Column(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.calendar_today,
                       color: Colors.white,
                       size: 32,
@@ -588,7 +588,7 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage>
                 padding: const EdgeInsets.all(AppTheme.spacing20),
                 child: Column(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.star,
                       color: Colors.white,
                       size: 32,
@@ -723,7 +723,7 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage>
                         ),
                         child: Text(
                           appointment['status'] ?? 'Bilinmiyor',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                             color: Colors.white,
@@ -931,7 +931,7 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage>
         children: [
           Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.star,
                 color: Colors.white,
                 size: 32,

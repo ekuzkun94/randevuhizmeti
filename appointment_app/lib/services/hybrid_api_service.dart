@@ -215,32 +215,8 @@ class HybridApiService {
             })
             .select()
             .single();
-        if (response != null) {
-          return {'appointment': response, 'supabase': true};
-        } else {
-          // Fallback to API
-          return await ApiService.createAppointment(
-            customerId: customerId,
-            customerName: customerName,
-            customerEmail: customerEmail,
-            customerPhone: customerPhone,
-            providerId: providerId,
-            serviceId: serviceId,
-            appointmentDate: appointmentDate,
-            appointmentTime: appointmentTime,
-            notes: notes,
-            isGuest: isGuest,
-            duration: duration,
-            location: location,
-            price: price,
-            paymentMethod: paymentMethod,
-            cardNumber: cardNumber,
-            cardHolder: cardHolder,
-            expiryDate: expiryDate,
-            cvv: cvv,
-          );
-        }
-      } else {
+        return {'appointment': response, 'supabase': true};
+            } else {
         // Offline appointment creation
         final serverId = _uuid.v4();
         appointmentData['server_id'] = serverId;

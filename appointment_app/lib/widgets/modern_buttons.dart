@@ -302,7 +302,7 @@ class ModernButtons {
         child: InkWell(
           onTap: onPressed,
           borderRadius: BorderRadius.circular(AppTheme.radius12),
-          child: Container(
+          child: SizedBox(
             width: size ?? 48,
             height: size ?? 48,
             child: Icon(
