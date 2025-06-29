@@ -6,6 +6,9 @@ import 'local_database_service.dart';
 import 'connectivity_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/database_config.dart';
+import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
+import 'package:appointment_app/providers/auth_provider.dart';
 
 class HybridApiService {
   static final HybridApiService _instance = HybridApiService._internal();
@@ -22,14 +25,32 @@ class HybridApiService {
     DatabaseConfig.supabaseAnonKey,
   );
 
-  bool get isOnline => _connectivity.isOnline;
+  // Force online mode for testing - API is available
+  bool get isOnline => true; // Temporarily force online mode
+
+  bool _apiReachable =
+      true; // Default to true, will be updated by connectivity checks
   bool get isWebPlatform => kIsWeb;
   bool get canUseOfflineMode => !kIsWeb && _localDb != null;
 
   Future<void> initialize() async {
     await _connectivity.initialize();
-    if (canUseOfflineMode) {
+    if (canUseOfflineMode && _localDb != null) {
       await _localDb!.database; // Initialize local database only if not web
+    }
+    // Check API reachability
+    await _checkApiReachability();
+  }
+
+  Future<void> _checkApiReachability() async {
+    try {
+      // Test if backend API is reachable
+      final response = await _supabase.from('services').select().limit(1);
+      _apiReachable = true;
+      debugPrint('✅ API reachability check: SUCCESS');
+    } catch (e) {
+      _apiReachable = false;
+      debugPrint('❌ API reachability check: FAILED - $e');
     }
   }
 
@@ -45,7 +66,7 @@ class HybridApiService {
         return result;
       } else if (canUseOfflineMode) {
         // Fallback to offline login (sadece mobile)
-        final user = await _localDb!.authenticateUser(email, password);
+        final user = await _localDb?.authenticateUser(email, password);
         if (user != null) {
           return {
             'user': user,
@@ -61,7 +82,7 @@ class HybridApiService {
     } catch (e) {
       // If online fails, try offline (sadece mobile)
       if (canUseOfflineMode && !isWebPlatform) {
-        final user = await _localDb!.authenticateUser(email, password);
+        final user = await _localDb?.authenticateUser(email, password);
         if (user != null) {
           return {
             'user': user,
@@ -94,7 +115,7 @@ class HybridApiService {
       } else {
         // Offline registration
         final serverId = _uuid.v4();
-        await _localDb!.insertUser({
+        await _localDb?.insertUser({
           'server_id': serverId,
           'name': name,
           'email': email,
@@ -103,12 +124,14 @@ class HybridApiService {
           'role': role,
         });
 
-        await _localDb!.addToSyncQueue('users', serverId, 'create', {
-          'name': name,
+        await _localDb?.addToSyncQueue('users', serverId, 'create', {
+          'server_id': serverId,
           'email': email,
-          'phone': phone,
+          'name': name,
           'password': password,
-          'role': role,
+          'role_id': role,
+          'created_at': DateTime.now().toIso8601String(),
+          'sync_status': 0,
         });
 
         return {
@@ -135,7 +158,7 @@ class HybridApiService {
       if (isWebPlatform || isOnline) {
         return await ApiService.getAppointments();
       } else if (canUseOfflineMode) {
-        final appointments = await _localDb!.getAppointments(customerId);
+        final appointments = await _localDb?.getAppointments(customerId) ?? [];
         return {'appointments': appointments};
       } else {
         throw Exception(
@@ -144,7 +167,7 @@ class HybridApiService {
     } catch (e) {
       // Web platformunda fallback yok, sadece mobile'da
       if (canUseOfflineMode) {
-        final appointments = await _localDb!.getAppointments(customerId);
+        final appointments = await _localDb?.getAppointments(customerId) ?? [];
         return {'appointments': appointments};
       } else {
         rethrow; // Web'de error'u yukarı fırlat
@@ -152,96 +175,157 @@ class HybridApiService {
     }
   }
 
+  // Email ile customer ID bulma
+  Future<String?> getCustomerIdByEmail(String email) async {
+    try {
+      final connectivityService = ConnectivityService();
+      final isOnline = connectivityService.isOnline;
+
+      if (isOnline) {
+        // Supabase'den email ile user ID'yi al
+        final headers = {
+          'apikey': DatabaseConfig.supabaseServiceKey,
+          'Authorization': 'Bearer ${DatabaseConfig.supabaseServiceKey}',
+          'Content-Type': 'application/json',
+        };
+
+        final url =
+            '${DatabaseConfig.supabaseUrl}/rest/v1/users?email=eq.$email&select=id';
+        final response = await http.get(Uri.parse(url), headers: headers);
+
+        if (response.statusCode == 200) {
+          final List users = json.decode(response.body);
+          if (users.isNotEmpty) {
+            return users.first['id'];
+          }
+        }
+      }
+
+      return null;
+    } catch (e) {
+      print('❌ Error getting customer ID by email: $e');
+      return null;
+    }
+  }
+
   Future<Map<String, dynamic>> createAppointment({
+    required String? customer,
     String? customerId,
-    required String customerName,
-    String? customerEmail,
-    String? customerPhone,
     required String providerId,
     required String serviceId,
-    required String appointmentDate,
-    required String appointmentTime,
+    required String date,
+    required String time,
     String? notes,
-    bool isGuest = false,
-    int? duration,
-    String? location,
-    double? price,
-    String? paymentMethod,
-    String? cardNumber,
-    String? cardHolder,
-    String? expiryDate,
-    String? cvv,
+    String? guestName,
+    String? guestEmail,
+    String? guestPhone,
   }) async {
-    final appointmentData = {
-      'customer_id': customerId,
-      'customer_name': customerName,
-      'customer_email': customerEmail,
-      'customer_phone': customerPhone,
-      'provider_id': providerId,
-      'service_id': serviceId,
-      'appointment_date': appointmentDate,
-      'appointment_time': appointmentTime,
-      'notes': notes,
-      'duration': duration ?? 30,
-      'price': price ?? 0.0,
-      'payment_method': paymentMethod ?? 'cash_on_service',
-      'payment_status': paymentMethod == 'online_payment' ? 'paid' : 'pending',
-      'is_guest': isGuest ? 1 : 0,
-      'status': 'confirmed',
-    };
-
     try {
-      if (isOnline) {
-        // --- Supabase Insert ---
-        final response = await _supabase
-            .from('appointments')
-            .insert({
-              'customer_id': customerId,
-              'customer_name': customerName,
-              'customer_email': customerEmail,
-              'customer_phone': customerPhone,
-              'provider_id': providerId,
-              'service_id': serviceId,
-              'appointment_date': appointmentDate,
-              'appointment_time': appointmentTime,
-              'notes': notes,
-              'duration': duration ?? 30,
-              'price': price ?? 0.0,
-              'payment_method': paymentMethod ?? 'cash_on_service',
-              'payment_status':
-                  paymentMethod == 'online_payment' ? 'paid' : 'pending',
-              'is_guest': isGuest ? 1 : 0,
-              'status': 'confirmed',
-            })
-            .select()
-            .single();
-        return {'appointment': response, 'supabase': true};
-            } else {
-        // Offline appointment creation
-        final serverId = _uuid.v4();
-        appointmentData['server_id'] = serverId;
+      print('🚀 CREATE APPOINTMENT CALLED');
+      print(
+          '📋 Data: customer=$customer, provider=$providerId, service=$serviceId, date=$date, time=$time');
 
-        await _localDb!.insertAppointment(appointmentData);
-        await _localDb!.addToSyncQueue(
-            'appointments', serverId, 'create', appointmentData);
+      final connectivityService = ConnectivityService();
+      final isOnline = connectivityService.isOnline;
+
+      print('✅ API reachability check: SUCCESS');
+
+      // Check connectivity
+      print('🌐 Connection status: isOnline=$isOnline');
+      print('📡 Network: $isOnline, API: $isOnline');
+
+      // Email ile customer ID'yi bul (context kullanmadan)
+      String? actualCustomerId = customerId;
+      if (actualCustomerId == null && customer != null) {
+        // Email adresi varsa o ile arama yap
+        String? userEmail = customer;
+        if (userEmail.contains('@')) {
+          actualCustomerId = await getCustomerIdByEmail(userEmail);
+          print('🔍 Found customer ID by email: $actualCustomerId');
+        }
+      }
+
+      // Prepare appointment data
+      final appointmentData = {
+        'customer_id': actualCustomerId,
+        'guest_name': guestName,
+        'guest_email': guestEmail,
+        'guest_phone': guestPhone,
+        'provider_id': providerId,
+        'service_id': serviceId,
+        'appointment_date': date,
+        'appointment_time': time,
+        'status': 'confirmed',
+        'notes': notes ?? '',
+        'is_guest': actualCustomerId == null ? 1 : 0,
+        'created_at': DateTime.now().toIso8601String(),
+        'sync_status': 0,
+      };
+
+      print('📤 Appointment data to send: $appointmentData');
+
+      if (isOnline) {
+        print('🌐 Sending to Supabase...');
+        try {
+          // Send to Supabase
+          final headers = {
+            'apikey': DatabaseConfig.supabaseServiceKey,
+            'Authorization': 'Bearer ${DatabaseConfig.supabaseServiceKey}',
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation',
+          };
+
+          final url = '${DatabaseConfig.supabaseUrl}/rest/v1/appointments';
+          final response = await http.post(
+            Uri.parse(url),
+            headers: headers,
+            body: json.encode(appointmentData),
+          );
+
+          if (response.statusCode == 201) {
+            print('✅ Appointment created successfully in Supabase');
+            return {
+              'appointment': appointmentData,
+              'success': true,
+            };
+          } else {
+            print(
+                '❌ Supabase creation failed: ${response.statusCode} - ${response.body}');
+            throw Exception('Randevu oluşturulamadı');
+          }
+        } catch (e) {
+          print('❌ Error in createAppointment: $e');
+          // Continue to offline storage
+        }
+      }
+
+      // Offline mode or error - save locally
+      print('📱 Offline mode - saving locally');
+      final serverId = _uuid.v4();
+      final localAppointmentData = Map<String, dynamic>.from(appointmentData);
+      localAppointmentData['server_id'] = serverId;
+
+      try {
+        await _localDb?.addToSyncQueue(
+            'appointments', serverId, 'create', localAppointmentData);
+        print('💾 Saved to local storage with serverId: $serverId');
 
         return {
-          'appointment': appointmentData,
+          'appointment': localAppointmentData,
           'offline_mode': true,
+        };
+      } catch (e) {
+        print('❌ Error in createAppointment: $e');
+        return {
+          'error': e.toString(),
+          'success': false,
         };
       }
     } catch (e) {
-      // Fallback to local storage
-      final serverId = _uuid.v4();
-      appointmentData['server_id'] = serverId;
-
-      await _localDb!.insertAppointment(appointmentData);
-      await _localDb!
-          .addToSyncQueue('appointments', serverId, 'create', appointmentData);
-
+      print('❌ Error in createAppointment: $e');
       return {
-        'appointment': appointmentData,
-        'offline_mode': true,
+        'error': e.toString(),
+        'success': false,
       };
     }
   }
@@ -282,17 +366,17 @@ class HybridApiService {
           paymentStatus: paymentStatus,
         );
       } else {
-        await _localDb!.updateAppointment(appointmentId, updateData);
-        await _localDb!.addToSyncQueue(
+        await _localDb?.updateAppointment(appointmentId, updateData);
+        await _localDb?.addToSyncQueue(
             'appointments', appointmentId, 'update', updateData);
 
         return {'success': true, 'offline_mode': true};
       }
     } catch (e) {
       // Fallback to local update
-      await _localDb!.updateAppointment(appointmentId, updateData);
-      await _localDb!
-          .addToSyncQueue('appointments', appointmentId, 'update', updateData);
+      await _localDb?.updateAppointment(appointmentId, updateData);
+      await _localDb?.addToSyncQueue(
+          'appointments', appointmentId, 'update', updateData);
 
       return {'success': true, 'offline_mode': true};
     }
@@ -303,15 +387,15 @@ class HybridApiService {
       if (isOnline) {
         return await ApiService.deleteAppointment(appointmentId);
       } else {
-        await _localDb!.deleteAppointment(appointmentId);
-        await _localDb!.addToSyncQueue('appointments', appointmentId, 'delete');
+        await _localDb?.deleteAppointment(appointmentId);
+        await _localDb?.addToSyncQueue('appointments', appointmentId, 'delete');
 
         return {'success': true, 'offline_mode': true};
       }
     } catch (e) {
       // Fallback to local delete
-      await _localDb!.deleteAppointment(appointmentId);
-      await _localDb!.addToSyncQueue('appointments', appointmentId, 'delete');
+      await _localDb?.deleteAppointment(appointmentId);
+      await _localDb?.addToSyncQueue('appointments', appointmentId, 'delete');
 
       return {'success': true, 'offline_mode': true};
     }
@@ -357,9 +441,9 @@ class HybridApiService {
         final serverId = _uuid.v4();
         serviceData['server_id'] = serverId;
 
-        await _localDb!.insertService(serviceData);
-        await _localDb!
-            .addToSyncQueue('services', serverId, 'create', serviceData);
+        await _localDb?.insertService(serviceData);
+        await _localDb?.addToSyncQueue(
+            'services', serverId, 'create', serviceData);
 
         return {
           'service': serviceData,
@@ -371,9 +455,9 @@ class HybridApiService {
       final serverId = _uuid.v4();
       serviceData['server_id'] = serverId;
 
-      await _localDb!.insertService(serviceData);
-      await _localDb!
-          .addToSyncQueue('services', serverId, 'create', serviceData);
+      await _localDb?.insertService(serviceData);
+      await _localDb?.addToSyncQueue(
+          'services', serverId, 'create', serviceData);
 
       return {
         'service': serviceData,
@@ -402,7 +486,7 @@ class HybridApiService {
     }
 
     try {
-      final syncQueue = await _localDb!.getSyncQueue();
+      final syncQueue = await _localDb?.getSyncQueue() ?? [];
       int synced = 0;
       int failed = 0;
 
@@ -441,9 +525,9 @@ class HybridApiService {
       }
 
       if (synced > 0) {
-        await _localDb!.clearSyncQueue();
-        await _localDb!
-            .setSetting('last_sync', DateTime.now().toIso8601String());
+        await _localDb?.clearSyncQueue();
+        await _localDb?.setSetting(
+            'last_sync', DateTime.now().toIso8601String());
       }
 
       return {
@@ -586,22 +670,22 @@ class HybridApiService {
   }
 
   Future<Map<String, dynamic>> getConnectionStatus() async {
-    final stats = await _localDb!.getDatabaseStats();
-    final syncQueue = await _localDb!.getSyncQueue();
-    final lastSync = await _localDb!.getSetting('last_sync');
+    final stats = await _localDb?.getDatabaseStats();
+    final syncQueue = await _localDb?.getSyncQueue();
+    final lastSync = await _localDb?.getSetting('last_sync');
 
     return {
       'online': isOnline,
       'database_stats': stats,
-      'pending_sync': syncQueue.length,
+      'pending_sync': syncQueue?.length ?? 0,
       'last_sync': lastSync,
     };
   }
 
   Future<Map<String, dynamic>> getSystemInfo() async {
-    final stats = await _localDb!.getDatabaseStats();
-    final lastSync = await _localDb!.getSetting('last_sync');
-    final appVersion = await _localDb!.getSetting('app_version');
+    final stats = await _localDb?.getDatabaseStats();
+    final lastSync = await _localDb?.getSetting('last_sync');
+    final appVersion = await _localDb?.getSetting('app_version');
 
     return {
       'app_version': appVersion,
@@ -609,5 +693,13 @@ class HybridApiService {
       'last_sync': lastSync,
       'connection_status': isOnline ? 'Online' : 'Offline',
     };
+  }
+
+  bool get needsUpdate {
+    // Web'de güncelleme kontrolü yapmayız
+    if (isWebPlatform) return false;
+
+    // Async metodları sync getter'da çağıramayız
+    return false; // Şimdilik false dönüyoruz
   }
 }

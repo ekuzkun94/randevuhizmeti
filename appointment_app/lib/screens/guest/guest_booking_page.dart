@@ -170,7 +170,9 @@ class _GuestBookingPageState extends State<GuestBookingPage>
             'id': providerMap['server_id']?.toString() ??
                 providerMap['id']?.toString() ??
                 '',
-            'name': providerMap['user_name'] ?? 'Bilinmeyen Provider',
+            'name': providerMap['business_name'] ??
+                providerMap['user_name'] ??
+                'Bilinmeyen Provider',
             'business_name': providerMap['business_name'] ?? '',
             'specialization': providerMap['specialization'] ?? '',
             'phone': providerMap['phone'] ?? '',
@@ -246,15 +248,15 @@ class _GuestBookingPageState extends State<GuestBookingPage>
     try {
       final hybridApi = HybridApiService();
       await hybridApi.createAppointment(
-        customerName: _nameController.text.trim(),
-        customerEmail: _emailController.text.trim(),
-        customerPhone: _phoneController.text.trim(),
+        customer: _emailController.text.trim(),
         providerId: _selectedProvider!,
         serviceId: _selectedService!,
-        appointmentDate: DateFormat('yyyy-MM-dd').format(_selectedDate),
-        appointmentTime: _selectedTime!,
+        date: DateFormat('yyyy-MM-dd').format(_selectedDate),
+        time: _selectedTime!,
         notes: _notesController.text.trim(),
-        isGuest: true,
+        guestName: _nameController.text.trim(),
+        guestEmail: _emailController.text.trim(),
+        guestPhone: _phoneController.text.trim(),
       );
 
       // Backend 201 status code ile başarılı response döndürürse ApiService exception fırlatmaz

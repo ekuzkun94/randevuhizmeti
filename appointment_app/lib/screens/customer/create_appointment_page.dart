@@ -92,32 +92,138 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage>
 
     final searchTerm = _searchController.text.toLowerCase();
     return _allServices.where((service) {
-      return service['name']!.toLowerCase().contains(searchTerm) ||
-          service['category']!.toLowerCase().contains(searchTerm);
+      return (service['name'] ?? '').toLowerCase().contains(searchTerm) ||
+          (service['category'] ?? '').toLowerCase().contains(searchTerm);
     }).toList();
   }
 
-  // Available providers based on selected service
+  // Available providers based on selected service category
   List<Map<String, dynamic>> get _availableProviders {
-    if (_selectedService == null) return _allProviders;
+    // Önce Supabase'den gelen gerçek verileri kontrol et
+    if (_allProviders.isNotEmpty) {
+      // Hizmet seçilmemişse tüm provider'ları göster
+      if (_selectedService == null) return _allProviders;
 
-    final selectedServiceData = _allServices.firstWhere(
-      (service) => service['id'] == _selectedService,
-      orElse: () => <String, dynamic>{},
-    );
+      // Seçilen hizmetin kategorisine göre provider'ları filtrele
+      final selectedServiceData = _allServices.firstWhere(
+        (service) => service['id'] == _selectedService,
+        orElse: () => <String, dynamic>{},
+      );
 
-    if (selectedServiceData.isEmpty) return _allProviders;
+      if (selectedServiceData.isEmpty) return _allProviders;
 
-    final serviceProviderId =
-        selectedServiceData['provider_id']?.toString() ?? '';
-    if (serviceProviderId.isNotEmpty) {
-      // Tip uyumsuzluğunu önlemek için .toString() ile karşılaştır
-      return _allProviders
-          .where((provider) => provider['id'].toString() == serviceProviderId)
-          .toList();
+      final serviceCategory = selectedServiceData['category']?.toString() ?? '';
+      return _allProviders.where((provider) {
+        final providerSpecialization =
+            provider['specialization']?.toString().toLowerCase() ?? '';
+        final serviceCategoryLower = serviceCategory.toLowerCase();
+
+        // Kategori eşleştirmeleri (Supabase verilerine uygun)
+        if (serviceCategoryLower.contains('saç') &&
+            (providerSpecialization.contains('saç') ||
+                providerSpecialization.contains('kuaför') ||
+                providerSpecialization.contains('hair'))) {
+          return true;
+        }
+        if (serviceCategoryLower.contains('masaj') &&
+            (providerSpecialization.contains('masaj') ||
+                providerSpecialization.contains('spa') ||
+                providerSpecialization.contains('terapi'))) {
+          return true;
+        }
+        if (serviceCategoryLower.contains('el-ayak') &&
+            (providerSpecialization.contains('el-ayak') ||
+                providerSpecialization.contains('bakım') ||
+                providerSpecialization.contains('manikür'))) {
+          return true;
+        }
+        if (serviceCategoryLower.contains('cilt') &&
+            (providerSpecialization.contains('cilt') ||
+                providerSpecialization.contains('skin'))) {
+          return true;
+        }
+        if (serviceCategoryLower.contains('sakal') &&
+            providerSpecialization.contains('sakal')) {
+          return true;
+        }
+        if (serviceCategoryLower.contains('paket') &&
+            (providerSpecialization.contains('saç') ||
+                providerSpecialization.contains('kuaför'))) {
+          return true;
+        }
+
+        return false;
+      }).toList();
     }
 
-    return _allProviders;
+    // Fallback: API'den veri gelmemişse static data kullan
+    return _getStaticProviders();
+  }
+
+  // Static provider data for when API is not available
+  List<Map<String, dynamic>> _getStaticProviders() {
+    return [
+      {
+        'id': 'p1',
+        'name': 'Elite Güzellik Salonu',
+        'business_name': 'Elite Güzellik Salonu',
+        'specialization': 'Saç Bakımı ve Styling',
+        'experience_years': 8,
+        'rating': 4.8,
+        'phone': '+90 555 123 4567',
+        'address': 'Levent Mahallesi, İstanbul',
+        'city': 'İstanbul',
+        'is_active': true,
+      },
+      {
+        'id': 'p2',
+        'name': 'Modern Erkek Kuaförü',
+        'business_name': 'Modern Erkek Kuaförü',
+        'specialization': 'Erkek Saç ve Sakal',
+        'experience_years': 12,
+        'rating': 4.9,
+        'phone': '+90 555 234 5678',
+        'address': 'Şişli, İstanbul',
+        'city': 'İstanbul',
+        'is_active': true,
+      },
+      {
+        'id': 'p3',
+        'name': 'Wellness Spa Center',
+        'business_name': 'Wellness Spa Center',
+        'specialization': 'Masaj ve Terapi',
+        'experience_years': 15,
+        'rating': 4.7,
+        'phone': '+90 555 345 6789',
+        'address': 'Beşiktaş, İstanbul',
+        'city': 'İstanbul',
+        'is_active': true,
+      },
+      {
+        'id': 'p4',
+        'name': 'Beauty Care Clinic',
+        'business_name': 'Beauty Care Clinic',
+        'specialization': 'El-Ayak Bakımı',
+        'experience_years': 6,
+        'rating': 4.6,
+        'phone': '+90 555 456 7890',
+        'address': 'Kadıköy, İstanbul',
+        'city': 'İstanbul',
+        'is_active': true,
+      },
+      {
+        'id': 'p5',
+        'name': 'Skin Care Expert',
+        'business_name': 'Skin Care Expert',
+        'specialization': 'Cilt Bakımı',
+        'experience_years': 10,
+        'rating': 4.8,
+        'phone': '+90 555 567 8901',
+        'address': 'Beyoğlu, İstanbul',
+        'city': 'İstanbul',
+        'is_active': true,
+      },
+    ];
   }
 
   // Filtered providers
@@ -128,7 +234,7 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage>
 
     final searchTerm = _providerSearchController.text.toLowerCase();
     return _availableProviders.where((provider) {
-      return provider['name']!.toLowerCase().contains(searchTerm) ||
+      return (provider['name'] ?? '').toLowerCase().contains(searchTerm) ||
           (provider['business_name'] ?? '')
               .toLowerCase()
               .contains(searchTerm) ||
@@ -266,8 +372,8 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage>
             'id': providerMap['id']?.toString() ??
                 '', // server_id yerine id kullan
             'user_id': providerMap['user_id']?.toString() ?? '',
-            'name': providerMap['name'] ??
-                'Bilinmeyen Provider', // user_name yerine name kullan
+            'name': providerMap['business_name'] ??
+                'Bilinmeyen Provider', // business_name'i name olarak kullan
             'business_name': providerMap['business_name'] ?? '',
             'description': providerMap['description'] ?? '',
             'specialization': providerMap['specialization'] ?? '',
@@ -422,30 +528,29 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage>
         orElse: () => <String, dynamic>{},
       );
 
+      print('🎯 BUTTON PRESSED - Creating appointment...');
+      print('📋 Provider ID: ${selectedProviderData['id']}');
+      print('📋 Service ID: ${selectedServiceData['id']}');
+      print('📋 Customer: ${_userName ?? 'Misafir Kullanıcı'}');
+      print('📋 Date: ${DateFormat('yyyy-MM-dd').format(_selectedDate!)}');
+      print('📋 Time: ${_selectedTime!}');
+
       final hybridApi = HybridApiService();
-      await hybridApi.createAppointment(
-        customerName: _userName!,
-        customerEmail: _userEmail!,
-        customerPhone: _userPhone!,
+      final result = await hybridApi.createAppointment(
+        customer: _userEmail ?? 'musteri3@email.com',
+        customerId:
+            Provider.of<AuthProvider>(context, listen: false).currentUser?.id,
         providerId: selectedProviderData['id'],
         serviceId: selectedServiceData['id'],
-        appointmentDate: DateFormat('yyyy-MM-dd').format(_selectedDate!),
-        appointmentTime: _selectedTime!,
+        date: DateFormat('yyyy-MM-dd').format(_selectedDate!),
+        time: _selectedTime!,
         notes: _notesController.text.trim(),
-        paymentMethod: _paymentMethod,
-        cardNumber: _paymentMethod == 'online_payment'
-            ? _cardNumberController.text.trim()
-            : null,
-        cardHolder: _paymentMethod == 'online_payment'
-            ? _cardHolderController.text.trim()
-            : null,
-        expiryDate: _paymentMethod == 'online_payment'
-            ? _expiryDateController.text.trim()
-            : null,
-        cvv: _paymentMethod == 'online_payment'
-            ? _cvvController.text.trim()
-            : null,
+        guestName: _userName ?? 'Misafir Kullanıcı',
+        guestEmail: _userEmail ?? 'misafir@email.com',
+        guestPhone: _userPhone ?? '+90 555 000 0000',
       );
+
+      print('✅ CREATE APPOINTMENT RESULT: ${result.toString()}');
 
       // Backend 201 status code ile başarılı response döndürürse ApiService exception fırlatmaz
       // Eğer buraya geldiyse randevu başarıyla oluşturulmuştur
@@ -628,7 +733,9 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage>
           _buildSummaryRow(
             Icons.payments,
             'Ücret',
-            selectedService['price'] ?? '0 ₺',
+            selectedService['price'] != null
+                ? '${selectedService['price']} ₺'
+                : '0 ₺',
             Colors.red,
           ),
           const SizedBox(height: 8),
@@ -1010,7 +1117,9 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage>
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            '${service['price'] ?? '0 ₺'}',
+                            service['price'] != null
+                                ? '${service['price']} ₺'
+                                : '0 ₺',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.green.shade700,
@@ -1148,18 +1257,6 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage>
                             : Colors.black87,
                       ),
                     ),
-                    if (provider['business_name'] != null &&
-                        provider['business_name']!.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        provider['business_name']!,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade600,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                    ],
                     const SizedBox(height: 4),
                     Row(
                       children: [
@@ -1175,8 +1272,7 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage>
                         ),
                       ],
                     ),
-                    if (provider['specialization'] != null &&
-                        provider['specialization']!.isNotEmpty) ...[
+                    if ((provider['specialization'] ?? '').isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -1186,7 +1282,7 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage>
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          provider['specialization']!,
+                          provider['specialization'] ?? '',
                           style: TextStyle(
                             fontSize: 11,
                             color: Colors.orange.shade700,
@@ -1230,7 +1326,8 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage>
             leading: const CircleAvatar(child: Icon(Icons.person)),
             title: Text(staff.fullName),
             subtitle: Text(staff.position),
-            trailing: isSelected ? const Icon(Icons.check, color: Colors.blue) : null,
+            trailing:
+                isSelected ? const Icon(Icons.check, color: Colors.blue) : null,
             onTap: () {
               setState(() {
                 _selectedStaff = staff.id;
@@ -1563,7 +1660,7 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage>
       orElse: () => <String, dynamic>{},
     );
 
-    final price = selectedService['price'] ?? '0 ₺';
+    final price = selectedService['price'] ?? 0.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1619,8 +1716,8 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage>
                     ),
                     Text(
                       price is num
-                          ? price.toStringAsFixed(2)
-                          : price.toString(),
+                          ? '${price.toStringAsFixed(2)} ₺'
+                          : '${price.toString()} ₺',
                       style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -2035,7 +2132,9 @@ class _CreateAppointmentPageState extends State<CreateAppointmentPage>
           return {
             'id': provider['id']?.toString() ?? '',
             'user_id': provider['user_id']?.toString() ?? '',
-            'name': provider['business_name'] ?? 'Bilinmeyen Provider',
+            'name': provider['business_name'] ??
+                provider['name'] ??
+                'Bilinmeyen Provider',
             'business_name': provider['business_name'] ?? '',
             'description': provider['bio'] ?? '',
             'specialization': provider['specialization'] ?? '',
