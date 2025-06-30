@@ -13,7 +13,7 @@ from datetime import datetime, timezone, timedelta
 load_dotenv()
 
 def create_app():
-    """Application factory pattern - ZamanYönet AI Enhancedd"""
+    """Application factory pattern - ZamanYönet AI Enhanced"""
     
     app = Flask(__name__)
     
