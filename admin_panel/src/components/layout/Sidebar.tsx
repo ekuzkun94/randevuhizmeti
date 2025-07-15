@@ -24,7 +24,8 @@ import {
   CheckSquare,
   Clock,
   Store,
-  Tag
+  Tag,
+  Database
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useSession, signOut } from 'next-auth/react'
@@ -99,6 +100,11 @@ const menuItems = [
     title: 'Entegrasyon Pazaryeri',
     href: '/dashboard/marketplace',
     icon: Store,
+  },
+  {
+    title: 'ERP Entegrasyonları',
+    href: '/dashboard/erp',
+    icon: Database,
   },
   {
     title: 'Notlar & Etiketler',

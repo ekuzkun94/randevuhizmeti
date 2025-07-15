@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     const where: any = {}
     if (status) where.status = status
     if (entityType) where.entityType = entityType
-    if (requesterId) where.requesterId = requesterId
+    if (requesterId) where.userId = requesterId
     if (approverId) {
       where.approvals = {
         some: {
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
         workflowId,
         entityType,
         entityId,
-        requesterId: session.user.id,
+        userId: session.user.id,
         title,
         description,
         data: data ? JSON.stringify(data) : null,
