@@ -1,362 +1,385 @@
-'use client'
+"use client"
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { useAuth } from '@/contexts/AuthContext'
-import DashboardLayout from '@/components/DashboardLayout'
+import { useState } from 'react'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
+import { TwoFactorManager } from '@/components/2fa/TwoFactorManager'
 import { 
-  User, 
-  Mail, 
-  Lock, 
+  Settings, 
+  Save, 
+  Globe, 
   Bell, 
-  Shield, 
-  Palette,
-  Save,
-  Eye,
-  EyeOff
+  Shield,
+  Database,
+  Mail,
+  Palette
 } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select'
+
+type SettingsTab = 'general' | 'notifications' | 'security' | 'database' | 'email' | 'theme'
 
 export default function SettingsPage() {
-  const { user, loading } = useAuth()
-  const [dataLoading, setDataLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-  const [showNewPassword, setShowNewPassword] = useState(false)
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-    notifications: {
-      email: true,
-      push: true,
-      sms: false
-    },
-    theme: 'light'
-  })
-  const router = useRouter()
+  const [activeTab, setActiveTab] = useState<SettingsTab>('general')
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login')
-    } else if (user) {
-      setFormData(prev => ({
-        ...prev,
-        name: user.displayName || '',
-        email: user.email || ''
-      }))
-      setDataLoading(false)
+  // State for custom selects
+  const [defaultLang, setDefaultLang] = useState('tr')
+  const [timezone, setTimezone] = useState('Europe/Istanbul')
+  const [dateFormat, setDateFormat] = useState('DD/MM/YYYY')
+  const [sessionTimeout, setSessionTimeout] = useState('30')
+  const [themeMode, setThemeMode] = useState('light')
+
+  const tabs = [
+    { id: 'general', label: 'Genel Ayarlar', icon: Globe },
+    { id: 'notifications', label: 'Bildirimler', icon: Bell },
+    { id: 'security', label: 'Güvenlik', icon: Shield },
+    { id: 'database', label: 'Veritabanı', icon: Database },
+    { id: 'email', label: 'E-posta', icon: Mail },
+    { id: 'theme', label: 'Tema', icon: Palette },
+  ]
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'general':
+        return (
+          <div className="card">
+            <div className="card-header">
+              <h2 className="card-title">Genel Ayarlar</h2>
+              <p className="card-description">Sistem genel ayarlarını yapılandırın</p>
+            </div>
+            <div className="card-content">
+              <form className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Uygulama Adı</label>
+                    <Input defaultValue="Modern Admin Panel" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Varsayılan Dil</label>
+                    <Select value={defaultLang} onValueChange={setDefaultLang}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select a language" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="tr">Türkçe</SelectItem>
+                        <SelectItem value="en">English</SelectItem>
+                        <SelectItem value="de">Deutsch</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Zaman Dilimi</label>
+                    <Select value={timezone} onValueChange={setTimezone}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select a timezone" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Europe/Istanbul">İstanbul (UTC+3)</SelectItem>
+                        <SelectItem value="UTC">UTC</SelectItem>
+                        <SelectItem value="America/New_York">New York (UTC-5)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Tarih Formatı</label>
+                    <Select value={dateFormat} onValueChange={setDateFormat}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select a date format" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="DD/MM/YYYY">DD/MM/YYYY</SelectItem>
+                        <SelectItem value="MM/DD/YYYY">MM/DD/YYYY</SelectItem>
+                        <SelectItem value="YYYY-MM-DD">YYYY-MM-DD</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Açıklama</label>
+                  <textarea 
+                    className="input min-h-[100px]"
+                    placeholder="Sistem açıklaması..."
+                    defaultValue="Modern ve güvenli admin paneli uygulaması"
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-4">
+                  <Button variant="outline">İptal</Button>
+                  <Button>
+                    <Save size={16} className="mr-2" />
+                    Kaydet
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )
+      
+      case 'notifications':
+        return (
+          <div className="card">
+            <div className="card-header">
+              <h2 className="card-title">Bildirim Ayarları</h2>
+              <p className="card-description">Bildirim tercihlerinizi yapılandırın</p>
+            </div>
+            <div className="card-content">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium">E-posta Bildirimleri</h3>
+                    <p className="text-sm text-muted-foreground">Önemli olaylar için e-posta alın</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" className="sr-only peer" defaultChecked />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium">Push Bildirimleri</h3>
+                    <p className="text-sm text-muted-foreground">Tarayıcı push bildirimleri</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" className="sr-only peer" />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium">SMS Bildirimleri</h3>
+                    <p className="text-sm text-muted-foreground">Acil durumlar için SMS</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" className="sr-only peer" />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+
+      case 'security':
+        return (
+          <div className="space-y-6">
+            <TwoFactorManager />
+            
+            <div className="card">
+              <div className="card-header">
+                <h2 className="card-title">Güvenlik Ayarları</h2>
+                <p className="card-description">Hesap güvenliğinizi yönetin</p>
+              </div>
+              <div className="card-content">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-medium">Oturum Zaman Aşımı</h3>
+                      <p className="text-sm text-muted-foreground">30 dakika sonra otomatik çıkış</p>
+                    </div>
+                    <Select value={sessionTimeout} onValueChange={setSessionTimeout}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select session timeout" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="15">15 dakika</SelectItem>
+                        <SelectItem value="30">30 dakika</SelectItem>
+                        <SelectItem value="60">1 saat</SelectItem>
+                        <SelectItem value="120">2 saat</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-medium">Şifre Değiştirme</h3>
+                      <p className="text-sm text-muted-foreground">Şifrenizi güvenli bir şekilde değiştirin</p>
+                    </div>
+                    <Button variant="outline">Değiştir</Button>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-medium">Aktif Oturumlar</h3>
+                      <p className="text-sm text-muted-foreground">Tüm cihazlardan çıkış yapın</p>
+                    </div>
+                    <Button variant="outline">Çıkış Yap</Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+
+      case 'database':
+        return (
+          <div className="card">
+            <div className="card-header">
+              <h2 className="card-title">Veritabanı Yönetimi</h2>
+              <p className="card-description">Veritabanı işlemlerini yönetin</p>
+            </div>
+            <div className="card-content">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium">Veritabanı Durumu</h3>
+                    <p className="text-sm text-muted-foreground">Bağlantı: Aktif</p>
+                  </div>
+                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm">Çevrimiçi</span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium">Yedekleme</h3>
+                    <p className="text-sm text-muted-foreground">Son yedekleme: 2 saat önce</p>
+                  </div>
+                  <Button variant="outline">Yedekle</Button>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium">Optimizasyon</h3>
+                    <p className="text-sm text-muted-foreground">Veritabanını optimize edin</p>
+                  </div>
+                  <Button variant="outline">Optimize Et</Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+
+      case 'email':
+        return (
+          <div className="card">
+            <div className="card-header">
+              <h2 className="card-title">E-posta Ayarları</h2>
+              <p className="card-description">E-posta sunucu ayarlarını yapılandırın</p>
+            </div>
+            <div className="card-content">
+              <form className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">SMTP Sunucu</label>
+                    <Input defaultValue="smtp.gmail.com" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Port</label>
+                    <Input defaultValue="587" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">E-posta</label>
+                    <Input defaultValue="noreply@example.com" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Şifre</label>
+                    <Input type="password" defaultValue="********" />
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-4">
+                  <Button variant="outline">Test Et</Button>
+                  <Button>
+                    <Save size={16} className="mr-2" />
+                    Kaydet
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )
+
+      case 'theme':
+        return (
+          <div className="card">
+            <div className="card-header">
+              <h2 className="card-title">Tema Ayarları</h2>
+              <p className="card-description">Görünüm tercihlerinizi özelleştirin</p>
+            </div>
+            <div className="card-content">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Tema Modu</label>
+                  <Select value={themeMode} onValueChange={setThemeMode}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Select theme mode" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="light">Açık</SelectItem>
+                      <SelectItem value="dark">Koyu</SelectItem>
+                      <SelectItem value="auto">Otomatik</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Renk Şeması</label>
+                  <div className="grid grid-cols-3 gap-4 mt-2">
+                    <button className="p-4 border-2 border-blue-500 rounded-lg bg-blue-50">Mavi</button>
+                    <button className="p-4 border-2 border-gray-300 rounded-lg bg-gray-50">Gri</button>
+                    <button className="p-4 border-2 border-gray-300 rounded-lg bg-green-50">Yeşil</button>
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-4">
+                  <Button variant="outline">Sıfırla</Button>
+                  <Button>
+                    <Save size={16} className="mr-2" />
+                    Kaydet
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+
+      default:
+        return null
     }
-  }, [user, loading, router])
-
-  const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }))
-  }
-
-  const handleNotificationChange = (type: string, value: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      notifications: {
-        ...prev.notifications,
-        [type]: value
-      }
-    }))
-  }
-
-  const handleSave = async () => {
-    setSaving(true)
-    try {
-      // Demo save - gerçek uygulamada Supabase'e kaydedilecek
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      alert('Ayarlar başarıyla kaydedildi!')
-    } catch (error) {
-      alert('Ayarlar kaydedilirken bir hata oluştu')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  if (loading || dataLoading) {
-    return <div className="min-h-screen flex items-center justify-center">
-      <div className="text-lg">Yükleniyor...</div>
-    </div>
-  }
-
-  if (!user) {
-    return null
   }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">Ayarlar</h1>
-          <p className="mt-2 text-gray-600">Hesap ayarlarınızı yönetin</p>
+    <div className="space-y-6">
+      {/* Başlık */}
+      <div>
+        <h1 className="text-2xl font-bold">Ayarlar</h1>
+        <p className="text-muted-foreground">Sistem ayarlarını yapılandırın</p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Sol Menü */}
+        <div className="lg:col-span-1">
+          <div className="card">
+            <div className="card-content">
+              <nav className="space-y-2">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon
+                  const isActive = activeTab === tab.id
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id as SettingsTab)}
+                      className={`w-full text-left p-3 rounded-md flex items-center transition-colors ${
+                        isActive 
+                          ? 'bg-primary text-primary-foreground' 
+                          : 'hover:bg-accent'
+                      }`}
+                    >
+                      <Icon size={16} className="mr-2" />
+                      {tab.label}
+                    </button>
+                  )
+                })}
+              </nav>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* Profile Settings */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Profile Information */}
-            <div className="bg-white shadow rounded-lg">
-              <div className="px-4 py-5 sm:p-6">
-                <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4 flex items-center">
-                  <User className="h-5 w-5 mr-2" />
-                  Profil Bilgileri
-                </h3>
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                  <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                      Ad Soyad
-                    </label>
-                    <input
-                      type="text"
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => handleInputChange('name', e.target.value)}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                      E-posta
-                    </label>
-                    <input
-                      type="email"
-                      id="email"
-                      value={formData.email}
-                      onChange={(e) => handleInputChange('email', e.target.value)}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Password Change */}
-            <div className="bg-white shadow rounded-lg">
-              <div className="px-4 py-5 sm:p-6">
-                <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4 flex items-center">
-                  <Lock className="h-5 w-5 mr-2" />
-                  Şifre Değiştir
-                </h3>
-                <div className="space-y-4">
-                  <div>
-                    <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                      Mevcut Şifre
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        id="currentPassword"
-                        value={formData.currentPassword}
-                        onChange={(e) => handleInputChange('currentPassword', e.target.value)}
-                        className="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div>
-                      <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                        Yeni Şifre
-                      </label>
-                      <div className="relative">
-                        <input
-                          type={showNewPassword ? 'text' : 'password'}
-                          id="newPassword"
-                          value={formData.newPassword}
-                          onChange={(e) => handleInputChange('newPassword', e.target.value)}
-                          className="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowNewPassword(!showNewPassword)}
-                          className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                        >
-                          {showNewPassword ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
-                        </button>
-                      </div>
-                    </div>
-                    <div>
-                      <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                        Şifre Tekrar
-                      </label>
-                      <input
-                        type="password"
-                        id="confirmPassword"
-                        value={formData.confirmPassword}
-                        onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Notifications */}
-            <div className="bg-white shadow rounded-lg">
-              <div className="px-4 py-5 sm:p-6">
-                <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4 flex items-center">
-                  <Bell className="h-5 w-5 mr-2" />
-                  Bildirim Ayarları
-                </h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-700">E-posta Bildirimleri</p>
-                      <p className="text-sm text-gray-500">Önemli güncellemeler için e-posta al</p>
-                    </div>
-                    <button
-                      onClick={() => handleNotificationChange('email', !formData.notifications.email)}
-                      className={`${
-                        formData.notifications.email ? 'bg-blue-600' : 'bg-gray-200'
-                      } relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
-                    >
-                      <span
-                        className={`${
-                          formData.notifications.email ? 'translate-x-5' : 'translate-x-0'
-                        } pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
-                      />
-                    </button>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-700">Push Bildirimleri</p>
-                      <p className="text-sm text-gray-500">Anlık bildirimler al</p>
-                    </div>
-                    <button
-                      onClick={() => handleNotificationChange('push', !formData.notifications.push)}
-                      className={`${
-                        formData.notifications.push ? 'bg-blue-600' : 'bg-gray-200'
-                      } relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
-                    >
-                      <span
-                        className={`${
-                          formData.notifications.push ? 'translate-x-5' : 'translate-x-0'
-                        } pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
-                      />
-                    </button>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-700">SMS Bildirimleri</p>
-                      <p className="text-sm text-gray-500">Acil durumlar için SMS al</p>
-                    </div>
-                    <button
-                      onClick={() => handleNotificationChange('sms', !formData.notifications.sms)}
-                      className={`${
-                        formData.notifications.sms ? 'bg-blue-600' : 'bg-gray-200'
-                      } relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
-                    >
-                      <span
-                        className={`${
-                          formData.notifications.sms ? 'translate-x-5' : 'translate-x-0'
-                        } pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
-                      />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Theme Settings */}
-            <div className="bg-white shadow rounded-lg">
-              <div className="px-4 py-5 sm:p-6">
-                <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4 flex items-center">
-                  <Palette className="h-5 w-5 mr-2" />
-                  Tema
-                </h3>
-                <div className="space-y-3">
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="theme"
-                      value="light"
-                      checked={formData.theme === 'light'}
-                      onChange={(e) => handleInputChange('theme', e.target.value)}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                    />
-                    <span className="ml-3 text-sm text-gray-700">Açık Tema</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="theme"
-                      value="dark"
-                      checked={formData.theme === 'dark'}
-                      onChange={(e) => handleInputChange('theme', e.target.value)}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                    />
-                    <span className="ml-3 text-sm text-gray-700">Koyu Tema</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="theme"
-                      value="auto"
-                      checked={formData.theme === 'auto'}
-                      onChange={(e) => handleInputChange('theme', e.target.value)}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                    />
-                    <span className="ml-3 text-sm text-gray-700">Sistem</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            {/* Security */}
-            <div className="bg-white shadow rounded-lg">
-              <div className="px-4 py-5 sm:p-6">
-                <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4 flex items-center">
-                  <Shield className="h-5 w-5 mr-2" />
-                  Güvenlik
-                </h3>
-                <div className="space-y-3">
-                  <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md">
-                    İki Faktörlü Doğrulama
-                  </button>
-                  <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md">
-                    Oturum Geçmişi
-                  </button>
-                  <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md">
-                    Güvenlik Ayarları
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Save Button */}
-            <div className="bg-white shadow rounded-lg">
-              <div className="px-4 py-5 sm:p-6">
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  {saving ? 'Kaydediliyor...' : 'Ayarları Kaydet'}
-                </button>
-              </div>
-            </div>
-          </div>
+        {/* Sağ İçerik */}
+        <div className="lg:col-span-2">
+          {renderTabContent()}
         </div>
       </div>
-    </DashboardLayout>
+    </div>
   )
 } 

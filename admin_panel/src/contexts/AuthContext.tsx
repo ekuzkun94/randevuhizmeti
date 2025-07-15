@@ -1,56 +1,80 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { User as FirebaseUser } from 'firebase/auth'
-import { onAuthStateChange, convertFirebaseUser } from '@/lib/auth'
-import { User } from '@/types/auth'
+import { createContext, useContext, useEffect, useState } from 'react'
+import { useSession, signIn, signOut } from 'next-auth/react'
+
+interface User {
+  id: string
+  name: string
+  email: string
+  role: string
+  status: string
+}
 
 interface AuthContextType {
   user: User | null
   loading: boolean
+  login: (email: string, password: string) => Promise<void>
+  logout: () => Promise<void>
 }
 
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  loading: true
-})
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export const useAuth = () => {
-  const context = useContext(AuthContext)
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider')
-  }
-  return context
-}
-
-interface AuthProviderProps {
-  children: ReactNode
-}
-
-export const AuthProvider = ({ children }: AuthProviderProps) => {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const { data: session, status } = useSession()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    console.log('AuthProvider: Setting up auth state listener');
-    const unsubscribe = onAuthStateChange((firebaseUser: FirebaseUser | null) => {
-      console.log('AuthProvider: Auth state changed:', firebaseUser ? 'User logged in' : 'No user');
-      if (firebaseUser) {
-        const convertedUser = convertFirebaseUser(firebaseUser);
-        console.log('AuthProvider: Converted user:', convertedUser);
-        setUser(convertedUser)
-      } else {
-        setUser(null)
-      }
-      setLoading(false)
-    })
+    if (status === 'loading') {
+      setLoading(true)
+      return
+    }
 
-    return () => unsubscribe()
-  }, [])
+    if (session?.user) {
+      setUser(session.user as User)
+    } else {
+      setUser(null)
+    }
+
+    setLoading(false)
+  }, [session, status])
+
+  const login = async (email: string, password: string) => {
+    try {
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      })
+
+      if (result?.error) {
+        throw new Error(result.error)
+      }
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const logout = async () => {
+    try {
+      await signOut({ redirect: false })
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
+  }
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   )
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext)
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider')
+  }
+  return context
 } 

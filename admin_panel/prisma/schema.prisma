@@ -1,0 +1,854 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          String    @default("USER")
+  status        String    @default("ACTIVE")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLoginAt   DateTime?
+  tenantId      String?   // Multi-tenant support
+
+  accounts      Account[]
+  sessions      Session[]
+  notifications Notification[]
+  apiKeys       ApiKey[]
+  files         File[]
+  logs          Log[]
+  twoFactorAuth TwoFactorAuth?
+  userSettings  UserSettings?
+  auditLogs     AuditLog[]
+  moduleLicenses ModuleLicense[]
+  approvalRequests ApprovalRequest[]
+  approvals     Approval[]
+  integrationInstallations IntegrationInstallation[]
+  contents      Content[]
+  contentVersions ContentVersion[]
+  versionedRecords VersionedRecord[]
+  annotations   Annotation[]
+  tags          Tag[]
+  tasks         Task[]
+  assignedTasks Task[] @relation("TaskAssignee")
+  customFields  CustomField[]
+  customFieldValues CustomFieldValue[]
+  webhookSubscriptions WebhookSubscription[]
+  backups       Backup[]
+  oauthConnections OAuthConnection[]
+  taskComments  TaskComment[]
+  taskAttachments TaskAttachment[]
+
+  @@index([email])
+  @@index([role])
+  @@index([tenantId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  title     String
+  message   String
+  type      String   @default("INFO") // INFO, SUCCESS, WARNING, ERROR
+  isRead    Boolean  @default(false)
+  userId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+}
+
+model ApiKey {
+  id          String    @id @default(cuid())
+  name        String
+  key         String    @unique
+  permissions String    // JSON string of permissions
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  isActive    Boolean   @default(true)
+  userId      String
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([key])
+}
+
+model File {
+  id        String   @id @default(cuid())
+  name      String
+  path      String
+  size      Int
+  type      String
+  mimeType  String?
+  userId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+}
+
+model Log {
+  id        String   @id @default(cuid())
+  level     String   // INFO, WARN, ERROR, DEBUG
+  message   String
+  type      String   // SYSTEM, USER, API, SECURITY
+  metadata  String?  // JSON string of additional data
+  userId    String?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([level])
+  @@index([type])
+  @@index([createdAt])
+  @@index([userId])
+}
+
+// New models for advanced features
+
+model TwoFactorAuth {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  secret    String
+  isEnabled Boolean  @default(false)
+  backupCodes String? // JSON string of backup codes
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserSettings {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  theme     String   @default("light") // light, dark, system
+  language  String   @default("tr")
+  timezone  String   @default("Europe/Istanbul")
+  dateFormat String  @default("DD/MM/YYYY")
+  notifications String @default("ALL")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Webhook {
+  id        String   @id @default(cuid())
+  name      String
+  url       String
+  events    String   // JSON string of events to listen to
+  secret    String?
+  isActive  Boolean  @default(true)
+  lastTriggered DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([events])
+  @@index([isActive])
+}
+
+model RateLimit {
+  id        String   @id @default(cuid())
+  key       String   // IP address or user ID
+  type      String   // IP, USER, API_KEY
+  count     Int      @default(1)
+  window    Int      // Time window in seconds
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@unique([key, type, window])
+  @@index([expiresAt])
+}
+
+model FeatureToggle {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  isEnabled   Boolean  @default(false)
+  rollout     Int      @default(0) // Percentage rollout (0-100)
+  conditions  String?  // JSON string of conditions
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isEnabled])
+}
+
+model Tenant {
+  id          String   @id @default(cuid())
+  name        String
+  domain      String?  @unique
+  settings    String?  // JSON string of tenant-specific settings
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  moduleLicenses ModuleLicense[]
+  integrationInstallations IntegrationInstallation[]
+
+  @@index([domain])
+  @@index([isActive])
+}
+
+model SystemSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  type      String   @default("STRING") // STRING, NUMBER, BOOLEAN, JSON
+  category  String   @default("GENERAL")
+  isPublic  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+  @@index([isPublic])
+}
+
+// Audit Trail System
+model AuditLog {
+  id          String   @id @default(cuid())
+  action      String   // CREATE, UPDATE, DELETE, LOGIN, LOGOUT, etc.
+  entityType  String   // User, File, ApiKey, etc.
+  entityId    String?  // ID of the affected entity
+  userId      String?  // User who performed the action
+  oldValues   String?  // JSON string of old values
+  newValues   String?  // JSON string of new values
+  ipAddress   String?
+  userAgent   String?
+  metadata    String?  // JSON string of additional data
+  createdAt   DateTime @default(now())
+  
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([action])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// Module Licensing System
+model Module {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  displayName String
+  description String?
+  version     String   @default("1.0.0")
+  isActive    Boolean  @default(true)
+  isPremium   Boolean  @default(false)
+  price       Float?   // Monthly price for premium modules
+  features    String?  // JSON string of features
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  licenses    ModuleLicense[]
+
+  @@index([isActive])
+  @@index([isPremium])
+}
+
+model ModuleLicense {
+  id        String   @id @default(cuid())
+  moduleId  String
+  tenantId  String?
+  userId    String?
+  isActive  Boolean  @default(true)
+  expiresAt DateTime?
+  features  String?  // JSON string of enabled features
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  module    Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  tenant    Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([moduleId, tenantId, userId])
+  @@index([isActive])
+  @@index([expiresAt])
+}
+
+// Approval Workflow System
+model ApprovalWorkflow {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  entityType  String   // User, Content, etc.
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  steps       ApprovalStep[]
+  requests    ApprovalRequest[]
+
+  @@index([entityType])
+  @@index([isActive])
+}
+
+model ApprovalStep {
+  id                   String           @id @default(cuid())
+  workflowId           String
+  workflow             ApprovalWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  name                 String
+  description          String?
+  order                Int
+  approverRole         String?          // Role required to approve
+  approverUserId       String?          // Specific user who can approve
+  isRequired           Boolean          @default(true)
+  canReject            Boolean          @default(true)
+  canEdit              Boolean          @default(false)
+  autoApprove          Boolean          @default(false)
+  timeoutHours         Int?             // Auto-approve after X hours
+  approvals            Approval[]
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  @@index([workflowId, order])
+}
+
+model ApprovalRequest {
+  id        String   @id @default(cuid())
+  workflowId String
+  entityType String
+  entityId   String
+  status     String   @default("PENDING") // PENDING, APPROVED, REJECTED, CANCELLED
+  currentStep Int     @default(1)
+  data      String   // JSON string of request data
+  userId    String   // User who created the request
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  workflow  ApprovalWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  approvals Approval[]
+
+  @@index([entityType])
+  @@index([entityId])
+  @@index([status])
+  @@index([userId])
+}
+
+model Approval {
+  id        String   @id @default(cuid())
+  requestId String
+  stepId    String
+  approverId String
+  status    String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  comment   String?
+  data      String?  // JSON string with approval data
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  request   ApprovalRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  step      ApprovalStep    @relation(fields: [stepId], references: [id])
+  approver  User            @relation(fields: [approverId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+  @@index([approverId])
+  @@index([status])
+}
+
+// Scheduler System
+model ScheduledTask {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  cronExpression String
+  handler     String   // Function name to execute
+  parameters  String?  // JSON string of parameters
+  isActive    Boolean  @default(true)
+  lastRunAt   DateTime?
+  nextRunAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  executions  TaskExecution[]
+
+  @@index([isActive])
+  @@index([nextRunAt])
+}
+
+model TaskExecution {
+  id        String   @id @default(cuid())
+  taskId    String
+  status    String   @default("RUNNING") // RUNNING, COMPLETED, FAILED
+  startedAt DateTime @default(now())
+  completedAt DateTime?
+  duration  Int?     // Duration in milliseconds
+  result    String?  // JSON string of execution result
+  error     String?  // Error message if failed
+  createdAt DateTime @default(now())
+
+  task      ScheduledTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([status])
+  @@index([startedAt])
+  @@index([createdAt])
+}
+
+// Integration Marketplace
+model Integration {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  displayName String
+  description String?
+  type        String   // WEBHOOK, OAUTH, API
+  config      String   // JSON string of configuration
+  isActive    Boolean  @default(true)
+  isPremium   Boolean  @default(false)
+  icon        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  installations IntegrationInstallation[]
+
+  @@index([type])
+  @@index([isActive])
+}
+
+model IntegrationInstallation {
+  id            String   @id @default(cuid())
+  integrationId String
+  tenantId      String?
+  userId        String?
+  config        String   // JSON string of installation config
+  isActive      Boolean  @default(true)
+  lastSyncAt    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  integration   Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  tenant        Tenant?     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user          User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([integrationId, tenantId, userId])
+  @@index([isActive])
+}
+
+// Content Management System
+model Content {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  content     String   // Markdown content
+  type        String   // PAGE, ANNOUNCEMENT, HELP
+  status      String   @default("DRAFT") // DRAFT, PUBLISHED, ARCHIVED
+  authorId    String
+  publishedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  versions    ContentVersion[]
+
+  @@index([type])
+  @@index([status])
+  @@index([slug])
+}
+
+model ContentVersion {
+  id        String   @id @default(cuid())
+  contentId String
+  version   Int
+  title     String
+  content   String
+  authorId  String
+  createdAt DateTime @default(now())
+
+  contentRecord Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  author        User    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@unique([contentId, version])
+  @@index([contentId])
+  @@index([createdAt])
+}
+
+// Versioned Records System
+model VersionedRecord {
+  id          String   @id @default(cuid())
+  entityType  String   // USER, SETTING, CONTENT, etc.
+  entityId    String
+  version     Int
+  data        String   // JSON string of the record data
+  authorId    String
+  changeType  String   // CREATE, UPDATE, DELETE, RESTORE
+  changeReason String?
+  createdAt   DateTime @default(now())
+
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@unique([entityType, entityId, version])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+// Annotation & Tagging System
+model Annotation {
+  id          String   @id @default(cuid())
+  entityType  String   // USER, CONTENT, TASK, etc.
+  entityId    String
+  content     String   // Note content
+  type        String   @default("NOTE") // NOTE, WARNING, INFO, TODO
+  isPrivate   Boolean  @default(false)
+  authorId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  tags        Tag[]
+
+  @@index([entityType])
+  @@index([entityId])
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+model Tag {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  color       String   @default("#3B82F6") // Hex color
+  description String?
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  annotations Annotation[]
+  users       User[]
+  taskTags    TaskTag[]
+
+  @@index([name])
+  @@index([isSystem])
+}
+
+// Task Management System
+model Task {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  status      String   @default("TODO") // TODO, IN_PROGRESS, REVIEW, DONE, CANCELLED
+  priority    String   @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  type        String   @default("TASK") // TASK, BUG, FEATURE, SUPPORT
+  assigneeId  String?
+  reporterId  String
+  dueDate     DateTime?
+  estimatedHours Int?
+  actualHours Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  assignee    User?    @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  reporter    User     @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  comments    TaskComment[]
+  attachments TaskAttachment[]
+  tags        TaskTag[]
+
+  @@index([status])
+  @@index([priority])
+  @@index([assigneeId])
+  @@index([reporterId])
+  @@index([dueDate])
+}
+
+model TaskComment {
+  id        String   @id @default(cuid())
+  taskId    String
+  content   String
+  authorId  String
+  isInternal Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([authorId])
+}
+
+model TaskAttachment {
+  id        String   @id @default(cuid())
+  taskId    String
+  fileName  String
+  filePath  String
+  fileSize  Int
+  mimeType  String
+  uploadedById String
+  createdAt DateTime @default(now())
+
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  uploadedBy User    @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+}
+
+model TaskTag {
+  id        String   @id @default(cuid())
+  taskId    String
+  tagId     String
+  createdAt DateTime @default(now())
+
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, tagId])
+}
+
+// Stripe Billing System
+model Subscription {
+  id                String   @id @default(cuid())
+  stripeCustomerId  String?
+  stripeSubscriptionId String?
+  planId            String
+  status            String   @default("ACTIVE") // ACTIVE, CANCELLED, PAST_DUE, UNPAID
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  plan              SubscriptionPlan @relation(fields: [planId], references: [id])
+  payments          Payment[]
+
+  @@index([stripeCustomerId])
+  @@index([stripeSubscriptionId])
+  @@index([status])
+}
+
+model SubscriptionPlan {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  stripePriceId String?
+  price       Float
+  currency    String   @default("USD")
+  interval    String   @default("MONTH") // MONTH, YEAR
+  features    String   // JSON string of features
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  subscriptions Subscription[]
+
+  @@index([stripePriceId])
+  @@index([isActive])
+}
+
+model Payment {
+  id                String   @id @default(cuid())
+  subscriptionId    String
+  stripePaymentId   String?
+  amount            Float
+  currency          String   @default("USD")
+  status            String   @default("PENDING") // PENDING, SUCCEEDED, FAILED, CANCELLED
+  paymentMethod     String?  // CARD, BANK_TRANSFER, etc.
+  failureReason     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  subscription      Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([stripePaymentId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// Custom Fields System
+model CustomField {
+  id          String   @id @default(cuid())
+  name        String
+  label       String
+  type        String   // TEXT, NUMBER, EMAIL, PHONE, DATE, SELECT, MULTISELECT, BOOLEAN
+  entityType  String   // USER, CONTENT, TASK, etc.
+  isRequired  Boolean  @default(false)
+  isUnique    Boolean  @default(false)
+  options     String?  // JSON string for SELECT/MULTISELECT options
+  validation  String?  // JSON string of validation rules
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdByUser User   @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  values       CustomFieldValue[]
+
+  @@index([entityType])
+  @@index([isActive])
+  @@index([order])
+}
+
+model CustomFieldValue {
+  id            String   @id @default(cuid())
+  fieldId       String
+  entityType    String
+  entityId      String
+  value         String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  field         CustomField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  user          User        @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  @@unique([fieldId, entityType, entityId])
+  @@index([entityType])
+  @@index([entityId])
+}
+
+// SSO / OAuth2 System
+model OAuthProvider {
+  id          String   @id @default(cuid())
+  name        String   @unique // GOOGLE, MICROSOFT, GITHUB, LDAP
+  displayName String
+  clientId    String
+  clientSecret String
+  authUrl     String
+  tokenUrl    String
+  userInfoUrl String?
+  scopes      String   // JSON string of required scopes
+  isActive    Boolean  @default(true)
+  config      String?  // JSON string of additional config
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  connections OAuthConnection[]
+
+  @@index([name])
+  @@index([isActive])
+}
+
+model OAuthConnection {
+  id            String   @id @default(cuid())
+  providerId    String
+  userId        String
+  externalId    String   // ID from the OAuth provider
+  accessToken   String?
+  refreshToken  String?
+  expiresAt     DateTime?
+  profile       String?  // JSON string of user profile from provider
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  provider      OAuthProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, userId])
+  @@unique([providerId, externalId])
+  @@index([externalId])
+  @@index([isActive])
+}
+
+// Webhook & Event Bus System
+model WebhookSubscription {
+  id          String   @id @default(cuid())
+  name        String
+  url         String
+  events      String   // JSON string of events to listen to
+  secret      String?
+  isActive    Boolean  @default(true)
+  retryCount  Int      @default(3)
+  timeout     Int      @default(30) // seconds
+  lastTriggered DateTime?
+  lastSuccess  DateTime?
+  lastFailure  DateTime?
+  failureCount Int     @default(0)
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdByUser User   @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  deliveries   WebhookDelivery[]
+
+  @@index([events])
+  @@index([isActive])
+  @@index([lastTriggered])
+}
+
+model WebhookDelivery {
+  id          String   @id @default(cuid())
+  subscriptionId String
+  event       String
+  payload     String   // JSON string of the event payload
+  response    String?  // JSON string of the response
+  statusCode  Int?
+  duration    Int?     // milliseconds
+  success     Boolean
+  error       String?
+  createdAt   DateTime @default(now())
+
+  subscription WebhookSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([subscriptionId])
+  @@index([event])
+  @@index([success])
+  @@index([createdAt])
+}
+
+// Backup & Restore System
+model Backup {
+  id          String   @id @default(cuid())
+  name        String
+  type        String   @default("FULL") // FULL, INCREMENTAL, SCHEMA_ONLY
+  status      String   @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, FAILED
+  filePath    String?
+  fileSize    Int?
+  checksum    String?
+  metadata    String?  // JSON string of backup metadata
+  createdBy   String
+  createdAt   DateTime @default(now())
+  completedAt DateTime?
+
+  createdByUser User   @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+}
