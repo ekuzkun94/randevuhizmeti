@@ -123,15 +123,18 @@ model ApiKey {
 }
 
 model File {
-  id        String   @id @default(cuid())
-  name      String
-  path      String
-  size      Int
-  type      String
-  mimeType  String?
-  userId    String
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String   @id @default(cuid())
+  name         String
+  originalName String
+  path         String
+  url          String
+  size         Int
+  type         String
+  mimeType     String?
+  isPublic     Boolean  @default(false)
+  userId       String
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([type])

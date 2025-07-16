@@ -25,7 +25,8 @@ import {
   Clock,
   Store,
   Tag,
-  Database
+  Database,
+  CreditCard
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useSession, signOut } from 'next-auth/react'
@@ -105,6 +106,26 @@ const menuItems = [
     title: 'ERP Entegrasyonları',
     href: '/dashboard/erp',
     icon: Database,
+  },
+  {
+    title: 'Görev Yönetimi',
+    href: '/dashboard/tasks',
+    icon: CheckSquare,
+  },
+  {
+    title: 'Faturalandırma',
+    href: '/dashboard/billing',
+    icon: CreditCard,
+  },
+  {
+    title: 'Özel Alanlar',
+    href: '/dashboard/custom-fields',
+    icon: Settings,
+  },
+  {
+    title: 'SSO / OAuth2',
+    href: '/dashboard/sso',
+    icon: Shield,
   },
   {
     title: 'Notlar & Etiketler',

@@ -61,17 +61,23 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('File upload request received')
     const session = await getServerSession(authOptions)
     
     if (!session?.user) {
+      console.log('Unauthorized file upload attempt')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    console.log('User authenticated:', session.user.id)
     const formData = await request.formData()
     const file = formData.get('file') as File
     const isPublic = formData.get('isPublic') === 'true'
 
+    console.log('File received:', file?.name, 'Size:', file?.size, 'Type:', file?.type)
+
     if (!file) {
+      console.log('No file provided')
       return NextResponse.json(
         { error: 'No file provided' },
         { status: 400 }
@@ -102,19 +108,22 @@ export async function POST(request: NextRequest) {
     await writeFile(filePath, buffer)
 
     // Veritabanına kaydet
+    console.log('Saving file to database...')
     const savedFile = await prisma.file.create({
       data: {
         userId: session.user.id,
         name: file.name,
         originalName: file.name,
+        type: file.type || 'unknown',
         mimeType: file.type,
         size: file.size,
         path: fileName,
         url: `/uploads/${fileName}`,
-        isPublic
+        isPublic: false // Varsayılan olarak private
       }
     })
 
+    console.log('File saved successfully:', savedFile.id)
     return NextResponse.json(savedFile, { status: 201 })
   } catch (error) {
     console.error('Error uploading file:', error)

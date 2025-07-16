@@ -395,7 +395,7 @@ export function VersionManager() {
                       <SelectValue placeholder="Tüm türler" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Tüm türler</SelectItem>
+                      <SelectItem value="all">Tüm türler</SelectItem>
                       <SelectItem value="USER">Kullanıcı</SelectItem>
                       <SelectItem value="SETTING">Ayar</SelectItem>
                       <SelectItem value="CONTENT">İçerik</SelectItem>
