@@ -5,10 +5,11 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
+    const { id } = await context.params
     
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -22,7 +23,7 @@ export async function GET(
 
     // Check if user has access to this task
     const task = await prisma.task.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       select: { assigneeId: true, reporterId: true },
     })
 
@@ -38,7 +39,7 @@ export async function GET(
 
     const [comments, total] = await Promise.all([
       prisma.taskComment.findMany({
-        where: { taskId: params.id },
+        where: { taskId: id },
         include: {
           author: {
             select: {
@@ -52,7 +53,7 @@ export async function GET(
         skip,
         take: limit,
       }),
-      prisma.taskComment.count({ where: { taskId: params.id } }),
+      prisma.taskComment.count({ where: { taskId: id } }),
     ])
 
     return NextResponse.json({
@@ -72,10 +73,11 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
+    const { id } = await context.params
     
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -90,7 +92,7 @@ export async function POST(
 
     // Check if task exists and user has access
     const task = await prisma.task.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       select: { assigneeId: true, reporterId: true },
     })
 
@@ -106,7 +108,7 @@ export async function POST(
 
     const comment = await prisma.taskComment.create({
       data: {
-        taskId: params.id,
+        taskId: id,
         content,
         authorId: session.user.id,
         isInternal: isInternal || false,

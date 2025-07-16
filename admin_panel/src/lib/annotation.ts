@@ -66,7 +66,7 @@ export class AnnotationService {
         },
       })
 
-      return annotation
+      return annotation as AnnotationData
     } catch (error) {
       console.error('Create annotation error:', error)
       throw error
@@ -117,7 +117,7 @@ export class AnnotationService {
         orderBy: { createdAt: 'desc' },
       })
 
-      return annotations
+      return annotations as AnnotationData[]
     } catch (error) {
       console.error('Get entity annotations error:', error)
       throw error
@@ -178,7 +178,7 @@ export class AnnotationService {
         },
       })
 
-      return updatedAnnotation
+      return updatedAnnotation as AnnotationData
     } catch (error) {
       console.error('Update annotation error:', error)
       throw error
@@ -269,7 +269,7 @@ export class AnnotationService {
         totalAnnotations,
         annotationsByType: annotationsByTypeMap,
         annotationsByEntityType: annotationsByEntityTypeMap,
-        recentAnnotations,
+        recentAnnotations: recentAnnotations as AnnotationData[],
       }
     } catch (error) {
       console.error('Get annotation stats error:', error)

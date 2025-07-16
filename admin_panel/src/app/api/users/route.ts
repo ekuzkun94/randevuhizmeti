@@ -24,11 +24,11 @@ export async function GET(request: NextRequest) {
       AND: [
         search ? {
           OR: [
-            { name: { contains: search, mode: 'insensitive' } },
-            { email: { contains: search, mode: 'insensitive' } },
+            { name: { contains: search } },
+            { email: { contains: search } },
           ]
         } : {},
-        role ? { role } : {}
+        role ? { role: { name: role } } : {}
       ]
     }
 
@@ -39,7 +39,13 @@ export async function GET(request: NextRequest) {
           id: true,
           name: true,
           email: true,
-          role: true,
+          role: {
+            select: {
+              id: true,
+              name: true,
+              displayName: true
+            }
+          },
           status: true,
           createdAt: true,
           updatedAt: true,
@@ -79,7 +85,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, email, password, role = 'USER', status = 'ACTIVE' } = body
+    const { name, email, password, status, roleId } = body
 
     if (!name || !email || !password) {
       return NextResponse.json(
@@ -109,17 +115,18 @@ export async function POST(request: NextRequest) {
         name,
         email,
         password: hashedPassword,
-        role,
-        status
+        status,
+        roleId: roleId || undefined,
       },
       select: {
         id: true,
         name: true,
         email: true,
-        role: true,
         status: true,
-        createdAt: true
-      }
+        roleId: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     })
 
     return NextResponse.json(user, { status: 201 })

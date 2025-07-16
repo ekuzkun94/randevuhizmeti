@@ -79,9 +79,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { workflowId, entityType, entityId, title, description, data, priority, dueDate } = body
+    const { workflowId, entityType, entityId, data } = body
 
-    if (!workflowId || !entityType || !entityId || !title) {
+    if (!workflowId || !entityType || !entityId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
@@ -114,11 +114,7 @@ export async function POST(request: NextRequest) {
         entityType,
         entityId,
         userId: session.user.id,
-        title,
-        description,
-        data: data ? JSON.stringify(data) : null,
-        priority: priority || 'NORMAL',
-        dueDate: dueDate ? new Date(dueDate) : null,
+        data: data ? JSON.stringify(data) : '',
         currentStep: 1,
       },
       include: {

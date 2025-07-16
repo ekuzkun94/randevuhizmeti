@@ -6,6 +6,7 @@ const PUBLIC_PATHS = [
   '/auth/register',
   '/auth/forgot',
   '/api/auth',
+  '/api/test-prisma',
   '/_next',
   '/favicon.ico',
   '/public',

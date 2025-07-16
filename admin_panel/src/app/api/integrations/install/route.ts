@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
         integrationId,
         tenantId: tenantId || null,
         userId: userId || null,
-        config: config ? JSON.stringify(config) : null,
+        config: config ? JSON.stringify(config) : '',
         isActive: isActive !== false,
       },
       include: {

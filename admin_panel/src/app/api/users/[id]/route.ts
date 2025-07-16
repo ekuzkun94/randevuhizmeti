@@ -6,22 +6,29 @@ import bcrypt from 'bcryptjs'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
+    const { id } = await context.params
     
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       select: {
         id: true,
         name: true,
         email: true,
-        role: true,
+        role: {
+          select: {
+            id: true,
+            name: true,
+            displayName: true
+          }
+        },
         status: true,
         createdAt: true,
         updatedAt: true,
@@ -45,40 +52,37 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
+    const { id } = await context.params
     
     if (!session?.user || session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const body = await request.json()
-    const { name, email, role, status, password } = body
+    const { name, email, password, status, roleId } = body
 
-    const updateData: any = {}
-    
-    if (name) updateData.name = name
-    if (email) updateData.email = email
-    if (role) updateData.role = role
-    if (status) updateData.status = status
+    const updateData: any = { name, email, status }
+    if (roleId) updateData.roleId = roleId
     if (password) {
       updateData.password = await bcrypt.hash(password, 12)
     }
 
     const user = await prisma.user.update({
-      where: { id: params.id },
+      where: { id: id },
       data: updateData,
       select: {
         id: true,
         name: true,
         email: true,
-        role: true,
         status: true,
+        roleId: true,
         createdAt: true,
-        updatedAt: true
-      }
+        updatedAt: true,
+      },
     })
 
     return NextResponse.json(user)
@@ -93,17 +97,18 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
+    const { id } = await context.params
     
     if (!session?.user || session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Prevent admin from deleting themselves
-    if (params.id === session.user.id) {
+    if (id === session.user.id) {
       return NextResponse.json(
         { error: 'Cannot delete your own account' },
         { status: 400 }
@@ -111,7 +116,7 @@ export async function DELETE(
     }
 
     await prisma.user.delete({
-      where: { id: params.id }
+      where: { id: id }
     })
 
     return NextResponse.json({ message: 'User deleted successfully' })

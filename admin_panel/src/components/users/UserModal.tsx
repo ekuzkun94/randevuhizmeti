@@ -26,6 +26,7 @@ interface User {
   email: string
   role: string
   status: string
+  password?: string
 }
 
 interface UserModalProps {
@@ -36,14 +37,40 @@ interface UserModalProps {
   mode: 'create' | 'edit'
 }
 
+interface RoleOption {
+  id: string
+  displayName: string
+}
+
 export function UserModal({ isOpen, onClose, onSubmit, user, mode }: UserModalProps) {
   const [formData, setFormData] = useState<User>({
     name: '',
     email: '',
-    role: 'USER',
+    role: '',
     status: 'ACTIVE'
   })
   const [loading, setLoading] = useState(false)
+  const [roles, setRoles] = useState<RoleOption[]>([])
+
+  useEffect(() => {
+    // Rolleri çek
+    const fetchRoles = async () => {
+      try {
+        const res = await fetch('/api/roles')
+        const data = await res.json()
+        if (res.ok && data.roles) {
+          setRoles(data.roles.map((r: any) => ({ id: r.id, displayName: r.displayName })))
+          // Varsayılan rol ata
+          if (!formData.role && data.roles.length > 0) {
+            setFormData(f => ({ ...f, role: data.roles[0].id }))
+          }
+        }
+      } catch (e) {
+        setRoles([])
+      }
+    }
+    fetchRoles()
+  }, [])
 
   useEffect(() => {
     if (user && mode === 'edit') {
@@ -52,11 +79,11 @@ export function UserModal({ isOpen, onClose, onSubmit, user, mode }: UserModalPr
       setFormData({
         name: '',
         email: '',
-        role: 'USER',
+        role: roles[0]?.id || '',
         status: 'ACTIVE'
       })
     }
-  }, [user, mode])
+  }, [user, mode, roles])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -71,7 +98,9 @@ export function UserModal({ isOpen, onClose, onSubmit, user, mode }: UserModalPr
       if (mode === 'create' && password) {
         submitData.password = password
       }
-      
+      // role -> roleId
+      submitData.roleId = submitData.role
+      delete submitData.role
       await onSubmit(submitData)
       onClose()
     } catch (error) {
@@ -138,9 +167,9 @@ export function UserModal({ isOpen, onClose, onSubmit, user, mode }: UserModalPr
                     <SelectValue placeholder="Rol seçin" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="USER">Kullanıcı</SelectItem>
-                    <SelectItem value="MODERATOR">Moderatör</SelectItem>
-                    <SelectItem value="ADMIN">Admin</SelectItem>
+                    {roles.map((role) => (
+                      <SelectItem key={role.id} value={role.id}>{role.displayName}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

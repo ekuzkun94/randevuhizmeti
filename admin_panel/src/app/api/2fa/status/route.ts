@@ -30,9 +30,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       isEnabled: twoFactorAuth.isEnabled,
       isSetUp: !!twoFactorAuth.secret,
-      backupCodesCount: backupCodes.length,
-      enabledAt: twoFactorAuth.enabledAt,
-      disabledAt: twoFactorAuth.disabledAt
+      backupCodesCount: backupCodes.length
     })
   } catch (error) {
     console.error('Error fetching 2FA status:', error)

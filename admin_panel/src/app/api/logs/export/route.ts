@@ -44,15 +44,14 @@ export async function GET(request: NextRequest) {
     })
 
     if (format === 'csv') {
-      const csvHeaders = ['Tarih', 'Seviye', 'Tip', 'Mesaj', 'Detaylar', 'Kullanıcı', 'IP']
+      const csvHeaders = ['Tarih', 'Seviye', 'Tip', 'Mesaj', 'Kullanıcı', 'IP']
       const csvRows = logs.map(log => [
         new Date(log.createdAt).toLocaleString('tr-TR'),
         log.level,
         log.type,
         log.message,
-        log.details,
         log.user?.name || 'Sistem',
-        log.metadata?.ip || ''
+        log.metadata ? (() => { try { return JSON.parse(log.metadata).ip || '' } catch { return '' } })() : ''
       ])
 
       const csvContent = [csvHeaders, ...csvRows]

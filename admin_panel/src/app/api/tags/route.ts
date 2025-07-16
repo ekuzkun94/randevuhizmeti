@@ -23,8 +23,7 @@ export async function GET(request: NextRequest) {
     
     if (search) {
       where.name = {
-        contains: search,
-        mode: 'insensitive'
+        contains: search
       }
     }
     if (isSystem !== null) where.isSystem = isSystem === 'true'

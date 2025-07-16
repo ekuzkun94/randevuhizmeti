@@ -49,9 +49,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, description, type, schedule, isActive, data, retryCount, timeout } = body
+    const { name, description, isActive, cronExpression, handler } = body
 
-    if (!name || !type || !schedule) {
+    if (!name || !cronExpression || !handler) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
@@ -59,12 +59,9 @@ export async function POST(request: NextRequest) {
       data: {
         name,
         description,
-        type,
-        schedule,
         isActive: isActive !== false,
-        data: data ? JSON.stringify(data) : null,
-        retryCount: retryCount || 3,
-        timeout: timeout || 300, // 5 minutes default
+        cronExpression,
+        handler
       },
       include: {
         executions: {

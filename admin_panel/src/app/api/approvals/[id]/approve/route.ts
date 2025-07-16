@@ -5,10 +5,11 @@ import { prisma } from '@/lib/prisma'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
+    const { id } = await context.params
     
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -21,7 +22,7 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
     }
 
-    const requestId = params.id
+    const requestId = id
 
     // Get the approval request with workflow and steps
     const approvalRequest = await prisma.approvalRequest.findUnique({

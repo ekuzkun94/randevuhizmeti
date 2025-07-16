@@ -24,8 +24,9 @@ import {
   Plus,
   Edit,
   Trash2,
-  CheckCircle,
-  XCircle,
+  Eye,
+  Check,
+  X,
   Clock,
   AlertCircle,
   Users,
@@ -35,7 +36,7 @@ import {
   User,
   Shield,
   Calendar,
-  Priority,
+  AlertTriangle,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { tr } from 'date-fns/locale'
@@ -326,9 +327,9 @@ export function ApprovalManager() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'APPROVED':
-        return <CheckCircle className="w-4 h-4 text-green-500" />
+        return <Check className="w-4 h-4 text-green-500" />
       case 'REJECTED':
-        return <XCircle className="w-4 h-4 text-red-500" />
+        return <X className="w-4 h-4 text-red-500" />
       case 'PENDING':
         return <Clock className="w-4 h-4 text-yellow-500" />
       case 'EXPIRED':

@@ -24,8 +24,8 @@ export async function GET(request: NextRequest) {
       prisma.user.findMany({
         where: {
           OR: [
-            { name: { contains: query, mode: 'insensitive' } },
-            { email: { contains: query, mode: 'insensitive' } }
+            { name: { contains: query } },
+            { email: { contains: query } }
           ]
         },
         select: {
@@ -41,8 +41,8 @@ export async function GET(request: NextRequest) {
       prisma.file.findMany({
         where: {
           OR: [
-            { name: { contains: query, mode: 'insensitive' } },
-            { originalName: { contains: query, mode: 'insensitive' } }
+            { name: { contains: query } },
+            { originalName: { contains: query } }
           ]
         },
         select: {
@@ -60,8 +60,8 @@ export async function GET(request: NextRequest) {
         where: {
           userId: session.user.id,
           OR: [
-            { title: { contains: query, mode: 'insensitive' } },
-            { message: { contains: query, mode: 'insensitive' } }
+            { title: { contains: query } },
+            { message: { contains: query } }
           ]
         },
         select: {

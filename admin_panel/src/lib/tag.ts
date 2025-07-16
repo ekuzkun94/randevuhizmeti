@@ -53,7 +53,7 @@ export class TagService {
         },
       })
 
-      return tag
+      return tag as TagData
     } catch (error) {
       console.error('Create tag error:', error)
       throw error
@@ -94,7 +94,7 @@ export class TagService {
         orderBy: { name: 'asc' },
       })
 
-      return tags
+      return tags as TagData[]
     } catch (error) {
       console.error('Get tags error:', error)
       throw error
@@ -119,7 +119,7 @@ export class TagService {
         },
       })
 
-      return tag
+      return tag as TagData | null
     } catch (error) {
       console.error('Get tag by ID error:', error)
       throw error
@@ -172,7 +172,7 @@ export class TagService {
         },
       })
 
-      return updatedTag
+      return updatedTag as TagData
     } catch (error) {
       console.error('Update tag error:', error)
       throw error

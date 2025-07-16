@@ -25,9 +25,9 @@ export async function GET(request: NextRequest) {
     const where: any = {
       ...(search && {
         OR: [
-          { message: { contains: search, mode: 'insensitive' } },
-          { details: { contains: search, mode: 'insensitive' } },
-          { userId: { contains: search, mode: 'insensitive' } },
+          { message: { contains: search } },
+          { details: { contains: search } },
+          { userId: { contains: search } },
         ]
       }),
       ...(level && { level }),
@@ -94,7 +94,6 @@ export async function POST(request: NextRequest) {
         level: level || 'INFO',
         type: type || 'SYSTEM',
         message,
-        details,
         metadata: metadata || {}
       }
     })

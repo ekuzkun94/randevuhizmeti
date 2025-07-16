@@ -54,8 +54,7 @@ export async function POST(request: NextRequest) {
       where: { userId: session.user.id },
       data: {
         isEnabled: false,
-        backupCodes: null,
-        disabledAt: new Date()
+        backupCodes: null
       }
     })
 

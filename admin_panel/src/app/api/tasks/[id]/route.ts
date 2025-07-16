@@ -5,17 +5,18 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
+    const { id } = await context.params
     
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const task = await prisma.task.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: {
         assignee: {
           select: {
@@ -83,10 +84,11 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
+    const { id } = await context.params
     
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -97,7 +99,7 @@ export async function PUT(
 
     // Check if task exists and user has access
     const existingTask = await prisma.task.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       select: { assigneeId: true, reporterId: true },
     })
 
@@ -113,7 +115,7 @@ export async function PUT(
 
     // Update task
     const task = await prisma.task.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         title,
         description,
@@ -153,14 +155,14 @@ export async function PUT(
     if (tagIds) {
       // Remove existing tags
       await prisma.taskTag.deleteMany({
-        where: { taskId: params.id },
+        where: { taskId: id },
       })
 
       // Add new tags
       if (tagIds.length > 0) {
         await prisma.taskTag.createMany({
           data: tagIds.map((tagId: string) => ({
-            taskId: params.id,
+            taskId: id,
             tagId,
           })),
         })
@@ -176,17 +178,18 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
+    const { id } = await context.params
     
     if (!session?.user || session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const task = await prisma.task.findUnique({
-      where: { id: params.id },
+      where: { id: id },
     })
 
     if (!task) {
@@ -194,7 +197,7 @@ export async function DELETE(
     }
 
     await prisma.task.delete({
-      where: { id: params.id },
+      where: { id: id },
     })
 
     return NextResponse.json({ message: 'Task deleted successfully' })

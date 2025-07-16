@@ -7,10 +7,11 @@ import { join } from 'path'
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
+    const { id } = await context.params
     
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -19,7 +20,7 @@ export async function DELETE(
     // Dosyayı veritabanından al
     const file = await prisma.file.findUnique({
       where: { 
-        id: params.id,
+        id: id,
         userId: session.user.id // Sadece kendi dosyalarını silebilir
       }
     })
@@ -39,7 +40,7 @@ export async function DELETE(
 
     // Veritabanından sil
     await prisma.file.delete({
-      where: { id: params.id }
+      where: { id: id }
     })
 
     return NextResponse.json({ message: 'File deleted successfully' })
@@ -54,10 +55,11 @@ export async function DELETE(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
+    const { id } = await context.params
     
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -73,7 +75,7 @@ export async function PATCH(
 
     const file = await prisma.file.update({
       where: { 
-        id: params.id,
+        id: id,
         userId: session.user.id // Sadece kendi dosyalarını güncelleyebilir
       },
       data: updateData

@@ -13,7 +13,7 @@ async function main() {
       name: 'Admin',
       password: hashed,
       role: 'SUPER_ADMIN',
-      isActive: true,
+      status: 'ACTIVE',
     },
   })
   console.log('Admin user:', user)

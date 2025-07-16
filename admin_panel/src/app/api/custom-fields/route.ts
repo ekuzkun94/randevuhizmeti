@@ -77,6 +77,7 @@ export async function POST(request: NextRequest) {
         isRequired: isRequired || false,
         isUnique: isUnique || false,
         options: options ? JSON.stringify(options) : null,
+        createdByUser: { connect: { id: session.user.id } },
       },
     })
 

@@ -5,10 +5,11 @@ import { prisma } from '@/lib/prisma'
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
+    const { id } = await context.params
     
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -19,10 +20,10 @@ export async function PATCH(
 
     const notification = await prisma.notification.update({
       where: { 
-        id: params.id,
+        id: id,
         userId: session.user.id // Sadece kendi bildirimlerini güncelleyebilir
       },
-      data: { read }
+      data: { isRead: read }
     })
 
     return NextResponse.json(notification)
@@ -37,10 +38,11 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
+    const { id } = await context.params
     
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -48,7 +50,7 @@ export async function DELETE(
 
     await prisma.notification.delete({
       where: { 
-        id: params.id,
+        id: id,
         userId: session.user.id // Sadece kendi bildirimlerini silebilir
       }
     })

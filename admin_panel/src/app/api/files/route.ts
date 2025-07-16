@@ -25,8 +25,8 @@ export async function GET(request: NextRequest) {
       userId: session.user.id,
       ...(search && {
         OR: [
-          { name: { contains: search, mode: 'insensitive' } },
-          { originalName: { contains: search, mode: 'insensitive' } },
+          { name: { contains: search } },
+          { originalName: { contains: search } },
         ]
       })
     }

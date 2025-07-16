@@ -35,7 +35,11 @@ interface User {
   id: string
   name: string
   email: string
-  role: string
+  role: {
+    id: string
+    name: string
+    displayName: string
+  }
   status: string
   createdAt: string
   lastLoginAt?: string
@@ -93,13 +97,16 @@ export function UserTable({ onEdit, onDelete, onView, onCreate }: UserTableProps
     return <Badge className={variants[status as keyof typeof variants]}>{status}</Badge>
   }
 
-  const getRoleBadge = (role: string) => {
+  const getRoleBadge = (role: { id: string; name: string; displayName: string } | null) => {
+    if (!role) {
+      return <Badge className="bg-gray-100 text-gray-400">Rol Yok</Badge>;
+    }
     const variants = {
       ADMIN: 'bg-purple-100 text-purple-800',
       MODERATOR: 'bg-blue-100 text-blue-800',
       USER: 'bg-gray-100 text-gray-800'
     }
-    return <Badge className={variants[role as keyof typeof variants]}>{role}</Badge>
+    return <Badge className={variants[role.name as keyof typeof variants] || 'bg-gray-100 text-gray-800'}>{role.displayName || role.name}</Badge>
   }
 
   if (loading) {

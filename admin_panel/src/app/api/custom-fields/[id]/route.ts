@@ -5,17 +5,18 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
+    const { id } = await context.params
     
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const customField = await prisma.customField.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: {
         values: {
           include: {
@@ -45,10 +46,11 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
+    const { id } = await context.params
     
     if (!session?.user || session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -58,7 +60,7 @@ export async function PUT(
     const { name, label, type, entityType, isRequired, isUnique, options } = body
 
     const customField = await prisma.customField.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         name,
         label,
@@ -79,17 +81,18 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
+    const { id } = await context.params
     
     if (!session?.user || session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const customField = await prisma.customField.findUnique({
-      where: { id: params.id },
+      where: { id: id },
     })
 
     if (!customField) {
@@ -97,7 +100,7 @@ export async function DELETE(
     }
 
     await prisma.customField.delete({
-      where: { id: params.id },
+      where: { id: id },
     })
 
     return NextResponse.json({ message: 'Custom field deleted successfully' })

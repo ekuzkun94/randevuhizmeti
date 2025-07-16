@@ -66,7 +66,8 @@ export class VersioningService {
       return {
         ...versionedRecord,
         data: JSON.parse(versionedRecord.data),
-      }
+        changeType: versionedRecord.changeType as 'CREATE' | 'UPDATE' | 'DELETE' | 'RESTORE',
+      } as VersionedData
     } catch (error) {
       console.error('Create version error:', error)
       throw error
@@ -98,7 +99,8 @@ export class VersioningService {
       return versions.map(version => ({
         ...version,
         data: JSON.parse(version.data),
-      }))
+        changeType: version.changeType as 'CREATE' | 'UPDATE' | 'DELETE' | 'RESTORE',
+      })) as VersionedData[]
     } catch (error) {
       console.error('Get versions error:', error)
       throw error
@@ -134,7 +136,8 @@ export class VersioningService {
       return {
         ...versionedRecord,
         data: JSON.parse(versionedRecord.data),
-      }
+        changeType: versionedRecord.changeType as 'CREATE' | 'UPDATE' | 'DELETE' | 'RESTORE',
+      } as VersionedData
     } catch (error) {
       console.error('Get version error:', error)
       throw error
@@ -168,7 +171,8 @@ export class VersioningService {
       return {
         ...versionedRecord,
         data: JSON.parse(versionedRecord.data),
-      }
+        changeType: versionedRecord.changeType as 'CREATE' | 'UPDATE' | 'DELETE' | 'RESTORE',
+      } as VersionedData
     } catch (error) {
       console.error('Get latest version error:', error)
       throw error
@@ -317,7 +321,8 @@ export class VersioningService {
         recentChanges: recentChanges.map(change => ({
           ...change,
           data: JSON.parse(change.data),
-        })),
+          changeType: change.changeType as 'CREATE' | 'UPDATE' | 'DELETE' | 'RESTORE',
+        })) as VersionedData[],
       }
     } catch (error) {
       console.error('Get version stats error:', error)

@@ -53,25 +53,21 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, description, category, provider, version, isActive, isPremium, price, features, configSchema, documentationUrl } = body
+    const { name, description, isActive, isPremium } = body
 
-    if (!name || !category || !provider) {
+    if (!name) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
     const integration = await prisma.integration.create({
       data: {
         name,
+        displayName: name,
         description,
-        category,
-        provider,
-        version: version || '1.0.0',
+        type: 'API',
+        config: '',
         isActive: isActive !== false,
-        isPremium: isPremium || false,
-        price: price || null,
-        features: features ? JSON.stringify(features) : null,
-        configSchema: configSchema ? JSON.stringify(configSchema) : null,
-        documentationUrl,
+        isPremium: isPremium || false
       },
     })
 

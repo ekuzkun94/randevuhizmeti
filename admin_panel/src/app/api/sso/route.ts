@@ -62,21 +62,22 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, provider, clientId, clientSecret, redirectUri, scopes, isActive } = body
+    const { name, clientId, clientSecret, scopes, isActive } = body
 
-    if (!name || !provider || !clientId || !clientSecret) {
-      return NextResponse.json({ error: 'Name, provider, clientId, and clientSecret are required' }, { status: 400 })
+    if (!name || !clientId || !clientSecret) {
+      return NextResponse.json({ error: 'Name, clientId, and clientSecret are required' }, { status: 400 })
     }
 
     const integration = await prisma.oAuthProvider.create({
       data: {
         name,
-        provider,
+        displayName: name,
         clientId,
         clientSecret,
-        redirectUri,
         scopes: scopes ? JSON.stringify(scopes) : '[]',
         isActive: isActive || false,
+        authUrl: '',
+        tokenUrl: ''
       },
     })
 

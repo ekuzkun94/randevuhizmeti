@@ -5,6 +5,23 @@ const prisma = new PrismaClient()
 
 async function createAdminUser() {
   try {
+    // Önce admin rolünü bul veya oluştur
+    let adminRole = await prisma.role.findFirst({
+      where: { name: 'ADMIN' }
+    })
+
+    if (!adminRole) {
+      adminRole = await prisma.role.create({
+        data: {
+          name: 'ADMIN',
+          displayName: 'Administrator',
+          description: 'System administrator with full access',
+          isSystem: true
+        }
+      })
+      console.log('Admin role created:', adminRole.name)
+    }
+
     const hashedPassword = bcrypt.hashSync('admin123', 10)
     
     const adminUser = await prisma.user.upsert({
@@ -12,7 +29,7 @@ async function createAdminUser() {
       update: {
         password: hashedPassword,
         name: 'Admin User',
-        role: 'ADMIN',
+        roleId: adminRole.id,
         status: 'ACTIVE',
         emailVerified: new Date()
       },
@@ -20,7 +37,7 @@ async function createAdminUser() {
         email: 'admin@example.com',
         password: hashedPassword,
         name: 'Admin User',
-        role: 'ADMIN',
+        roleId: adminRole.id,
         status: 'ACTIVE',
         emailVerified: new Date()
       }

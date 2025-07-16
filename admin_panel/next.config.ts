@@ -2,13 +2,11 @@ import type { NextConfig } from 'next'
 import withPWA from 'next-pwa'
 
 const nextConfig: NextConfig = {
-  experimental: {
-    turbo: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
+  turbopack: {
+    rules: {
+      '*.svg': {
+        loaders: ['@svgr/webpack'],
+        as: '*.js',
       },
     },
   },

@@ -5,16 +5,17 @@ import { prisma } from '@/lib/prisma'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
+    const { id } = await context.params
     
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const notificationId = params.id
+    const notificationId = id
 
     // Bildirimin kullanıcıya ait olduğunu kontrol et ve okundu olarak işaretle
     const notification = await prisma.notification.updateMany({

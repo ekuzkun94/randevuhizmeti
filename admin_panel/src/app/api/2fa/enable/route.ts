@@ -60,8 +60,7 @@ export async function POST(request: NextRequest) {
       where: { userId: session.user.id },
       data: {
         isEnabled: true,
-        backupCodes: JSON.stringify(backupCodes),
-        enabledAt: new Date()
+        backupCodes: JSON.stringify(backupCodes)
       }
     })
 
