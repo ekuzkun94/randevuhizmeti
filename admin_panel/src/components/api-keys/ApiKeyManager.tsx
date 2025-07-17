@@ -34,6 +34,8 @@ import {
 import { format } from 'date-fns'
 import { tr } from 'date-fns/locale'
 import { toast } from 'sonner'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { StatsCard, gradientPresets } from '@/components/ui/StatsCard'
 
 interface ApiKey {
   id: string
@@ -154,6 +156,43 @@ export function ApiKeyManager() {
     return <Badge className="bg-green-100 text-green-800">Aktif</Badge>
   }
 
+  // Stats
+  const total = apiKeys.length
+  const active = apiKeys.filter(k => k.isActive && (!k.expiresAt || new Date(k.expiresAt) > new Date())).length
+  const expired = apiKeys.filter(k => k.expiresAt && new Date(k.expiresAt) < new Date()).length
+  const passive = apiKeys.filter(k => !k.isActive).length
+
+  const statsCards = [
+    {
+      title: 'Toplam Anahtar',
+      value: total,
+      icon: <Key className="h-6 w-6" />, 
+      gradient: gradientPresets.blue,
+      change: { value: 0, type: 'neutral', period: '' }
+    },
+    {
+      title: 'Aktif',
+      value: active,
+      icon: <Key className="h-6 w-6" />, 
+      gradient: gradientPresets.green,
+      change: { value: 0, type: 'neutral', period: '' }
+    },
+    {
+      title: 'Pasif',
+      value: passive,
+      icon: <Key className="h-6 w-6" />, 
+      gradient: gradientPresets.red,
+      change: { value: 0, type: 'neutral', period: '' }
+    },
+    {
+      title: 'Süresi Dolmuş',
+      value: expired,
+      icon: <Clock className="h-6 w-6" />, 
+      gradient: gradientPresets.orange,
+      change: { value: 0, type: 'neutral', period: '' }
+    }
+  ]
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -163,25 +202,29 @@ export function ApiKeyManager() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">API Anahtarları</h1>
-          <p className="text-muted-foreground">
-            API erişimi için anahtarlarınızı yönetin
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" onClick={fetchApiKeys}>
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-          <Button onClick={() => setIsModalOpen(true)} className="flex items-center space-x-2">
-            <Plus className="h-4 w-4" />
-            <span>Yeni API Anahtarı</span>
-          </Button>
-        </div>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        title="API Anahtarları"
+        description="API erişimi için anahtarlarınızı yönetin"
+        icon={<Key className="h-8 w-8" />}
+        gradient="from-blue-600 via-purple-600 to-pink-600"
+        stats={statsCards}
+        actions={
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" size="sm" onClick={fetchApiKeys}>
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+            <Button onClick={() => setIsModalOpen(true)} className="flex items-center space-x-2">
+              <Plus className="h-4 w-4" />
+              <span>Yeni API Anahtarı</span>
+            </Button>
+          </div>
+        }
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'API Anahtarları' }
+        ]}
+      />
 
       {/* API Keys Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

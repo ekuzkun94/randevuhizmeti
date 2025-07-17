@@ -62,6 +62,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import Link from 'next/link'
+import { StatsCard, gradientPresets } from '@/components/ui/StatsCard'
+import Image from 'next/image'
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions)
@@ -204,75 +206,67 @@ export default async function DashboardPage() {
     {
       title: 'Toplam Kullanıcı',
       value: userCount.toLocaleString(),
-      icon: Users,
-      change: '+12%',
-      color: 'from-blue-500 to-blue-600',
-      bgColor: 'bg-gradient-to-br from-blue-50 to-blue-100',
-      href: '/dashboard/users'
+      icon: <Users className="h-6 w-6" />, 
+      gradient: gradientPresets.blueOrange,
+      change: { value: 12, type: 'increase', period: 'Bu ay' },
+      href: '/dashboard/users',
     },
     {
       title: 'Aktif Randevular',
       value: appointmentCount.toLocaleString(),
-      icon: Calendar,
-      change: '+25%',
-      color: 'from-green-500 to-green-600',
-      bgColor: 'bg-gradient-to-br from-green-50 to-green-100',
-      href: '/dashboard/appointments'
+      icon: <Calendar className="h-6 w-6" />, 
+      gradient: gradientPresets.orangeBlue,
+      change: { value: 25, type: 'increase', period: 'Bu ay' },
+      href: '/dashboard/appointments',
     },
     {
       title: 'Hizmet Sağlayıcıları',
       value: providerCount.toLocaleString(),
-      icon: Building,
-      change: '+8%',
-      color: 'from-purple-500 to-purple-600',
-      bgColor: 'bg-gradient-to-br from-purple-50 to-purple-100',
-      href: '/dashboard/providers'
+      icon: <Building className="h-6 w-6" />, 
+      gradient: gradientPresets.blue,
+      change: { value: 8, type: 'increase', period: 'Bu ay' },
+      href: '/dashboard/providers',
     },
     {
       title: 'Toplam Çalışan',
       value: employeeCount.toLocaleString(),
-      icon: UserCheck,
-      change: '+15%',
-      color: 'from-orange-500 to-orange-600',
-      bgColor: 'bg-gradient-to-br from-orange-50 to-orange-100',
-      href: '/dashboard/employees'
+      icon: <UserCheck className="h-6 w-6" />, 
+      gradient: gradientPresets.orange,
+      change: { value: 15, type: 'increase', period: 'Bu ay' },
+      href: '/dashboard/employees',
     },
     {
       title: 'Müşteri Sayısı',
       value: customerCount.toLocaleString(),
-      icon: Users,
-      change: '+20%',
-      color: 'from-pink-500 to-pink-600',
-      bgColor: 'bg-gradient-to-br from-pink-50 to-pink-100',
-      href: '/dashboard/customers'
+      icon: <Users className="h-6 w-6" />, 
+      gradient: gradientPresets.pink,
+      change: { value: 20, type: 'increase', period: 'Bu ay' },
+      href: '/dashboard/customers',
     },
     {
       title: 'Hizmet Türü',
       value: serviceCount.toLocaleString(),
-      icon: Package,
-      change: '+5%',
-      color: 'from-indigo-500 to-indigo-600',
-      bgColor: 'bg-gradient-to-br from-indigo-50 to-indigo-100',
-      href: '/dashboard/services'
+      icon: <Package className="h-6 w-6" />, 
+      gradient: gradientPresets.indigo,
+      change: { value: 5, type: 'increase', period: 'Bu ay' },
+      href: '/dashboard/services',
     },
     {
       title: 'Sistem Rolleri',
       value: roleCount.toLocaleString(),
-      icon: Shield,
-      change: '+3%',
-      color: 'from-red-500 to-red-600',
-      bgColor: 'bg-gradient-to-br from-red-50 to-red-100',
-      href: '/dashboard/roles'
+      icon: <Shield className="h-6 w-6" />, 
+      gradient: gradientPresets.red,
+      change: { value: 3, type: 'increase', period: 'Bu ay' },
+      href: '/dashboard/roles',
     },
     {
       title: 'API Anahtarları',
       value: apiKeyCount.toLocaleString(),
-      icon: Key,
-      change: '+7%',
-      color: 'from-teal-500 to-teal-600',
-      bgColor: 'bg-gradient-to-br from-teal-50 to-teal-100',
-      href: '/dashboard/api-keys'
-    }
+      icon: <Key className="h-6 w-6" />, 
+      gradient: gradientPresets.teal,
+      change: { value: 7, type: 'increase', period: 'Bu ay' },
+      href: '/dashboard/api-keys',
+    },
   ]
 
   // Sistem sağlığı durumları
@@ -291,69 +285,64 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      {/* Hoş Geldin Mesajı */}
-      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-2xl p-8 text-white shadow-2xl">
-        <div className="flex items-center justify-between">
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold flex items-center space-x-3">
-              <Sparkles className="h-8 w-8" />
-              <span>Hoş geldin, {session.user?.name}!</span>
-            </h1>
-            <p className="text-blue-100 text-lg">
-              Admin panelinizin genel durumunu ve tüm sistemlerin özetini buradan takip edebilirsiniz.
-            </p>
-            <div className="flex items-center space-x-4 pt-2">
-              <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
-                <Clock className="h-4 w-4 mr-1" />
-                Son güncelleme: {new Date().toLocaleString('tr-TR')}
-              </Badge>
-              <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
-                <Activity className="h-4 w-4 mr-1" />
-                Sistem Aktif
-              </Badge>
+      {/* Hoş geldin banner'ı */}
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-blue-500 to-orange-500 p-8 text-white shadow-lg">
+        <div className="relative z-10">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-12 h-12 relative">
+              <Image
+                src="/icons/zamanyonet_logo.png"
+                alt="ZamanYonet Logo"
+                fill
+                className="object-contain"
+              />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold">Hoş geldin, {session.user?.name || 'Admin User'}!</h1>
+              <p className="text-blue-100 text-lg">ZamanYonet Admin Paneli</p>
             </div>
           </div>
-          <div className="hidden lg:block">
-            <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center">
-              <Trophy className="h-12 w-12 text-white" />
+          <p className="text-lg text-blue-50 mb-6 max-w-2xl">
+            Admin panelinizin genel durumunu ve tüm sistemlerin özetini buradan takip edebilirsiniz.
+          </p>
+          <div className="flex items-center gap-6 text-sm">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              <span>Son güncelleme: {new Date().toLocaleString('tr-TR')}</span>
             </div>
+            <div className="flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              <span>Sistem Aktif</span>
+            </div>
+          </div>
+        </div>
+        <div className="absolute right-4 top-4">
+          <div className="rounded-full bg-white/20 p-3">
+            <Trophy className="h-8 w-8 text-white" />
           </div>
         </div>
       </div>
 
       {/* Ana İstatistikler */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statCards.map((stat, index) => {
-          const Icon = stat.icon
-          return (
-            <Link key={index} href={stat.href}>
-              <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group border-0 shadow-md">
-                <CardContent className={`p-6 ${stat.bgColor} rounded-xl`}>
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                      <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
-                      <div className="flex items-center space-x-1">
-                        <ArrowUp className="h-4 w-4 text-green-600" />
-                        <span className="text-sm text-green-600 font-medium">{stat.change}</span>
-                      </div>
-                    </div>
-                    <div className={`w-16 h-16 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                      <Icon className="h-8 w-8 text-white" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          )
-        })}
+        {statCards.map((stat, index) => (
+          <StatsCard
+            key={index}
+            title={stat.title}
+            value={stat.value}
+            change={stat.change}
+            icon={stat.icon}
+            gradient={stat.gradient}
+            href={stat.href}
+          />
+        ))}
       </div>
 
       {/* Detaylı Raporlar Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Randevu Yönetimi Özeti */}
         <Card className="border-0 shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 border-b">
+          <CardHeader className="bg-gradient-to-r from-blue-50 to-orange-50 border-b">
             <CardTitle className="flex items-center space-x-2">
               <Calendar className="h-5 w-5 text-blue-600" />
               <span>Randevu Yönetimi</span>

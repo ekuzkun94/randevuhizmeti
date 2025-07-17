@@ -139,7 +139,7 @@ export function AuditTrailManager() {
       case 'CREATE':
         return <CheckCircle className="w-4 h-4 text-green-500" />
       case 'UPDATE':
-        return <RefreshCw className="w-4 h-4 text-blue-500" />
+        return <RefreshCw className="w-4 h-4 text-blue-600" />
       case 'DELETE':
         return <XCircle className="w-4 h-4 text-red-500" />
       case 'LOGIN':
@@ -147,7 +147,7 @@ export function AuditTrailManager() {
       case 'LOGOUT':
         return <User className="w-4 h-4 text-gray-500" />
       default:
-        return <Activity className="w-4 h-4 text-gray-500" />
+        return <Activity className="w-4 h-4 text-orange-600" />
     }
   }
 
@@ -195,250 +195,318 @@ export function AuditTrailManager() {
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Toplam Log</p>
-                  <p className="text-2xl font-bold">{stats.totalLogs}</p>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-gray-50">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Toplam Log</p>
+                    <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
+                      {stats.totalLogs}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200">
+                    <Activity className="w-6 h-6 text-blue-600" />
+                  </div>
                 </div>
-                <Activity className="w-8 h-8 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </motion.div>
           
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Bugünkü Log</p>
-                  <p className="text-2xl font-bold">{stats.todayLogs}</p>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-gray-50">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Bugünkü Log</p>
+                    <p className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-orange-700 bg-clip-text text-transparent">
+                      {stats.todayLogs}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200">
+                    <Clock className="w-6 h-6 text-orange-600" />
+                  </div>
                 </div>
-                <Clock className="w-8 h-8 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </motion.div>
           
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">En Çok İşlem</p>
-                  <p className="text-lg font-semibold">
-                    {stats.actionStats[0]?.action || 'N/A'}
-                  </p>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
+            <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-gray-50">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">En Çok İşlem</p>
+                    <p className="text-lg font-semibold text-gray-800">
+                      {stats.actionStats[0]?.action || 'N/A'}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200">
+                    <AlertTriangle className="w-6 h-6 text-blue-600" />
+                  </div>
                 </div>
-                <AlertTriangle className="w-8 h-8 text-orange-500" />
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </motion.div>
           
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">İşlem Türleri</p>
-                  <p className="text-2xl font-bold">{stats.actionStats.length}</p>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+          >
+            <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-gray-50">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">İşlem Türleri</p>
+                    <p className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-orange-700 bg-clip-text text-transparent">
+                      {stats.actionStats.length}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200">
+                    <Filter className="w-6 h-6 text-orange-600" />
+                  </div>
                 </div>
-                <Filter className="w-8 h-8 text-purple-500" />
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </motion.div>
         </div>
       )}
 
       {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="w-5 h-5" />
-            Filtreler
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">İşlem Türü</label>
-              <Select value={filters.action} onValueChange={(value) => handleFilterChange('action', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="İşlem türü seçin" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tüm işlemler</SelectItem>
-                  <SelectItem value="CREATE">Oluşturma</SelectItem>
-                  <SelectItem value="UPDATE">Güncelleme</SelectItem>
-                  <SelectItem value="DELETE">Silme</SelectItem>
-                  <SelectItem value="LOGIN">Giriş</SelectItem>
-                  <SelectItem value="LOGOUT">Çıkış</SelectItem>
-                </SelectContent>
-              </Select>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.5 }}
+      >
+        <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-gray-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-gray-800">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200">
+                <Filter className="w-5 h-5 text-blue-600" />
+              </div>
+              Filtreler
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700">İşlem Türü</label>
+                <Select value={filters.action} onValueChange={(value) => handleFilterChange('action', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="İşlem türü seçin" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tüm işlemler</SelectItem>
+                    <SelectItem value="CREATE">Oluşturma</SelectItem>
+                    <SelectItem value="UPDATE">Güncelleme</SelectItem>
+                    <SelectItem value="DELETE">Silme</SelectItem>
+                    <SelectItem value="LOGIN">Giriş</SelectItem>
+                    <SelectItem value="LOGOUT">Çıkış</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700">Varlık Tipi</label>
+                <Select value={filters.entityType} onValueChange={(value) => handleFilterChange('entityType', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Varlık türü seçin" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tüm varlıklar</SelectItem>
+                    <SelectItem value="User">Kullanıcı</SelectItem>
+                    <SelectItem value="File">Dosya</SelectItem>
+                    <SelectItem value="ApiKey">API Anahtarı</SelectItem>
+                    <SelectItem value="Notification">Bildirim</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700">Başlangıç Tarihi</label>
+                <Input
+                  type="date"
+                  value={filters.startDate}
+                  onChange={(e) => handleFilterChange('startDate', e.target.value)}
+                />
+              </div>
             </div>
             
-            <div>
-              <label className="block text-sm font-medium mb-2">Varlık Tipi</label>
-              <Select value={filters.entityType} onValueChange={(value) => handleFilterChange('entityType', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Varlık türü seçin" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tüm varlıklar</SelectItem>
-                  <SelectItem value="User">Kullanıcı</SelectItem>
-                  <SelectItem value="File">Dosya</SelectItem>
-                  <SelectItem value="ApiKey">API Anahtarı</SelectItem>
-                  <SelectItem value="Notification">Bildirim</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="flex gap-2 mt-6">
+              <Button 
+                onClick={handleSearch} 
+                className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+              >
+                <Search className="w-4 h-4" />
+                Ara
+              </Button>
+              <Button variant="outline" onClick={handleReset}>
+                Sıfırla
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={exportLogs} 
+                className="flex items-center gap-2 border-orange-200 text-orange-600 hover:bg-orange-50"
+              >
+                <Download className="w-4 h-4" />
+                Dışa Aktar
+              </Button>
             </div>
-            
-            <div>
-              <label className="block text-sm font-medium mb-2">Başlangıç Tarihi</label>
-              <Input
-                type="date"
-                value={filters.startDate}
-                onChange={(e) => handleFilterChange('startDate', e.target.value)}
-              />
-            </div>
-          </div>
-          
-          <div className="flex gap-2 mt-4">
-            <Button onClick={handleSearch} className="flex items-center gap-2">
-              <Search className="w-4 h-4" />
-              Ara
-            </Button>
-            <Button variant="outline" onClick={handleReset}>
-              Sıfırla
-            </Button>
-            <Button variant="outline" onClick={exportLogs} className="flex items-center gap-2">
-              <Download className="w-4 h-4" />
-              Dışa Aktar
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* Logs Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span className="flex items-center gap-2">
-              <Activity className="w-5 h-5" />
-              Audit Logları
-            </span>
-            <Button variant="outline" size="sm" onClick={fetchLogs} className="flex items-center gap-2">
-              <RefreshCw className="w-4 h-4" />
-              Yenile
-            </Button>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <RefreshCw className="w-6 h-6 animate-spin" />
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {logs.map((log) => (
-                <motion.div
-                  key={log.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="border rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer"
-                  onClick={() => {
-                    setSelectedLog(log)
-                    setShowDetails(true)
-                  }}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      {getActionIcon(log.action)}
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={getActionBadgeVariant(log.action) as any}>
-                            {log.action}
-                          </Badge>
-                          <span className="text-sm text-muted-foreground">
-                            {log.entityType}
-                          </span>
-                          {log.entityId && (
-                            <span className="text-sm text-muted-foreground">
-                              #{log.entityId.slice(-8)}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.6 }}
+      >
+        <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-gray-50">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span className="flex items-center gap-2 text-gray-800">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200">
+                  <Activity className="w-5 h-5 text-orange-600" />
+                </div>
+                Audit Logları
+              </span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={fetchLogs} 
+                className="flex items-center gap-2 border-blue-200 text-blue-600 hover:bg-blue-50"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Yenile
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <RefreshCw className="w-6 h-6 animate-spin text-blue-600" />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {logs.map((log, index) => (
+                  <motion.div
+                    key={log.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
+                    className="border border-gray-200 rounded-xl p-4 hover:bg-gradient-to-r hover:from-blue-50 hover:to-orange-50 transition-all duration-300 cursor-pointer shadow-sm hover:shadow-md"
+                    onClick={() => {
+                      setSelectedLog(log)
+                      setShowDetails(true)
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        {getActionIcon(log.action)}
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={getActionBadgeVariant(log.action) as any}>
+                              {log.action}
+                            </Badge>
+                            <span className="text-sm text-gray-600">
+                              {log.entityType}
                             </span>
-                          )}
+                            {log.entityId && (
+                              <span className="text-sm text-gray-500 font-mono">
+                                #{log.entityId.slice(-8)}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {log.user?.name || log.user?.email || 'Sistem'}
+                            {log.ipAddress && ` • ${log.ipAddress}`}
+                          </p>
                         </div>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {log.user?.name || log.user?.email || 'Sistem'}
-                          {log.ipAddress && ` • ${log.ipAddress}`}
-                        </p>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-500">
+                          {format(new Date(log.createdAt), 'dd/MM/yyyy HH:mm', { locale: tr })}
+                        </span>
+                        <Eye className="w-4 h-4 text-gray-400" />
                       </div>
                     </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">
-                        {format(new Date(log.createdAt), 'dd/MM/yyyy HH:mm', { locale: tr })}
-                      </span>
-                      <Eye className="w-4 h-4 text-muted-foreground" />
-                    </div>
+                  </motion.div>
+                ))}
+                
+                {logs.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    Log bulunamadı
                   </div>
-                </motion.div>
-              ))}
-              
-              {logs.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
-                  Log bulunamadı
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* Log Details Modal */}
       {showDetails && selectedLog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Log Detayları</h3>
+          <div className="bg-white rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-800">Log Detayları</h3>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowDetails(false)}
+                className="border-gray-200 text-gray-600 hover:bg-gray-50"
               >
                 Kapat
               </Button>
             </div>
             
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">İşlem</label>
+                  <label className="block text-sm font-medium mb-2 text-gray-700">İşlem</label>
                   <Badge variant={getActionBadgeVariant(selectedLog.action) as any}>
                     {selectedLog.action}
                   </Badge>
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Varlık Tipi</label>
-                  <p className="text-sm">{selectedLog.entityType}</p>
+                  <label className="block text-sm font-medium mb-2 text-gray-700">Varlık Tipi</label>
+                  <p className="text-sm text-gray-800">{selectedLog.entityType}</p>
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Varlık ID</label>
-                  <p className="text-sm font-mono">{selectedLog.entityId || 'N/A'}</p>
+                  <label className="block text-sm font-medium mb-2 text-gray-700">Varlık ID</label>
+                  <p className="text-sm font-mono text-gray-800">{selectedLog.entityId || 'N/A'}</p>
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Kullanıcı</label>
-                  <p className="text-sm">{selectedLog.user?.name || selectedLog.user?.email || 'Sistem'}</p>
+                  <label className="block text-sm font-medium mb-2 text-gray-700">Kullanıcı</label>
+                  <p className="text-sm text-gray-800">{selectedLog.user?.name || selectedLog.user?.email || 'Sistem'}</p>
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium mb-1">IP Adresi</label>
-                  <p className="text-sm font-mono">{selectedLog.ipAddress || 'N/A'}</p>
+                  <label className="block text-sm font-medium mb-2 text-gray-700">IP Adresi</label>
+                  <p className="text-sm font-mono text-gray-800">{selectedLog.ipAddress || 'N/A'}</p>
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Tarih</label>
-                  <p className="text-sm">
+                  <label className="block text-sm font-medium mb-2 text-gray-700">Tarih</label>
+                  <p className="text-sm text-gray-800">
                     {format(new Date(selectedLog.createdAt), 'dd/MM/yyyy HH:mm:ss', { locale: tr })}
                   </p>
                 </div>
@@ -446,8 +514,8 @@ export function AuditTrailManager() {
               
               {selectedLog.oldValues && (
                 <div>
-                  <label className="block text-sm font-medium mb-1">Eski Değerler</label>
-                  <pre className="bg-gray-100 p-3 rounded text-sm overflow-x-auto">
+                  <label className="block text-sm font-medium mb-2 text-gray-700">Eski Değerler</label>
+                  <pre className="bg-gray-50 p-4 rounded-lg text-sm overflow-x-auto border border-gray-200">
                     {JSON.stringify(selectedLog.oldValues, null, 2)}
                   </pre>
                 </div>
@@ -455,8 +523,8 @@ export function AuditTrailManager() {
               
               {selectedLog.newValues && (
                 <div>
-                  <label className="block text-sm font-medium mb-1">Yeni Değerler</label>
-                  <pre className="bg-gray-100 p-3 rounded text-sm overflow-x-auto">
+                  <label className="block text-sm font-medium mb-2 text-gray-700">Yeni Değerler</label>
+                  <pre className="bg-gray-50 p-4 rounded-lg text-sm overflow-x-auto border border-gray-200">
                     {JSON.stringify(selectedLog.newValues, null, 2)}
                   </pre>
                 </div>
@@ -464,8 +532,8 @@ export function AuditTrailManager() {
               
               {selectedLog.metadata && (
                 <div>
-                  <label className="block text-sm font-medium mb-1">Meta Veri</label>
-                  <pre className="bg-gray-100 p-3 rounded text-sm overflow-x-auto">
+                  <label className="block text-sm font-medium mb-2 text-gray-700">Meta Veri</label>
+                  <pre className="bg-gray-50 p-4 rounded-lg text-sm overflow-x-auto border border-gray-200">
                     {JSON.stringify(selectedLog.metadata, null, 2)}
                   </pre>
                 </div>

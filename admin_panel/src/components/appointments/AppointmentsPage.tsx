@@ -1,13 +1,18 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Calendar, List, Grid, BarChart3, TrendingUp, Users, Clock } from 'lucide-react'
+import { Plus, Calendar, List, Grid, BarChart3, TrendingUp, Users, Clock, Filter, Download, Search } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { StatsCard, gradientPresets } from '@/components/ui/StatsCard'
+import { DataTable } from '@/components/ui/DataTable'
 import { AppointmentCalendar } from './AppointmentCalendar'
 import { AppointmentList } from './AppointmentList'
 import { AppointmentModal } from './AppointmentModal'
 import { Badge } from '@/components/ui/Badge'
+import { Input } from '@/components/ui/Input'
+import { Select } from '@/components/ui/Select'
 
 interface Appointment {
   id: string
@@ -54,7 +59,7 @@ interface Appointment {
   }
 }
 
-type ViewMode = 'calendar' | 'list'
+type ViewMode = 'calendar' | 'list' | 'table'
 
 export function AppointmentsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([])
@@ -63,6 +68,12 @@ export function AppointmentsPage() {
   const [showModal, setShowModal] = useState(false)
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+  const [filters, setFilters] = useState({
+    status: '',
+    provider: '',
+    service: '',
+    dateRange: ''
+  })
 
   const fetchAppointments = async () => {
     try {
@@ -136,10 +147,6 @@ export function AppointmentsPage() {
 
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date)
-    if (viewMode === 'list') {
-      // List view'da tarih seçildiğinde o tarihe ait randevuları filtrele
-      // Bu özellik daha sonra eklenebilir
-    }
   }
 
   // İstatistikler
@@ -156,147 +163,246 @@ export function AppointmentsPage() {
     }).length
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between space-y-4 lg:space-y-0">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Randevular
-          </h1>
-          <p className="text-gray-600 mt-1">Gelişmiş takvim görünümü ve randevu yönetimi</p>
+  // Trend data for stats cards
+  const trendData = [12, 19, 15, 25, 22, 30, 28]
+
+  // Table columns for DataTable
+  const columns = [
+    {
+      key: 'customer',
+      label: 'Müşteri',
+      render: (value: any, row: Appointment) => (
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-orange-500 rounded-full flex items-center justify-center text-white font-semibold">
+            {row.customer.name.charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">{row.customer.name}</p>
+            <p className="text-sm text-gray-500">{row.customer.email}</p>
+          </div>
         </div>
+      )
+    },
+    {
+      key: 'service',
+      label: 'Hizmet',
+      render: (value: any, row: Appointment) => (
         <div className="flex items-center space-x-2">
+          <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+          <span className="font-medium">{row.service?.name || 'Belirtilmemiş'}</span>
+        </div>
+      )
+    },
+    {
+      key: 'employee',
+      label: 'Çalışan',
+      render: (value: any, row: Appointment) => (
+        <div>
+          <p className="font-medium">{row.employee.name}</p>
+          <p className="text-sm text-gray-500">{row.employee.provider.name}</p>
+        </div>
+      )
+    },
+    {
+      key: 'start',
+      label: 'Tarih & Saat',
+      render: (value: any, row: Appointment) => (
+        <div>
+          <p className="font-medium">{new Date(row.start).toLocaleDateString('tr-TR')}</p>
+          <p className="text-sm text-gray-500">
+            {new Date(row.start).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })} - 
+            {new Date(row.end).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+          </p>
+        </div>
+      )
+    },
+    {
+      key: 'status',
+      label: 'Durum',
+      render: (value: any, row: Appointment) => {
+        const statusConfig = {
+          SCHEDULED: { label: 'Planlandı', color: 'bg-blue-100 text-blue-800' },
+          IN_PROGRESS: { label: 'Devam Ediyor', color: 'bg-yellow-100 text-yellow-800' },
+          COMPLETED: { label: 'Tamamlandı', color: 'bg-green-100 text-green-800' },
+          CANCELLED: { label: 'İptal Edildi', color: 'bg-red-100 text-red-800' }
+        }
+        const config = statusConfig[row.status as keyof typeof statusConfig] || { label: row.status, color: 'bg-gray-100 text-gray-800' }
+        
+        return (
+          <Badge className={config.color}>
+            {config.label}
+          </Badge>
+        )
+      }
+    }
+  ]
+
+  const statsCards = [
+    {
+      title: 'Toplam Randevu',
+      value: stats.total,
+      icon: <Calendar className="h-6 w-6" />,
+      gradient: gradientPresets.blue,
+      change: { value: 12, type: 'increase' as const, period: 'Bu ay' },
+      trend: { data: trendData, period: 'Son 7 gün' }
+    },
+    {
+      title: 'Tamamlanan',
+      value: stats.completed,
+      icon: <Clock className="h-6 w-6" />,
+      gradient: gradientPresets.green,
+      change: { value: 8, type: 'increase' as const, period: 'Bu ay' }
+    },
+    {
+      title: 'Planlanan',
+      value: stats.scheduled,
+      icon: <Calendar className="h-6 w-6" />,
+      gradient: gradientPresets.orange,
+      change: { value: 15, type: 'increase' as const, period: 'Bu ay' }
+    },
+    {
+      title: 'Devam Eden',
+      value: stats.inProgress,
+      icon: <TrendingUp className="h-6 w-6" />,
+      gradient: gradientPresets.purple,
+      change: { value: 3, type: 'neutral' as const, period: 'Bu ay' }
+    }
+  ]
+
+  return (
+    <div className="space-y-8">
+      {/* Page Header */}
+      <PageHeader
+        title="Randevular"
+        description="Gelişmiş takvim görünümü ve randevu yönetimi sistemi"
+        icon={<Calendar className="h-8 w-8" />}
+        gradient="from-blue-500 to-orange-500"
+        stats={statsCards}
+        actions={
           <Button 
             onClick={handleCreate} 
-            className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white shadow-lg"
+            className="bg-gradient-to-r from-blue-500 to-orange-500 hover:from-blue-600 hover:to-orange-600 text-white shadow-lg"
           >
             <Plus className="h-4 w-4 mr-2" />
             <span>Yeni Randevu</span>
           </Button>
-        </div>
-      </div>
+        }
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Randevular' }
+        ]}
+      />
 
-      {/* İstatistik Kartları */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-        <Card className="p-4 bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0 shadow-lg">
+      {/* View Mode Toggle */}
+      <Card className="border-0 shadow-lg">
+        <CardContent className="p-4">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-blue-100 text-sm">Toplam</p>
-              <p className="text-2xl font-bold">{stats.total}</p>
-            </div>
-            <Calendar className="h-8 w-8 text-blue-200" />
-          </div>
-        </Card>
-        <Card className="p-4 bg-gradient-to-br from-green-500 to-green-600 text-white border-0 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-green-100 text-sm">Tamamlanan</p>
-              <p className="text-2xl font-bold">{stats.completed}</p>
-            </div>
-            <Clock className="h-8 w-8 text-green-200" />
-          </div>
-        </Card>
-        <Card className="p-4 bg-gradient-to-br from-yellow-500 to-orange-500 text-white border-0 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-yellow-100 text-sm">Planlandı</p>
-              <p className="text-2xl font-bold">{stats.scheduled}</p>
-            </div>
-            <Calendar className="h-8 w-8 text-yellow-200" />
-          </div>
-        </Card>
-        <Card className="p-4 bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-purple-100 text-sm">Devam Eden</p>
-              <p className="text-2xl font-bold">{stats.inProgress}</p>
-            </div>
-            <TrendingUp className="h-8 w-8 text-purple-200" />
-          </div>
-        </Card>
-        <Card className="p-4 bg-gradient-to-br from-red-500 to-red-600 text-white border-0 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-red-100 text-sm">İptal</p>
-              <p className="text-2xl font-bold">{stats.cancelled}</p>
-            </div>
-            <Users className="h-8 w-8 text-red-200" />
-          </div>
-        </Card>
-        <Card className="p-4 bg-gradient-to-br from-indigo-500 to-indigo-600 text-white border-0 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-indigo-100 text-sm">Bu Ay</p>
-              <p className="text-2xl font-bold">{stats.thisMonth}</p>
-            </div>
-            <BarChart3 className="h-8 w-8 text-indigo-200" />
-          </div>
-        </Card>
-      </div>
-
-      {/* Ana İçerik */}
-      <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-        <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 border-b">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between space-y-4 lg:space-y-0">
-            <CardTitle className="text-xl font-bold text-gray-800">
-              {viewMode === 'calendar' ? 'Gelişmiş Takvim Görünümü' : 'Randevu Listesi'}
-            </CardTitle>
             <div className="flex items-center space-x-2">
-              {/* View Mode Toggle */}
-              <div className="flex items-center bg-white/80 backdrop-blur-sm rounded-lg p-1 shadow-sm">
-                <Button
-                  variant={viewMode === 'calendar' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('calendar')}
-                  className="flex items-center space-x-2"
-                >
-                  <Calendar className="h-4 w-4" />
-                  <span>Takvim</span>
-                </Button>
-                <Button
-                  variant={viewMode === 'list' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('list')}
-                  className="flex items-center space-x-2"
-                >
-                  <List className="h-4 w-4" />
-                  <span>Liste</span>
-                </Button>
+              <Button
+                variant={viewMode === 'calendar' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('calendar')}
+                className="bg-gradient-to-r from-blue-500 to-orange-500 hover:from-blue-600 hover:to-orange-600"
+              >
+                <Calendar className="h-4 w-4 mr-2" />
+                Takvim
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+              >
+                <List className="h-4 w-4 mr-2" />
+                Liste
+              </Button>
+              <Button
+                variant={viewMode === 'table' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('table')}
+              >
+                <Grid className="h-4 w-4 mr-2" />
+                Tablo
+              </Button>
+            </div>
+
+            {/* Filters */}
+            <div className="flex items-center space-x-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Randevu ara..."
+                  className="pl-10 w-64"
+                />
               </div>
+              <Select>
+                <option value="">Tüm Durumlar</option>
+                <option value="SCHEDULED">Planlandı</option>
+                <option value="IN_PROGRESS">Devam Ediyor</option>
+                <option value="COMPLETED">Tamamlandı</option>
+                <option value="CANCELLED">İptal Edildi</option>
+              </Select>
+              <Button variant="outline" size="sm">
+                <Filter className="h-4 w-4 mr-2" />
+                Filtrele
+              </Button>
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          {viewMode === 'calendar' ? (
-            <AppointmentCalendar
-              appointments={appointments}
-              loading={loading}
-              selectedDate={selectedDate}
-              onDateSelect={handleDateSelect}
-              onAppointmentClick={handleEdit}
-              onAppointmentEdit={handleEdit}
-              onAppointmentDelete={handleDelete}
-              onFileUpload={handleFileUpload}
-            />
-          ) : (
-            <div className="p-6">
-              <AppointmentList
-                appointments={appointments}
-                loading={loading}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-            </div>
-          )}
         </CardContent>
       </Card>
+
+      {/* Content */}
+      {viewMode === 'calendar' && (
+        <AppointmentCalendar
+          appointments={appointments}
+          onDateSelect={handleDateSelect}
+          onAppointmentClick={handleEdit}
+          onFileUpload={handleFileUpload}
+          loading={loading}
+        />
+      )}
+
+      {viewMode === 'list' && (
+        <AppointmentList
+          appointments={appointments}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onFileUpload={handleFileUpload}
+          loading={loading}
+        />
+      )}
+
+      {viewMode === 'table' && (
+        <DataTable
+          data={appointments}
+          columns={columns}
+          title="Randevu Listesi"
+          description="Tüm randevuları tablo formatında görüntüleyin"
+          searchable={true}
+          filterable={true}
+          exportable={true}
+          pagination={true}
+          pageSize={10}
+          loading={loading}
+          onRowClick={handleEdit}
+          actions={
+            <Button 
+              onClick={handleCreate} 
+              size="sm"
+              className="bg-gradient-to-r from-blue-500 to-orange-500 hover:from-blue-600 hover:to-orange-600 text-white"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Yeni Randevu
+            </Button>
+          }
+        />
+      )}
 
       {/* Modal */}
       {showModal && (
         <AppointmentModal
           appointment={editingAppointment}
           onClose={handleModalClose}
+          onSave={handleModalClose}
         />
       )}
     </div>

@@ -43,6 +43,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useSession, signOut } from 'next-auth/react'
+import Image from 'next/image'
 
 interface MenuItem {
   title: string
@@ -282,11 +283,16 @@ export function Sidebar() {
               exit={{ opacity: 0 }}
               className="flex items-center space-x-2"
             >
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
-                <span className="text-white font-bold text-sm">A</span>
+              <div className="w-8 h-8 relative">
+                <Image
+                  src="/icons/zamanyonet_logo.png"
+                  alt="ZamanYonet Logo"
+                  fill
+                  className="object-contain"
+                />
               </div>
-              <span className="font-bold text-lg bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Admin Panel
+              <span className="font-bold text-lg bg-gradient-to-r from-blue-600 to-orange-600 bg-clip-text text-transparent">
+                ZamanYonet
               </span>
             </motion.div>
           )}
@@ -328,6 +334,7 @@ export function Sidebar() {
                   <AnimatePresence mode="wait">
                     {!collapsed && (
                       <motion.span
+                        key="group-title"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
@@ -341,6 +348,7 @@ export function Sidebar() {
                 <AnimatePresence mode="wait">
                   {!collapsed && (
                     <motion.div
+                      key="group-icon"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
@@ -360,6 +368,7 @@ export function Sidebar() {
               <AnimatePresence>
                 {isOpen && !collapsed && (
                   <motion.div
+                    key="group-items"
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
@@ -368,37 +377,33 @@ export function Sidebar() {
                     {group.items.map((item) => {
                       const isActive = pathname === item.href
                       return (
-                        <Link key={item.href} href={item.href}>
-                          <motion.div
-                            whileHover={{ scale: 1.02, x: 4 }}
-                            whileTap={{ scale: 0.98 }}
-                            className={cn(
-                              'flex items-center justify-between px-3 py-2 rounded-lg transition-all duration-200 cursor-pointer group',
-                              isActive
-                                ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-md'
-                                : 'text-gray-600 hover:bg-white hover:text-gray-900 hover:shadow-sm border border-transparent hover:border-gray-200'
-                            )}
-                          >
-                            <div className="flex items-center space-x-3">
-                              <item.icon className={cn(
-                                'h-4 w-4 flex-shrink-0 transition-colors',
-                                isActive ? 'text-white' : 'text-gray-500 group-hover:text-gray-700'
-                              )} />
-                              <span className="text-sm font-medium">
-                                {item.title}
-                              </span>
-                            </div>
-                            {item.badge && (
-                              <span className={cn(
-                                'px-2 py-1 text-xs font-medium rounded-full',
-                                isActive 
-                                  ? 'bg-white/20 text-white' 
-                                  : 'bg-blue-100 text-blue-700'
-                              )}>
-                                {item.badge}
-                              </span>
-                            )}
-                          </motion.div>
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          className={cn(
+                            "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                            pathname === item.href
+                              ? "bg-gradient-to-r from-blue-500 to-orange-500 text-white shadow-md"
+                              : "text-gray-600 hover:bg-blue-50 hover:text-blue-900"
+                          )}
+                        >
+                          <item.icon className={cn(
+                            'h-4 w-4 flex-shrink-0 transition-colors',
+                            isActive ? 'text-white' : 'text-gray-500 group-hover:text-gray-700'
+                          )} />
+                          <span className="text-sm font-medium">
+                            {item.title}
+                          </span>
+                          {item.badge && (
+                            <span className={cn(
+                              'px-2 py-1 text-xs font-medium rounded-full',
+                              isActive 
+                                ? 'bg-white/20 text-white' 
+                                : 'bg-blue-100 text-blue-700'
+                            )}>
+                              {item.badge}
+                            </span>
+                          )}
                         </Link>
                       )
                     })}
@@ -421,7 +426,7 @@ export function Sidebar() {
                           className={cn(
                             'flex items-center justify-center w-10 h-10 rounded-lg transition-all duration-200 cursor-pointer mx-auto',
                             isActive
-                              ? 'bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-lg'
+                              ? 'bg-gradient-to-br from-blue-500 to-orange-500 text-white shadow-lg'
                               : 'text-gray-600 hover:bg-gray-100'
                           )}
                           title={item.title}
@@ -449,7 +454,7 @@ export function Sidebar() {
               className="space-y-3"
             >
               <div className="flex items-center space-x-3 p-3 bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg border border-gray-200">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-md">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-orange-500 rounded-full flex items-center justify-center shadow-md">
                   <User className="h-5 w-5 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -478,7 +483,7 @@ export function Sidebar() {
               exit={{ opacity: 0 }}
               className="flex flex-col items-center space-y-3"
             >
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-md">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-orange-500 rounded-full flex items-center justify-center shadow-md">
                 <User className="h-5 w-5 text-white" />
               </div>
               <Button

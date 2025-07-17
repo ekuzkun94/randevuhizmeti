@@ -320,7 +320,7 @@ export function AppointmentCalendar({
   return (
     <div className="space-y-6">
       {/* Üst Kontrol Paneli */}
-      <Card className="p-6 bg-gradient-to-r from-blue-50 to-purple-50 border-0 shadow-lg">
+      <Card className="p-6 bg-gradient-to-r from-blue-50 to-orange-50 border-0 shadow-lg">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between space-y-4 lg:space-y-0">
           {/* Sol Taraf - Navigasyon ve Başlık */}
           <div className="flex items-center space-x-4">
@@ -333,7 +333,7 @@ export function AppointmentCalendar({
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-orange-600 bg-clip-text text-transparent">
                 {currentMonth.toLocaleDateString('tr-TR', {
                   month: 'long',
                   year: 'numeric'
@@ -352,7 +352,7 @@ export function AppointmentCalendar({
               variant="default" 
               size="sm" 
               onClick={goToToday}
-              className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white shadow-lg"
+              className="bg-gradient-to-r from-blue-500 to-orange-500 hover:from-blue-600 hover:to-orange-600 text-white shadow-lg"
             >
               <Calendar className="h-4 w-4 mr-2" />
               Bugün
@@ -580,7 +580,7 @@ export function AppointmentCalendar({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <div className="flex-shrink-0">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-orange-500 flex items-center justify-center text-white font-bold">
                         {appointment.employee.name.charAt(0)}
                       </div>
                     </div>
@@ -645,7 +645,7 @@ export function AppointmentCalendar({
               <div key={appointment.id} className="relative">
                 <div className="flex items-center space-x-4">
                   <div className="flex-shrink-0">
-                    <div className="w-4 h-4 rounded-full bg-gradient-to-br from-blue-500 to-purple-500"></div>
+                    <div className="w-4 h-4 rounded-full bg-gradient-to-br from-blue-500 to-orange-500"></div>
                     <div className="w-0.5 h-16 bg-gray-200 mx-auto mt-2"></div>
                   </div>
                   <div className="flex-1 p-4 rounded-xl bg-white shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer"
@@ -692,14 +692,14 @@ export function AppointmentCalendar({
               <div className="space-y-6">
                 {/* Üst Bilgiler */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Card className="p-4 bg-gradient-to-br from-blue-50 to-purple-50 border-0">
+                  <Card className="p-4 bg-gradient-to-br from-blue-50 to-orange-50 border-0">
                     <h3 className="font-semibold mb-3 flex items-center">
                       <User className="h-5 w-5 mr-2" />
                       Çalışan Bilgileri
                     </h3>
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-orange-500 flex items-center justify-center text-white font-bold">
                           {selectedAppointment.employee.name.charAt(0)}
                         </div>
                         <div>
@@ -784,7 +784,7 @@ export function AppointmentCalendar({
                     <Button
                       size="sm"
                       onClick={() => setShowFileUpload(true)}
-                      className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
+                      className="bg-gradient-to-r from-blue-500 to-orange-500 hover:from-blue-600 hover:to-orange-600 text-white"
                     >
                       <Upload className="h-4 w-4 mr-2" />
                       Dosya Yükle

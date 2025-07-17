@@ -29,7 +29,7 @@ interface AnalyticsData {
   period: string
 }
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042']
+const COLORS = ['#3B82F6', '#F97316', '#10B981', '#8B5CF6', '#EF4444', '#06B6D4']
 
 export function AnalyticsDashboard() {
   const [data, setData] = useState<AnalyticsData | null>(null)
@@ -58,7 +58,7 @@ export function AnalyticsDashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     )
   }
@@ -84,68 +84,63 @@ export function AnalyticsDashboard() {
       value: data.performanceMetrics.totalUsers,
       icon: Users,
       color: 'text-blue-600',
-      bgColor: 'bg-blue-100'
+      bgColor: 'bg-gradient-to-br from-blue-50 to-blue-100',
+      borderColor: 'border-blue-200'
     },
     {
       title: 'Aktif Kullanıcı',
       value: data.performanceMetrics.activeUsers,
       icon: UserCheck,
-      color: 'text-green-600',
-      bgColor: 'bg-green-100'
+      color: 'text-orange-600',
+      bgColor: 'bg-gradient-to-br from-orange-50 to-orange-100',
+      borderColor: 'border-orange-200'
     },
     {
       title: 'Yeni Kullanıcı',
       value: data.performanceMetrics.newUsers,
       icon: UserPlus,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100'
+      color: 'text-blue-600',
+      bgColor: 'bg-gradient-to-br from-blue-50 to-blue-100',
+      borderColor: 'border-blue-200'
     },
     {
       title: 'Büyüme Oranı',
       value: `${data.performanceMetrics.userGrowthRate}%`,
       icon: TrendingUp,
       color: 'text-orange-600',
-      bgColor: 'bg-orange-100'
+      bgColor: 'bg-gradient-to-br from-orange-50 to-orange-100',
+      borderColor: 'border-orange-200'
     }
   ]
 
   return (
     <div className="space-y-6">
-      {/* Başlık ve Filtreler */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Analytics Dashboard</h1>
-          <p className="text-muted-foreground">
-            Sistem performansı ve kullanıcı istatistikleri
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant={period === '7d' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setPeriod('7d')}
-          >
-            7 Gün
-          </Button>
-          <Button
-            variant={period === '30d' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setPeriod('30d')}
-          >
-            30 Gün
-          </Button>
-          <Button
-            variant={period === '90d' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setPeriod('90d')}
-          >
-            90 Gün
-          </Button>
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            Rapor İndir
-          </Button>
-        </div>
+      {/* Filtreler */}
+      <div className="flex items-center justify-end space-x-2">
+        <Button
+          variant={period === '7d' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setPeriod('7d')}
+          className={period === '7d' ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800' : ''}
+        >
+          7 Gün
+        </Button>
+        <Button
+          variant={period === '30d' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setPeriod('30d')}
+          className={period === '30d' ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800' : ''}
+        >
+          30 Gün
+        </Button>
+        <Button
+          variant={period === '90d' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setPeriod('90d')}
+          className={period === '90d' ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800' : ''}
+        >
+          90 Gün
+        </Button>
       </div>
 
       {/* Metrik Kartları */}
@@ -157,18 +152,20 @@ export function AnalyticsDashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: index * 0.1 }}
           >
-            <Card>
+            <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-gray-50">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
+                <CardTitle className="text-sm font-medium text-gray-700">
                   {metric.title}
                 </CardTitle>
-                <div className={`p-2 rounded-lg ${metric.bgColor}`}>
-                  <metric.icon className={`h-4 w-4 ${metric.color}`} />
+                <div className={`p-3 rounded-xl ${metric.bgColor} border ${metric.borderColor}`}>
+                  <metric.icon className={`h-5 w-5 ${metric.color}`} />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{metric.value}</div>
-                <p className="text-xs text-muted-foreground">
+                <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-orange-600 bg-clip-text text-transparent">
+                  {metric.value}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
                   Son {period === '7d' ? '7 gün' : period === '30d' ? '30 gün' : '90 gün'}
                 </p>
               </CardContent>
@@ -178,32 +175,41 @@ export function AnalyticsDashboard() {
       </div>
 
       {/* Grafikler */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2">
         {/* Aktivite Grafiği */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
         >
-          <Card>
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-gray-50">
             <CardHeader>
-              <CardTitle className="flex items-center">
-                <Activity className="h-5 w-5 mr-2" />
+              <CardTitle className="flex items-center text-gray-800">
+                <Activity className="h-5 w-5 mr-2 text-blue-600" />
                 Kullanıcı Aktivitesi
               </CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={activityData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="date" stroke="#6b7280" />
+                  <YAxis stroke="#6b7280" />
+                  <Tooltip 
+                    contentStyle={{
+                      backgroundColor: 'white',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                    }}
+                  />
                   <Line 
                     type="monotone" 
                     dataKey="users" 
-                    stroke="#8884d8" 
-                    strokeWidth={2}
+                    stroke="#3B82F6" 
+                    strokeWidth={3}
+                    dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, stroke: '#3B82F6', strokeWidth: 2 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -217,10 +223,10 @@ export function AnalyticsDashboard() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.5 }}
         >
-          <Card>
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-gray-50">
             <CardHeader>
-              <CardTitle className="flex items-center">
-                <BarChart3 className="h-5 w-5 mr-2" />
+              <CardTitle className="flex items-center text-gray-800">
+                <BarChart3 className="h-5 w-5 mr-2 text-orange-600" />
                 Rol Dağılımı
               </CardTitle>
             </CardHeader>
@@ -241,7 +247,14 @@ export function AnalyticsDashboard() {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip 
+                    contentStyle={{
+                      backgroundColor: 'white',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                    }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </CardContent>

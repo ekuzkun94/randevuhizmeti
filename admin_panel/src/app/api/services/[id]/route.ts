@@ -27,8 +27,10 @@ export async function GET(
         },
         appointments: {
           include: {
-            provider: true,
-            customer: true
+            employee: true,
+            customer: true,
+            service: true,
+            attachments: true
           }
         }
       }
