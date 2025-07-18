@@ -15,18 +15,16 @@ import {
   X,
   HelpCircle,
   Shield,
-  Activity,
   Globe,
   Mail,
   Phone,
   Calendar,
-  Clock,
   TrendingUp,
-  Database,
   FileText,
   Users as UsersIcon,
   Key,
-  Zap
+  Zap,
+  BarChart3
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useTheme } from 'next-themes'
@@ -52,12 +50,7 @@ export function Header() {
   const [searchQuery, setSearchQuery] = useState('')
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
-  const [systemStatus, setSystemStatus] = useState({
-    cpu: 45,
-    memory: 62,
-    disk: 28,
-    uptime: '15g 7s 32d'
-  })
+
 
   // Bildirimleri yükle
   useEffect(() => {
@@ -129,20 +122,7 @@ export function Header() {
     }
   }
 
-  // Sistem durumunu güncelle
-  useEffect(() => {
-    const updateSystemStatus = () => {
-      setSystemStatus(prev => ({
-        cpu: Math.floor(Math.random() * 30) + 30, // 30-60 arası
-        memory: Math.floor(Math.random() * 40) + 40, // 40-80 arası
-        disk: Math.floor(Math.random() * 20) + 20, // 20-40 arası
-        uptime: prev.uptime
-      }))
-    }
 
-    const interval = setInterval(updateSystemStatus, 10000) // 10 saniyede bir güncelle
-    return () => clearInterval(interval)
-  }, [])
 
   // Bildirimi okundu olarak işaretle
   const markAsRead = async (notificationId: string) => {
@@ -255,7 +235,7 @@ export function Header() {
              onClick={() => handleQuickAccess('database')}
              title="Analitik"
            >
-             <Database size={16} />
+             <BarChart3 size={16} />
            </Button>
            <Button 
              variant="ghost" 
@@ -287,23 +267,8 @@ export function Header() {
          </div>
       </div>
 
-      {/* Sağ Taraf - Sistem Durumu, Tema, Bildirimler, Kullanıcı */}
+      {/* Sağ Taraf - Tema, Bildirimler, Kullanıcı */}
       <div className="flex items-center space-x-4">
-        {/* Sistem Durumu */}
-        <div className="hidden xl:flex items-center space-x-3 text-xs text-muted-foreground">
-          <div className="flex items-center space-x-1">
-            <Activity size={12} />
-            <span>CPU: {systemStatus.cpu}%</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <Database size={12} />
-            <span>RAM: {systemStatus.memory}%</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <Clock size={12} />
-            <span>{systemStatus.uptime}</span>
-          </div>
-        </div>
 
         {/* Tema Değiştirici */}
         <Button

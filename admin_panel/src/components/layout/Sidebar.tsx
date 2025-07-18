@@ -39,7 +39,8 @@ import {
   PieChart,
   Workflow,
   Cog,
-  Palette
+  Palette,
+  FileText as FileTextIcon
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useSession, signOut } from 'next-auth/react'
@@ -111,6 +112,11 @@ const menuGroups: MenuGroup[] = [
         title: 'Hizmetler',
         href: '/dashboard/services',
         icon: Package,
+      },
+      {
+        title: 'Teklifler',
+        href: '/dashboard/quotes',
+        icon: FileTextIcon,
       },
     ],
     defaultOpen: true

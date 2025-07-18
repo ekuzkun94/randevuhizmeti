@@ -74,6 +74,8 @@ model User {
   versionedRecords         VersionedRecord[]
   webhookSubscriptions     WebhookSubscription[]
   tags                     Tag[]                     @relation("TagToUser")
+  quotes                   Quote[]
+  quoteTemplates           QuoteTemplate[]
 
   @@index([email])
   @@index([roleId])
@@ -886,6 +888,9 @@ model Customer {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   appointments Appointment[]
+  quotes       Quote[]
+
+  @@index([email])
 }
 
 model Service {
@@ -952,4 +957,93 @@ model AppointmentAttachment {
   @@index([appointmentId])
   @@index([type])
   @@index([createdAt])
+}
+
+// Quote Management System
+model Quote {
+  id              String        @id @default(cuid())
+  quoteNumber     String        @unique
+  title           String
+  description     String?
+  customerId      String
+  customerName    String
+  customerEmail   String
+  customerPhone   String?
+  customerAddress String?
+  
+  // Quote details
+  subtotal        Float         @default(0)
+  taxRate         Float         @default(0)
+  taxAmount       Float         @default(0)
+  discountRate    Float         @default(0)
+  discountAmount  Float         @default(0)
+  total           Float         @default(0)
+  
+  // Status and dates
+  status          String        @default("DRAFT") // DRAFT, SENT, ACCEPTED, REJECTED, EXPIRED
+  validUntil      DateTime?
+  sentAt          DateTime?
+  acceptedAt      DateTime?
+  rejectedAt      DateTime?
+  
+  // PDF and files
+  pdfPath         String?
+  pdfGeneratedAt  DateTime?
+  
+  // Metadata
+  notes           String?
+  terms           String?
+  createdBy       String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  // Relations
+  items           QuoteItem[]
+  createdByUser   User          @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  customer        Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([quoteNumber])
+  @@index([status])
+  @@index([customerId])
+  @@index([createdBy])
+  @@index([createdAt])
+  @@index([validUntil])
+}
+
+model QuoteItem {
+  id          String   @id @default(cuid())
+  quoteId     String
+  name        String
+  description String?
+  quantity    Float    @default(1)
+  unitPrice   Float    @default(0)
+  total       Float    @default(0)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  quote       Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  @@index([quoteId])
+  @@index([order])
+}
+
+// Quote Template System
+model QuoteTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  content     String   // HTML template content
+  css         String?  // Custom CSS styles
+  isActive    Boolean  @default(true)
+  isDefault   Boolean  @default(false)
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  createdByUser User @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+
+  @@index([isActive])
+  @@index([isDefault])
+  @@index([createdBy])
 }
