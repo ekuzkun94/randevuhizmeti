@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { AuditTrail, AUDIT_ACTIONS, AUDIT_ENTITY_TYPES } from '@/lib/audit'
 import bcrypt from 'bcryptjs'
 
 export async function GET(
@@ -62,6 +63,22 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Get current user data for audit trail
+    const currentUser = await prisma.user.findUnique({
+      where: { id: id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        status: true,
+        roleId: true,
+      }
+    })
+
+    if (!currentUser) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
     const body = await request.json()
     const { name, email, password, status, roleId } = body
 
@@ -84,6 +101,29 @@ export async function PUT(
         updatedAt: true,
       },
     })
+
+    // Log audit trail
+    await AuditTrail.log({
+      action: AUDIT_ACTIONS.UPDATE,
+      entityType: AUDIT_ENTITY_TYPES.USER,
+      entityId: user.id,
+      oldValues: {
+        name: currentUser.name,
+        email: currentUser.email,
+        status: currentUser.status,
+        roleId: currentUser.roleId
+      },
+      newValues: {
+        name: user.name,
+        email: user.email,
+        status: user.status,
+        roleId: user.roleId
+      },
+      metadata: {
+        updatedBy: session.user.id,
+        source: 'admin_panel'
+      }
+    }, request)
 
     return NextResponse.json(user)
   } catch (error) {
@@ -115,9 +155,42 @@ export async function DELETE(
       )
     }
 
+    // Get user data for audit trail before deletion
+    const userToDelete = await prisma.user.findUnique({
+      where: { id: id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        status: true,
+        roleId: true,
+      }
+    })
+
+    if (!userToDelete) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
     await prisma.user.delete({
       where: { id: id }
     })
+
+    // Log audit trail
+    await AuditTrail.log({
+      action: AUDIT_ACTIONS.DELETE,
+      entityType: AUDIT_ENTITY_TYPES.USER,
+      entityId: userToDelete.id,
+      oldValues: {
+        name: userToDelete.name,
+        email: userToDelete.email,
+        status: userToDelete.status,
+        roleId: userToDelete.roleId
+      },
+      metadata: {
+        deletedBy: session.user.id,
+        source: 'admin_panel'
+      }
+    }, request)
 
     return NextResponse.json({ message: 'User deleted successfully' })
   } catch (error) {

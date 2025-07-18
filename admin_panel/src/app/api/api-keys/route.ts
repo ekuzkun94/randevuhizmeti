@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { AuditTrail, AUDIT_ACTIONS, AUDIT_ENTITY_TYPES } from '@/lib/audit'
 import crypto from 'crypto'
 
 export async function GET(request: NextRequest) {
@@ -110,6 +111,23 @@ export async function POST(request: NextRequest) {
         createdAt: true
       }
     })
+
+    // Log audit trail
+    await AuditTrail.log({
+      action: AUDIT_ACTIONS.API_KEY_CREATE,
+      entityType: AUDIT_ENTITY_TYPES.API_KEY,
+      entityId: newApiKey.id,
+      newValues: {
+        name: newApiKey.name,
+        permissions: permissions,
+        expiresAt: expiresAtDate,
+        isActive: newApiKey.isActive
+      },
+      metadata: {
+        createdBy: session.user.id,
+        source: 'admin_panel'
+      }
+    }, request)
 
     return NextResponse.json(newApiKey, { status: 201 })
   } catch (error) {

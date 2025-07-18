@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -23,8 +20,7 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -38,48 +34,46 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  password      String?
-  roleId        String?
-  status        String    @default("ACTIVE")
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  lastLoginAt   DateTime?
-  tenantId      String?   // Multi-tenant support
-
-  role          Role?     @relation(fields: [roleId], references: [id])
-  accounts      Account[]
-  sessions      Session[]
-  notifications Notification[]
-  apiKeys       ApiKey[]
-  files         File[]
-  logs          Log[]
-  twoFactorAuth TwoFactorAuth?
-  userSettings  UserSettings?
-  auditLogs     AuditLog[]
-  moduleLicenses ModuleLicense[]
-  approvalRequests ApprovalRequest[]
-  approvals     Approval[]
+  id                       String                    @id @default(cuid())
+  name                     String?
+  email                    String                    @unique
+  emailVerified            DateTime?
+  image                    String?
+  password                 String?
+  roleId                   String?
+  status                   String                    @default("ACTIVE")
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  lastLoginAt              DateTime?
+  tenantId                 String?
+  accounts                 Account[]
+  annotations              Annotation[]
+  apiKeys                  ApiKey[]
+  approvals                Approval[]
+  approvalRequests         ApprovalRequest[]
+  auditLogs                AuditLog[]
+  backups                  Backup[]
+  contents                 Content[]
+  contentVersions          ContentVersion[]
+  customFields             CustomField[]
+  customFieldValues        CustomFieldValue[]
+  files                    File[]
   integrationInstallations IntegrationInstallation[]
-  contents      Content[]
-  contentVersions ContentVersion[]
-  versionedRecords VersionedRecord[]
-  annotations   Annotation[]
-  tags          Tag[]
-  tasks         Task[]
-  assignedTasks Task[] @relation("TaskAssignee")
-  customFields  CustomField[]
-  customFieldValues CustomFieldValue[]
-  webhookSubscriptions WebhookSubscription[]
-  backups       Backup[]
-  oauthConnections OAuthConnection[]
-  taskComments  TaskComment[]
-  taskAttachments TaskAttachment[]
-  // appointments  Appointment[] // KALDIRILDI
+  logs                     Log[]
+  moduleLicenses           ModuleLicense[]
+  notifications            Notification[]
+  oauthConnections         OAuthConnection[]
+  sessions                 Session[]
+  tasks                    Task[]
+  assignedTasks            Task[]                    @relation("TaskAssignee")
+  taskAttachments          TaskAttachment[]
+  taskComments             TaskComment[]
+  twoFactorAuth            TwoFactorAuth?
+  role                     Role?                     @relation(fields: [roleId], references: [id])
+  userSettings             UserSettings?
+  versionedRecords         VersionedRecord[]
+  webhookSubscriptions     WebhookSubscription[]
+  tags                     Tag[]                     @relation("TagToUser")
 
   @@index([email])
   @@index([roleId])
@@ -98,7 +92,7 @@ model Notification {
   id        String   @id @default(cuid())
   title     String
   message   String
-  type      String   @default("INFO") // INFO, SUCCESS, WARNING, ERROR
+  type      String   @default("INFO")
   isRead    Boolean  @default(false)
   userId    String
   createdAt DateTime @default(now())
@@ -112,7 +106,7 @@ model ApiKey {
   id          String    @id @default(cuid())
   name        String
   key         String    @unique
-  permissions String    // JSON string of permissions
+  permissions String
   lastUsedAt  DateTime?
   expiresAt   DateTime?
   isActive    Boolean   @default(true)
@@ -144,13 +138,13 @@ model File {
 
 model Log {
   id        String   @id @default(cuid())
-  level     String   // INFO, WARN, ERROR, DEBUG
+  level     String
   message   String
-  type      String   // SYSTEM, USER, API, SECURITY
-  metadata  String?  // JSON string of additional data
+  type      String
+  metadata  String?
   userId    String?
   createdAt DateTime @default(now())
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user      User?    @relation(fields: [userId], references: [id])
 
   @@index([level])
   @@index([type])
@@ -158,42 +152,40 @@ model Log {
   @@index([userId])
 }
 
-// New models for advanced features
-
 model TwoFactorAuth {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  secret    String
-  isEnabled Boolean  @default(false)
-  backupCodes String? // JSON string of backup codes
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  secret      String
+  isEnabled   Boolean  @default(false)
+  backupCodes String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model UserSettings {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  theme     String   @default("light") // light, dark, system
-  language  String   @default("tr")
-  timezone  String   @default("Europe/Istanbul")
-  dateFormat String  @default("DD/MM/YYYY")
-  notifications String @default("ALL")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  theme         String   @default("light")
+  language      String   @default("tr")
+  timezone      String   @default("Europe/Istanbul")
+  dateFormat    String   @default("DD/MM/YYYY")
+  notifications String   @default("ALL")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Webhook {
-  id        String   @id @default(cuid())
-  name      String
-  url       String
-  events    String   // JSON string of events to listen to
-  secret    String?
-  isActive  Boolean  @default(true)
+  id            String    @id @default(cuid())
+  name          String
+  url           String
+  events        String
+  secret        String?
+  isActive      Boolean   @default(true)
   lastTriggered DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   @@index([events])
   @@index([isActive])
@@ -201,10 +193,10 @@ model Webhook {
 
 model RateLimit {
   id        String   @id @default(cuid())
-  key       String   // IP address or user ID
-  type      String   // IP, USER, API_KEY
+  key       String
+  type      String
   count     Int      @default(1)
-  window    Int      // Time window in seconds
+  window    Int
   expiresAt DateTime
   createdAt DateTime @default(now())
 
@@ -217,8 +209,8 @@ model FeatureToggle {
   name        String   @unique
   description String?
   isEnabled   Boolean  @default(false)
-  rollout     Int      @default(0) // Percentage rollout (0-100)
-  conditions  String?  // JSON string of conditions
+  rollout     Int      @default(0)
+  conditions  String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -226,16 +218,15 @@ model FeatureToggle {
 }
 
 model Tenant {
-  id          String   @id @default(cuid())
-  name        String
-  domain      String?  @unique
-  settings    String?  // JSON string of tenant-specific settings
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  moduleLicenses ModuleLicense[]
+  id                       String                    @id @default(cuid())
+  name                     String
+  domain                   String?                   @unique
+  settings                 String?
+  isActive                 Boolean                   @default(true)
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
   integrationInstallations IntegrationInstallation[]
+  moduleLicenses           ModuleLicense[]
 
   @@index([domain])
   @@index([isActive])
@@ -245,7 +236,7 @@ model SystemSetting {
   id        String   @id @default(cuid())
   key       String   @unique
   value     String
-  type      String   @default("STRING") // STRING, NUMBER, BOOLEAN, JSON
+  type      String   @default("STRING")
   category  String   @default("GENERAL")
   isPublic  Boolean  @default(false)
   createdAt DateTime @default(now())
@@ -255,21 +246,19 @@ model SystemSetting {
   @@index([isPublic])
 }
 
-// Audit Trail System
 model AuditLog {
-  id          String   @id @default(cuid())
-  action      String   // CREATE, UPDATE, DELETE, LOGIN, LOGOUT, etc.
-  entityType  String   // User, File, ApiKey, etc.
-  entityId    String?  // ID of the affected entity
-  userId      String?  // User who performed the action
-  oldValues   String?  // JSON string of old values
-  newValues   String?  // JSON string of new values
-  ipAddress   String?
-  userAgent   String?
-  metadata    String?  // JSON string of additional data
-  createdAt   DateTime @default(now())
-  
-  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id         String   @id @default(cuid())
+  action     String
+  entityType String
+  entityId   String?
+  userId     String?
+  oldValues  String?
+  newValues  String?
+  ipAddress  String?
+  userAgent  String?
+  metadata   String?
+  createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id])
 
   @@index([action])
   @@index([entityType])
@@ -278,20 +267,18 @@ model AuditLog {
   @@index([createdAt])
 }
 
-// Module Licensing System
 model Module {
-  id          String   @id @default(cuid())
-  name        String   @unique
+  id          String          @id @default(cuid())
+  name        String          @unique
   displayName String
   description String?
-  version     String   @default("1.0.0")
-  isActive    Boolean  @default(true)
-  isPremium   Boolean  @default(false)
-  price       Float?   // Monthly price for premium modules
-  features    String?  // JSON string of features
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
+  version     String          @default("1.0.0")
+  isActive    Boolean         @default(true)
+  isPremium   Boolean         @default(false)
+  price       Float?
+  features    String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
   licenses    ModuleLicense[]
 
   @@index([isActive])
@@ -299,78 +286,74 @@ model Module {
 }
 
 model ModuleLicense {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   moduleId  String
   tenantId  String?
   userId    String?
-  isActive  Boolean  @default(true)
+  isActive  Boolean   @default(true)
   expiresAt DateTime?
-  features  String?  // JSON string of enabled features
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  module    Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  tenant    Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  features  String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant    Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  module    Module    @relation(fields: [moduleId], references: [id], onDelete: Cascade)
 
   @@unique([moduleId, tenantId, userId])
   @@index([isActive])
   @@index([expiresAt])
 }
 
-// Approval Workflow System
 model ApprovalWorkflow {
-  id          String   @id @default(cuid())
+  id          String            @id @default(cuid())
   name        String
   description String?
-  entityType  String   // User, Content, etc.
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  steps       ApprovalStep[]
+  entityType  String
+  isActive    Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
   requests    ApprovalRequest[]
+  steps       ApprovalStep[]
 
   @@index([entityType])
   @@index([isActive])
 }
 
 model ApprovalStep {
-  id                   String           @id @default(cuid())
-  workflowId           String
-  workflow             ApprovalWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
-  name                 String
-  description          String?
-  order                Int
-  approverRole         String?          // Role required to approve
-  approverUserId       String?          // Specific user who can approve
-  isRequired           Boolean          @default(true)
-  canReject            Boolean          @default(true)
-  canEdit              Boolean          @default(false)
-  autoApprove          Boolean          @default(false)
-  timeoutHours         Int?             // Auto-approve after X hours
-  approvals            Approval[]
-  createdAt            DateTime         @default(now())
-  updatedAt            DateTime         @updatedAt
+  id             String           @id @default(cuid())
+  workflowId     String
+  name           String
+  description    String?
+  order          Int
+  approverRole   String?
+  approverUserId String?
+  isRequired     Boolean          @default(true)
+  canReject      Boolean          @default(true)
+  canEdit        Boolean          @default(false)
+  autoApprove    Boolean          @default(false)
+  timeoutHours   Int?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  approvals      Approval[]
+  workflow       ApprovalWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
 
   @@index([workflowId, order])
 }
 
 model ApprovalRequest {
-  id        String   @id @default(cuid())
-  workflowId String
-  entityType String
-  entityId   String
-  status     String   @default("PENDING") // PENDING, APPROVED, REJECTED, CANCELLED
-  currentStep Int     @default(1)
-  data      String   // JSON string of request data
-  userId    String   // User who created the request
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  workflow  ApprovalWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  approvals Approval[]
+  id          String           @id @default(cuid())
+  workflowId  String
+  entityType  String
+  entityId    String
+  status      String           @default("PENDING")
+  currentStep Int              @default(1)
+  data        String
+  userId      String
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  approvals   Approval[]
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workflow    ApprovalWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
 
   @@index([entityType])
   @@index([entityId])
@@ -379,57 +362,53 @@ model ApprovalRequest {
 }
 
 model Approval {
-  id        String   @id @default(cuid())
-  requestId String
-  stepId    String
+  id         String          @id @default(cuid())
+  requestId  String
+  stepId     String
   approverId String
-  status    String   @default("PENDING") // PENDING, APPROVED, REJECTED
-  comment   String?
-  data      String?  // JSON string with approval data
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  request   ApprovalRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
-  step      ApprovalStep    @relation(fields: [stepId], references: [id])
-  approver  User            @relation(fields: [approverId], references: [id], onDelete: Cascade)
+  status     String          @default("PENDING")
+  comment    String?
+  data       String?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  approver   User            @relation(fields: [approverId], references: [id], onDelete: Cascade)
+  step       ApprovalStep    @relation(fields: [stepId], references: [id])
+  request    ApprovalRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
 
   @@index([requestId])
   @@index([approverId])
   @@index([status])
 }
 
-// Scheduler System
 model ScheduledTask {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
+  id             String          @id @default(cuid())
+  name           String
+  description    String?
   cronExpression String
-  handler     String   // Function name to execute
-  parameters  String?  // JSON string of parameters
-  isActive    Boolean  @default(true)
-  lastRunAt   DateTime?
-  nextRunAt   DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  executions  TaskExecution[]
+  handler        String
+  parameters     String?
+  isActive       Boolean         @default(true)
+  lastRunAt      DateTime?
+  nextRunAt      DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  executions     TaskExecution[]
 
   @@index([isActive])
   @@index([nextRunAt])
 }
 
 model TaskExecution {
-  id        String   @id @default(cuid())
-  taskId    String
-  status    String   @default("RUNNING") // RUNNING, COMPLETED, FAILED
-  startedAt DateTime @default(now())
+  id          String        @id @default(cuid())
+  taskId      String
+  status      String        @default("RUNNING")
+  startedAt   DateTime      @default(now())
   completedAt DateTime?
-  duration  Int?     // Duration in milliseconds
-  result    String?  // JSON string of execution result
-  error     String?  // Error message if failed
-  createdAt DateTime @default(now())
-
-  task      ScheduledTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  duration    Int?
+  result      String?
+  error       String?
+  createdAt   DateTime      @default(now())
+  task        ScheduledTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@index([taskId])
   @@index([status])
@@ -437,20 +416,18 @@ model TaskExecution {
   @@index([createdAt])
 }
 
-// Integration Marketplace
 model Integration {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  displayName String
-  description String?
-  type        String   // WEBHOOK, OAUTH, API
-  config      String   // JSON string of configuration
-  isActive    Boolean  @default(true)
-  isPremium   Boolean  @default(false)
-  icon        String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
+  id            String                    @id @default(cuid())
+  name          String                    @unique
+  displayName   String
+  description   String?
+  type          String
+  config        String
+  isActive      Boolean                   @default(true)
+  isPremium     Boolean                   @default(false)
+  icon          String?
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
   installations IntegrationInstallation[]
 
   @@index([type])
@@ -458,38 +435,35 @@ model Integration {
 }
 
 model IntegrationInstallation {
-  id            String   @id @default(cuid())
+  id            String      @id @default(cuid())
   integrationId String
   tenantId      String?
   userId        String?
-  config        String   // JSON string of installation config
-  isActive      Boolean  @default(true)
+  config        String
+  isActive      Boolean     @default(true)
   lastSyncAt    DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  integration   Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
-  tenant        Tenant?     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
   user          User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant        Tenant?     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  integration   Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
 
   @@unique([integrationId, tenantId, userId])
   @@index([isActive])
 }
 
-// Content Management System
 model Content {
-  id          String   @id @default(cuid())
+  id          String           @id @default(cuid())
   title       String
-  slug        String   @unique
-  content     String   // Markdown content
-  type        String   // PAGE, ANNOUNCEMENT, HELP
-  status      String   @default("DRAFT") // DRAFT, PUBLISHED, ARCHIVED
+  slug        String           @unique
+  content     String
+  type        String
+  status      String           @default("DRAFT")
   authorId    String
   publishedAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  author      User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
   versions    ContentVersion[]
 
   @@index([type])
@@ -498,35 +472,32 @@ model Content {
 }
 
 model ContentVersion {
-  id        String   @id @default(cuid())
-  contentId String
-  version   Int
-  title     String
-  content   String
-  authorId  String
-  createdAt DateTime @default(now())
-
-  contentRecord Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
-  author        User    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  id            String   @id @default(cuid())
+  contentId     String
+  version       Int
+  title         String
+  content       String
+  authorId      String
+  createdAt     DateTime @default(now())
+  author        User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  contentRecord Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
 
   @@unique([contentId, version])
   @@index([contentId])
   @@index([createdAt])
 }
 
-// Versioned Records System
 model VersionedRecord {
-  id          String   @id @default(cuid())
-  entityType  String   // USER, SETTING, CONTENT, etc.
-  entityId    String
-  version     Int
-  data        String   // JSON string of the record data
-  authorId    String
-  changeType  String   // CREATE, UPDATE, DELETE, RESTORE
+  id           String   @id @default(cuid())
+  entityType   String
+  entityId     String
+  version      Int
+  data         String
+  authorId     String
+  changeType   String
   changeReason String?
-  createdAt   DateTime @default(now())
-
-  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  author       User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@unique([entityType, entityId, version])
   @@index([entityType])
@@ -535,20 +506,18 @@ model VersionedRecord {
   @@index([createdAt])
 }
 
-// Annotation & Tagging System
 model Annotation {
-  id          String   @id @default(cuid())
-  entityType  String   // USER, CONTENT, TASK, etc.
-  entityId    String
-  content     String   // Note content
-  type        String   @default("NOTE") // NOTE, WARNING, INFO, TODO
-  isPrivate   Boolean  @default(false)
-  authorId    String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  tags        Tag[]
+  id         String   @id @default(cuid())
+  entityType String
+  entityId   String
+  content    String
+  type       String   @default("NOTE")
+  isPrivate  Boolean  @default(false)
+  authorId   String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  author     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  tags       Tag[]    @relation("AnnotationToTag")
 
   @@index([entityType])
   @@index([entityId])
@@ -557,43 +526,40 @@ model Annotation {
 }
 
 model Tag {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  color       String   @default("#3B82F6") // Hex color
+  id          String       @id @default(cuid())
+  name        String       @unique
+  color       String       @default("#3B82F6")
   description String?
-  isSystem    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  annotations Annotation[]
-  users       User[]
+  isSystem    Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
   taskTags    TaskTag[]
+  annotations Annotation[] @relation("AnnotationToTag")
+  users       User[]       @relation("TagToUser")
 
   @@index([name])
   @@index([isSystem])
 }
 
-// Task Management System
 model Task {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  status      String   @default("TODO") // TODO, IN_PROGRESS, REVIEW, DONE, CANCELLED
-  priority    String   @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
-  type        String   @default("TASK") // TASK, BUG, FEATURE, SUPPORT
-  assigneeId  String?
-  reporterId  String
-  dueDate     DateTime?
+  id             String           @id @default(cuid())
+  title          String
+  description    String?
+  status         String           @default("TODO")
+  priority       String           @default("MEDIUM")
+  type           String           @default("TASK")
+  assigneeId     String?
+  reporterId     String
+  dueDate        DateTime?
   estimatedHours Int?
-  actualHours Int?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  assignee    User?    @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
-  reporter    User     @relation(fields: [reporterId], references: [id], onDelete: Cascade)
-  comments    TaskComment[]
-  attachments TaskAttachment[]
-  tags        TaskTag[]
+  actualHours    Int?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  reporter       User             @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  assignee       User?            @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  attachments    TaskAttachment[]
+  comments       TaskComment[]
+  tags           TaskTag[]
 
   @@index([status])
   @@index([priority])
@@ -603,33 +569,31 @@ model Task {
 }
 
 model TaskComment {
-  id        String   @id @default(cuid())
-  taskId    String
-  content   String
-  authorId  String
+  id         String   @id @default(cuid())
+  taskId     String
+  content    String
+  authorId   String
   isInternal Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  author     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@index([taskId])
   @@index([authorId])
 }
 
 model TaskAttachment {
-  id        String   @id @default(cuid())
-  taskId    String
-  fileName  String
-  filePath  String
-  fileSize  Int
-  mimeType  String
+  id           String   @id @default(cuid())
+  taskId       String
+  fileName     String
+  filePath     String
+  fileSize     Int
+  mimeType     String
   uploadedById String
-  createdAt DateTime @default(now())
-
-  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  uploadedBy User     @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  task         Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@index([taskId])
 }
@@ -639,28 +603,25 @@ model TaskTag {
   taskId    String
   tagId     String
   createdAt DateTime @default(now())
-
-  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
   tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@unique([taskId, tagId])
 }
 
-// Stripe Billing System
 model Subscription {
-  id                String   @id @default(cuid())
-  stripeCustomerId  String?
+  id                   String           @id @default(cuid())
+  stripeCustomerId     String?
   stripeSubscriptionId String?
-  planId            String
-  status            String   @default("ACTIVE") // ACTIVE, CANCELLED, PAST_DUE, UNPAID
-  currentPeriodStart DateTime?
-  currentPeriodEnd   DateTime?
-  cancelAtPeriodEnd Boolean  @default(false)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  plan              SubscriptionPlan @relation(fields: [planId], references: [id])
-  payments          Payment[]
+  planId               String
+  status               String           @default("ACTIVE")
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean          @default(false)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  payments             Payment[]
+  plan                 SubscriptionPlan @relation(fields: [planId], references: [id])
 
   @@index([stripeCustomerId])
   @@index([stripeSubscriptionId])
@@ -668,18 +629,17 @@ model Subscription {
 }
 
 model SubscriptionPlan {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
+  id            String         @id @default(cuid())
+  name          String
+  description   String?
   stripePriceId String?
-  price       Float
-  currency    String   @default("USD")
-  interval    String   @default("MONTH") // MONTH, YEAR
-  features    String   // JSON string of features
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
+  price         Float
+  currency      String         @default("USD")
+  interval      String         @default("MONTH")
+  features      String
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   subscriptions Subscription[]
 
   @@index([stripePriceId])
@@ -687,43 +647,40 @@ model SubscriptionPlan {
 }
 
 model Payment {
-  id                String   @id @default(cuid())
-  subscriptionId    String
-  stripePaymentId   String?
-  amount            Float
-  currency          String   @default("USD")
-  status            String   @default("PENDING") // PENDING, SUCCEEDED, FAILED, CANCELLED
-  paymentMethod     String?  // CARD, BANK_TRANSFER, etc.
-  failureReason     String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  subscription      Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  id              String       @id @default(cuid())
+  subscriptionId  String
+  stripePaymentId String?
+  amount          Float
+  currency        String       @default("USD")
+  status          String       @default("PENDING")
+  paymentMethod   String?
+  failureReason   String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  subscription    Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
   @@index([stripePaymentId])
   @@index([status])
   @@index([createdAt])
 }
 
-// Custom Fields System
 model CustomField {
-  id          String   @id @default(cuid())
-  name        String
-  label       String
-  type        String   // TEXT, NUMBER, EMAIL, PHONE, DATE, SELECT, MULTISELECT, BOOLEAN
-  entityType  String   // USER, CONTENT, TASK, etc.
-  isRequired  Boolean  @default(false)
-  isUnique    Boolean  @default(false)
-  options     String?  // JSON string for SELECT/MULTISELECT options
-  validation  String?  // JSON string of validation rules
-  order       Int      @default(0)
-  isActive    Boolean  @default(true)
-  createdBy   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  createdByUser User   @relation(fields: [createdBy], references: [id], onDelete: Cascade)
-  values       CustomFieldValue[]
+  id            String             @id @default(cuid())
+  name          String
+  label         String
+  type          String
+  entityType    String
+  isRequired    Boolean            @default(false)
+  isUnique      Boolean            @default(false)
+  options       String?
+  validation    String?
+  order         Int                @default(0)
+  isActive      Boolean            @default(true)
+  createdBy     String
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  createdByUser User               @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  values        CustomFieldValue[]
 
   @@index([entityType])
   @@index([isActive])
@@ -731,59 +688,55 @@ model CustomField {
 }
 
 model CustomFieldValue {
-  id            String   @id @default(cuid())
-  fieldId       String
-  entityType    String
-  entityId      String
-  value         String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  field         CustomField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
-  user          User        @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  id         String      @id @default(cuid())
+  fieldId    String
+  entityType String
+  entityId   String
+  value      String
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  user       User        @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  field      CustomField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
 
   @@unique([fieldId, entityType, entityId])
   @@index([entityType])
   @@index([entityId])
 }
 
-// SSO / OAuth2 System
 model OAuthProvider {
-  id          String   @id @default(cuid())
-  name        String   @unique // GOOGLE, MICROSOFT, GITHUB, LDAP
-  displayName String
-  clientId    String
+  id           String            @id @default(cuid())
+  name         String            @unique
+  displayName  String
+  clientId     String
   clientSecret String
-  authUrl     String
-  tokenUrl    String
-  userInfoUrl String?
-  scopes      String   // JSON string of required scopes
-  isActive    Boolean  @default(true)
-  config      String?  // JSON string of additional config
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  connections OAuthConnection[]
+  authUrl      String
+  tokenUrl     String
+  userInfoUrl  String?
+  scopes       String
+  isActive     Boolean           @default(true)
+  config       String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  connections  OAuthConnection[]
 
   @@index([name])
   @@index([isActive])
 }
 
 model OAuthConnection {
-  id            String   @id @default(cuid())
-  providerId    String
-  userId        String
-  externalId    String   // ID from the OAuth provider
-  accessToken   String?
-  refreshToken  String?
-  expiresAt     DateTime?
-  profile       String?  // JSON string of user profile from provider
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  provider      OAuthProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
-  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String        @id @default(cuid())
+  providerId   String
+  userId       String
+  externalId   String
+  accessToken  String?
+  refreshToken String?
+  expiresAt    DateTime?
+  profile      String?
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider     OAuthProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
 
   @@unique([providerId, userId])
   @@unique([providerId, externalId])
@@ -791,26 +744,24 @@ model OAuthConnection {
   @@index([isActive])
 }
 
-// Webhook & Event Bus System
 model WebhookSubscription {
-  id          String   @id @default(cuid())
-  name        String
-  url         String
-  events      String   // JSON string of events to listen to
-  secret      String?
-  isActive    Boolean  @default(true)
-  retryCount  Int      @default(3)
-  timeout     Int      @default(30) // seconds
+  id            String            @id @default(cuid())
+  name          String
+  url           String
+  events        String
+  secret        String?
+  isActive      Boolean           @default(true)
+  retryCount    Int               @default(3)
+  timeout       Int               @default(30)
   lastTriggered DateTime?
-  lastSuccess  DateTime?
-  lastFailure  DateTime?
-  failureCount Int     @default(0)
-  createdBy   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  createdByUser User   @relation(fields: [createdBy], references: [id], onDelete: Cascade)
-  deliveries   WebhookDelivery[]
+  lastSuccess   DateTime?
+  lastFailure   DateTime?
+  failureCount  Int               @default(0)
+  createdBy     String
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  deliveries    WebhookDelivery[]
+  createdByUser User              @relation(fields: [createdBy], references: [id], onDelete: Cascade)
 
   @@index([events])
   @@index([isActive])
@@ -818,18 +769,17 @@ model WebhookSubscription {
 }
 
 model WebhookDelivery {
-  id          String   @id @default(cuid())
+  id             String              @id @default(cuid())
   subscriptionId String
-  event       String
-  payload     String   // JSON string of the event payload
-  response    String?  // JSON string of the response
-  statusCode  Int?
-  duration    Int?     // milliseconds
-  success     Boolean
-  error       String?
-  createdAt   DateTime @default(now())
-
-  subscription WebhookSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  event          String
+  payload        String
+  response       String?
+  statusCode     Int?
+  duration       Int?
+  success        Boolean
+  error          String?
+  createdAt      DateTime            @default(now())
+  subscription   WebhookSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
   @@index([subscriptionId])
   @@index([event])
@@ -837,52 +787,47 @@ model WebhookDelivery {
   @@index([createdAt])
 }
 
-// Backup & Restore System
 model Backup {
-  id          String   @id @default(cuid())
-  name        String
-  type        String   @default("FULL") // FULL, INCREMENTAL, SCHEMA_ONLY
-  status      String   @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, FAILED
-  filePath    String?
-  fileSize    Int?
-  checksum    String?
-  metadata    String?  // JSON string of backup metadata
-  createdBy   String
-  createdAt   DateTime @default(now())
-  completedAt DateTime?
-
-  createdByUser User   @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  id            String    @id @default(cuid())
+  name          String
+  type          String    @default("FULL")
+  status        String    @default("PENDING")
+  filePath      String?
+  fileSize      Int?
+  checksum      String?
+  metadata      String?
+  createdBy     String
+  createdAt     DateTime  @default(now())
+  completedAt   DateTime?
+  createdByUser User      @relation(fields: [createdBy], references: [id], onDelete: Cascade)
 
   @@index([type])
   @@index([status])
   @@index([createdAt])
 }
 
-// Role-Based Access Control (RBAC) System
 model Role {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  displayName String
-  description String?
-  isSystem    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  users       User[]
+  id              String           @id @default(cuid())
+  name            String           @unique
+  displayName     String
+  description     String?
+  isSystem        Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
   rolePermissions RolePermission[]
+  users           User[]
 
   @@index([name])
   @@index([isSystem])
 }
 
 model Permission {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  description String?
-  category    String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
+  id              String           @id @default(cuid())
+  name            String           @unique
+  description     String?
+  category        String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
   rolePermissions RolePermission[]
 
   @@index([name])
@@ -890,13 +835,12 @@ model Permission {
 }
 
 model RolePermission {
-  id           String @id @default(cuid())
+  id           String     @id @default(cuid())
   roleId       String
   permissionId String
-  createdAt    DateTime @default(now())
-
-  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
   permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@unique([roleId, permissionId])
   @@index([roleId])
@@ -904,60 +848,57 @@ model RolePermission {
 }
 
 model Provider {
-  id        String   @id @default(cuid())
-  name      String   // İşletme adı (Ahmet Kuaför, Selin Güzellik Salonu)
-  email     String   @unique
-  phone     String?
-  address   String?
+  id          String            @id @default(cuid())
+  name        String
+  email       String            @unique
+  phone       String?
+  address     String?
   description String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  employees Employee[]
-  services  ProviderService[]
+  isActive    Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  employees   Employee[]
+  services    ProviderService[]
 }
 
 model Employee {
-  id         String   @id @default(cuid())
-  name       String   // Çalışan adı
-  email      String?
-  phone      String?
-  position   String?  // Pozisyon (Kuaför, Güzellik uzmanı, vb.)
-  isActive   Boolean  @default(true)
-  providerId String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  provider   Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  id           String        @id @default(cuid())
+  name         String
+  email        String?
+  phone        String?
+  position     String?
+  isActive     Boolean       @default(true)
+  providerId   String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
   appointments Appointment[]
+  provider     Provider      @relation(fields: [providerId], references: [id], onDelete: Cascade)
 
   @@index([providerId])
   @@index([isActive])
 }
 
 model Customer {
-  id        String   @id @default(cuid())
-  name      String
-  email     String   @unique
-  phone     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String        @id @default(cuid())
+  name         String
+  email        String        @unique
+  phone        String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
   appointments Appointment[]
 }
 
 model Service {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  duration    Int      // Duration in minutes
-  price       Float?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  providers   ProviderService[]
+  id           String            @id @default(cuid())
+  name         String
+  description  String?
+  duration     Int
+  price        Float?
+  isActive     Boolean           @default(true)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
   appointments Appointment[]
+  providers    ProviderService[]
 
   @@index([isActive])
 }
@@ -966,50 +907,47 @@ model ProviderService {
   id         String   @id @default(cuid())
   providerId String
   serviceId  String
-  price      Float?   // Provider-specific price override
+  price      Float?
   isActive   Boolean  @default(true)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-
-  provider   Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
   service    Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  provider   Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
 
   @@unique([providerId, serviceId])
   @@index([isActive])
 }
 
 model Appointment {
-  id          String   @id @default(cuid())
+  id          String                  @id @default(cuid())
   employeeId  String
   customerId  String
   serviceId   String
   start       DateTime
   end         DateTime
-  status      String   // ör: SCHEDULED, COMPLETED, CANCELLED
+  status      String
   note        String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  employee    Employee @relation(fields: [employeeId], references: [id])
-  customer    Customer @relation(fields: [customerId], references: [id])
-  service     Service  @relation(fields: [serviceId], references: [id])
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+  service     Service                 @relation(fields: [serviceId], references: [id])
+  customer    Customer                @relation(fields: [customerId], references: [id])
+  employee    Employee                @relation(fields: [employeeId], references: [id])
   attachments AppointmentAttachment[]
 
   @@unique([employeeId, customerId, start])
 }
 
 model AppointmentAttachment {
-  id           String   @id @default(cuid())
+  id            String      @id @default(cuid())
   appointmentId String
-  name         String   // Original file name
-  filename     String   // Stored file name
-  type         String   // MIME type
-  size         Int      // File size in bytes
-  path         String   // File path relative to public directory
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  appointment  Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  name          String
+  filename      String
+  type          String
+  size          Int
+  path          String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
 
   @@index([appointmentId])
   @@index([type])

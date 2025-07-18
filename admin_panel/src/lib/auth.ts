@@ -4,6 +4,7 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import GoogleProvider from 'next-auth/providers/google'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
+import { AuditTrail, AUDIT_ACTIONS, AUDIT_ENTITY_TYPES } from '@/lib/audit'
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as any,
@@ -68,6 +69,40 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role as string
       }
       return session
+    },
+    async signIn({ user, account, profile }) {
+      try {
+        // Log successful login
+        await AuditTrail.log({
+          action: AUDIT_ACTIONS.LOGIN,
+          entityType: AUDIT_ENTITY_TYPES.USER,
+          entityId: user.id,
+          metadata: {
+            provider: account?.provider || 'credentials',
+            source: 'admin_panel'
+          }
+        })
+      } catch (error) {
+        console.error('Error logging sign in:', error)
+      }
+      return true
+    }
+  },
+  events: {
+    async signOut({ token }) {
+      try {
+        // Log logout
+        await AuditTrail.log({
+          action: AUDIT_ACTIONS.LOGOUT,
+          entityType: AUDIT_ENTITY_TYPES.USER,
+          entityId: token?.id as string,
+          metadata: {
+            source: 'admin_panel'
+          }
+        })
+      } catch (error) {
+        console.error('Error logging sign out:', error)
+      }
     }
   },
   pages: {

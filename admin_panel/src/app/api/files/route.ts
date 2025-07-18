@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { AuditTrail, AUDIT_ACTIONS, AUDIT_ENTITY_TYPES } from '@/lib/audit'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import crypto from 'crypto'
@@ -122,6 +123,26 @@ export async function POST(request: NextRequest) {
         isPublic: false // Varsayılan olarak private
       }
     })
+
+    // Log audit trail
+    await AuditTrail.log({
+      action: AUDIT_ACTIONS.FILE_UPLOAD,
+      entityType: AUDIT_ENTITY_TYPES.FILE,
+      entityId: savedFile.id,
+      newValues: {
+        name: savedFile.name,
+        originalName: savedFile.originalName,
+        type: savedFile.type,
+        size: savedFile.size,
+        isPublic: savedFile.isPublic
+      },
+      metadata: {
+        uploadedBy: session.user.id,
+        source: 'admin_panel',
+        fileType: file.type,
+        fileSize: file.size
+      }
+    }, request)
 
     console.log('File saved successfully:', savedFile.id)
     return NextResponse.json(savedFile, { status: 201 })

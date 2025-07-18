@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { AuditTrail, AUDIT_ACTIONS, AUDIT_ENTITY_TYPES } from '@/lib/audit'
 import bcrypt from 'bcryptjs'
 
 export async function GET(request: NextRequest) {
@@ -128,6 +129,23 @@ export async function POST(request: NextRequest) {
         updatedAt: true,
       },
     })
+
+    // Log audit trail
+    await AuditTrail.log({
+      action: AUDIT_ACTIONS.CREATE,
+      entityType: AUDIT_ENTITY_TYPES.USER,
+      entityId: user.id,
+      newValues: {
+        name: user.name,
+        email: user.email,
+        status: user.status,
+        roleId: user.roleId
+      },
+      metadata: {
+        createdBy: session.user.id,
+        source: 'admin_panel'
+      }
+    }, request)
 
     return NextResponse.json(user, { status: 201 })
   } catch (error) {
