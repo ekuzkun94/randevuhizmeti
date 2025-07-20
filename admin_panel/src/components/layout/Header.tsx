@@ -24,7 +24,8 @@ import {
   Users as UsersIcon,
   Key,
   Zap,
-  BarChart3
+  BarChart3,
+  Receipt
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useTheme } from 'next-themes'
@@ -116,6 +117,9 @@ export function Header() {
         break
       case 'api-keys':
         window.location.href = '/dashboard/api-keys'
+        break
+      case 'quotes':
+        window.location.href = '/dashboard/quotes'
         break
       default:
         break
@@ -263,6 +267,15 @@ export function Header() {
              title="API Anahtarları"
            >
              <Key size={16} />
+           </Button>
+           <Button 
+             variant="ghost" 
+             size="sm" 
+             className="h-8 w-8 p-0"
+             onClick={() => handleQuickAccess('quotes')}
+             title="Teklifler"
+           >
+             <Receipt size={16} />
            </Button>
          </div>
       </div>

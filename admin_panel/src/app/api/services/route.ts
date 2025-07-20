@@ -12,9 +12,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Debug: Check if prisma is defined
-    console.log('Prisma client:', prisma)
-    console.log('Prisma service:', prisma?.service)
+
 
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search') || ''
@@ -48,7 +46,12 @@ export async function GET(request: NextRequest) {
       prisma.service.count({ where })
     ])
 
-    return NextResponse.json(services, {
+    return NextResponse.json({
+      services,
+      total,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page
+    }, {
       headers: {
         'X-Total-Count': total.toString(),
         'X-Page': page.toString(),

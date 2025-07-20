@@ -148,20 +148,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Service not found' }, { status: 400 })
     }
 
-    // Check if provider offers this service
-    const providerService = await prisma.providerService.findFirst({
-      where: {
-        providerId: employee.provider.id,
-        serviceId,
-        isActive: true
-      }
-    })
+    // Check if provider offers this service (optional for now)
+    // const providerService = await prisma.providerService.findFirst({
+    //   where: {
+    //     providerId: employee.provider.id,
+    //     serviceId,
+    //     isActive: true
+    //   }
+    // })
 
-    if (!providerService) {
-      return NextResponse.json({ 
-        error: 'Provider does not offer this service' 
-      }, { status: 400 })
-    }
+    // if (!providerService) {
+    //   return NextResponse.json({ 
+    //     error: 'Provider does not offer this service' 
+    //   }, { status: 400 })
+    // }
 
     // Check for time conflicts
     const conflictingAppointment = await prisma.appointment.findFirst({

@@ -257,3 +257,125 @@ export async function DELETE(
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 } 
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { id } = params
+    const body = await request.json()
+    const { status, start, end } = body
+
+    // Check if appointment exists
+    const existingAppointment = await prisma.appointment.findUnique({
+      where: { id }
+    })
+
+    if (!existingAppointment) {
+      return NextResponse.json({ error: 'Appointment not found' }, { status: 404 })
+    }
+
+    // Prepare update data
+    const updateData: any = {};
+    
+    if (status) {
+      updateData.status = status;
+    }
+    
+    if (start) {
+      updateData.start = new Date(start);
+    }
+    
+    if (end) {
+      updateData.end = new Date(end);
+    }
+
+    // If updating time, check for conflicts
+    if (start || end) {
+      const newStart = start ? new Date(start) : existingAppointment.start;
+      const newEnd = end ? new Date(end) : existingAppointment.end;
+      
+      const conflictingAppointment = await prisma.appointment.findFirst({
+        where: {
+          employeeId: existingAppointment.employeeId,
+          id: { not: id }, // Exclude current appointment
+          OR: [
+            {
+              AND: [
+                { start: { lte: newStart } },
+                { end: { gt: newStart } }
+              ]
+            },
+            {
+              AND: [
+                { start: { lt: newEnd } },
+                { end: { gte: newEnd } }
+              ]
+            },
+            {
+              AND: [
+                { start: { gte: newStart } },
+                { end: { lte: newEnd } }
+              ]
+            }
+          ]
+        }
+      });
+
+      if (conflictingAppointment) {
+        return NextResponse.json({ 
+          error: 'Bu saatte başka bir randevu bulunmaktadır' 
+        }, { status: 409 });
+      }
+    }
+
+    // Update appointment
+    const updatedAppointment = await prisma.appointment.update({
+      where: { id },
+      data: updateData,
+      include: {
+        employee: {
+          select: {
+            id: true,
+            name: true,
+            position: true,
+            provider: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        },
+        customer: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true
+          }
+        },
+        service: {
+          select: {
+            id: true,
+            name: true,
+            duration: true,
+            price: true
+          }
+        }
+      }
+    })
+
+    return NextResponse.json(updatedAppointment)
+  } catch (error) {
+    console.error('Error updating appointment:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+} 
