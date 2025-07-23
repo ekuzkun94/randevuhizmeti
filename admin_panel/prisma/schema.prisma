@@ -650,7 +650,7 @@ model SubscriptionPlan {
 
 model Payment {
   id              String       @id @default(cuid())
-  subscriptionId  String
+  subscriptionId  String?
   stripePaymentId String?
   amount          Float
   currency        String       @default("USD")
@@ -659,11 +659,85 @@ model Payment {
   failureReason   String?
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
-  subscription    Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  subscription    Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
   @@index([stripePaymentId])
   @@index([status])
   @@index([createdAt])
+}
+
+model AppointmentPayment {
+  id              String      @id @default(cuid())
+  appointmentId   String
+  customerId      String
+  employeeId      String
+  serviceId       String
+  amount          Float
+  currency        String      @default("TRY")
+  status          String      @default("PENDING") // PENDING, PAID, FAILED, REFUNDED
+  paymentMethod   String      // CASH, CREDIT_CARD, BANK_TRANSFER, ONLINE
+  transactionId   String?
+  receiptNumber   String?
+  notes           String?
+  paidAt          DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  // Kredi kartı özel alanları
+  cardNumber      String?
+  cardHolderName  String?
+  expiryMonth     String?
+  expiryYear      String?
+  cvv             String?
+  installmentCount Int        @default(1)
+  installmentAmount Float?
+  totalAmount     Float?
+  interestRate    Float       @default(0)
+  bankName        String?
+  cardType        String?
+  
+  appointment     Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  customer        Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  employee        Employee    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  service         Service     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  invoices        Invoice[]
+
+  @@index([appointmentId])
+  @@index([customerId])
+  @@index([employeeId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([transactionId])
+  @@index([paymentMethod])
+  @@index([cardType])
+}
+
+model Invoice {
+  id              String    @id @default(cuid())
+  invoiceNumber   String    @unique
+  customerId      String
+  appointmentId   String?
+  paymentId       String?
+  amount          Float
+  taxAmount       Float     @default(0)
+  totalAmount     Float
+  currency        String    @default("TRY")
+  status          String    @default("DRAFT") // DRAFT, SENT, PAID, OVERDUE, CANCELLED
+  dueDate         DateTime?
+  paidAt          DateTime?
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  customer        Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  appointment     Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  payment         AppointmentPayment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@index([customerId])
+  @@index([appointmentId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([invoiceNumber])
 }
 
 model CustomField {
@@ -874,6 +948,7 @@ model Employee {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   appointments Appointment[]
+  payments     AppointmentPayment[]
   provider     Provider      @relation(fields: [providerId], references: [id], onDelete: Cascade)
 
   @@index([providerId])
@@ -889,6 +964,8 @@ model Customer {
   updatedAt    DateTime      @updatedAt
   appointments Appointment[]
   quotes       Quote[]
+  payments     AppointmentPayment[]
+  invoices     Invoice[]
 
   @@index([email])
 }
@@ -903,6 +980,7 @@ model Service {
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
   appointments Appointment[]
+  payments     AppointmentPayment[]
   providers    ProviderService[]
 
   @@index([isActive])
@@ -938,6 +1016,8 @@ model Appointment {
   customer    Customer                @relation(fields: [customerId], references: [id])
   employee    Employee                @relation(fields: [employeeId], references: [id])
   attachments AppointmentAttachment[]
+  payments    AppointmentPayment[]
+  invoices    Invoice[]
 
   @@unique([employeeId, customerId, start])
 }

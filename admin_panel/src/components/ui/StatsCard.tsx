@@ -131,7 +131,7 @@ export function StatsCard({
           </div>
 
           {/* Trend Chart */}
-          {trend && trend.data.length > 0 && (
+          {trend && trend.data && trend.data.length > 0 && (
             <div className="mt-4 pt-4 border-t border-gray-100">
               <div className="flex items-end justify-between h-12 space-x-1">
                 {trend.data.map((point, index) => (

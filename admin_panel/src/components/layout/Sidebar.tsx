@@ -267,6 +267,18 @@ const menuGroups: MenuGroup[] = [
         href: '/dashboard/services',
         icon: Package,
       },
+      {
+        title: 'Ödemeler',
+        href: '/dashboard/payments',
+        icon: CreditCard,
+        badge: 'Yeni'
+      },
+      {
+        title: 'Kredi Kartı Ödemeleri',
+        href: '/dashboard/payments/credit-card',
+        icon: CreditCard,
+        badge: 'Gelişmiş'
+      },
     ],
     defaultOpen: true
   },
