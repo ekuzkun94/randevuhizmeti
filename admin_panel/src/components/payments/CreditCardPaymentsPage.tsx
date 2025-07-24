@@ -33,9 +33,9 @@ import {
   PieChart,
   LineChart
 } from 'lucide-react';
-import CreditCardPaymentModal from './CreditCardPaymentModal';
 import PaymentFilters from './PaymentFilters';
 import PaymentTable from './PaymentTable';
+import Link from 'next/link';
 
 interface CreditCardPayment {
   id: string;
@@ -132,8 +132,7 @@ export default function CreditCardPaymentsPage() {
     }
   });
   const [loading, setLoading] = useState(true);
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [selectedPayment, setSelectedPayment] = useState<CreditCardPayment | null>(null);
+
   const [activeTab, setActiveTab] = useState('all');
   const [filters, setFilters] = useState({
     status: 'all',
@@ -179,38 +178,9 @@ export default function CreditCardPaymentsPage() {
     loadData();
   }, []);
 
-  const handleCreatePayment = () => {
-    setSelectedPayment(null);
-    setIsPaymentModalOpen(true);
-  };
 
-  const handleEditPayment = (payment: CreditCardPayment) => {
-    setSelectedPayment(payment);
-    setIsPaymentModalOpen(true);
-  };
 
-  const handlePaymentSave = async (paymentData: any) => {
-    try {
-      const method = selectedPayment ? 'PUT' : 'POST';
-      const url = selectedPayment 
-        ? `/api/payments/${selectedPayment.id}` 
-        : '/api/payments';
 
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(paymentData)
-      });
-
-      if (response.ok) {
-        await Promise.all([fetchPayments(), fetchStats()]);
-        setIsPaymentModalOpen(false);
-        setSelectedPayment(null);
-      }
-    } catch (error) {
-      console.error('Error saving payment:', error);
-    }
-  };
 
   const handlePaymentDelete = async (paymentId: string) => {
     if (!confirm('Bu kredi kartı ödemesini silmek istediğinizden emin misiniz?')) return;
@@ -247,12 +217,13 @@ export default function CreditCardPaymentsPage() {
   // Filtreleme
   const filteredPayments = payments.filter(payment => {
     if (filters.status !== 'all' && payment.status !== filters.status) return false;
-    if (filters.cardType !== 'all' && payment.cardType !== filters.cardType) return false;
+    if (filters.cardType !== 'all' && (payment.cardType || '') !== filters.cardType) return false;
     if (filters.installmentCount !== 'all') {
       const count = parseInt(filters.installmentCount);
-      if (filters.installmentCount === 'single' && payment.installmentCount !== 1) return false;
-      if (filters.installmentCount === 'multiple' && payment.installmentCount === 1) return false;
-      if (count > 1 && payment.installmentCount !== count) return false;
+      const installmentCount = payment.installmentCount || 1;
+      if (filters.installmentCount === 'single' && installmentCount !== 1) return false;
+      if (filters.installmentCount === 'multiple' && installmentCount === 1) return false;
+      if (count > 1 && installmentCount !== count) return false;
     }
     if (filters.customerId !== 'all' && payment.customerId !== filters.customerId) return false;
     if (filters.employeeId !== 'all' && payment.employeeId !== filters.employeeId) return false;
@@ -270,9 +241,9 @@ export default function CreditCardPaymentsPage() {
       case 'failed':
         return filteredPayments.filter(p => p.status === 'FAILED');
       case 'installments':
-        return filteredPayments.filter(p => p.installmentCount > 1);
+        return filteredPayments.filter(p => (p.installmentCount || 1) > 1);
       case 'single':
-        return filteredPayments.filter(p => p.installmentCount === 1);
+        return filteredPayments.filter(p => (p.installmentCount || 1) === 1);
       default:
         return filteredPayments;
     }
@@ -289,6 +260,8 @@ export default function CreditCardPaymentsPage() {
   };
 
   const getCardTypeIcon = (cardType: string) => {
+    if (!cardType) return '💳';
+    
     switch (cardType.toLowerCase()) {
       case 'visa': return '💳';
       case 'mastercard': return '💳';
@@ -307,10 +280,12 @@ export default function CreditCardPaymentsPage() {
         icon={<CreditCard className="h-8 w-8 text-white" />}
         actions={
           <div className="flex items-center space-x-3">
-            <Button onClick={handleCreatePayment} className="bg-gradient-to-r from-blue-500 to-purple-500">
-              <Plus className="w-4 h-4 mr-2" />
-              Yeni Kredi Kartı Ödeme
-            </Button>
+            <Link href="/dashboard/payments/credit-card/new">
+              <Button className="bg-gradient-to-r from-blue-500 to-purple-500">
+                <Plus className="w-4 h-4 mr-2" />
+                Yeni Kredi Kartı Ödeme
+              </Button>
+            </Link>
             <Button variant="outline">
               <Download className="w-4 h-4 mr-2" />
               Rapor İndir
@@ -334,8 +309,8 @@ export default function CreditCardPaymentsPage() {
         />
         <StatsCard
           title="Taksitli Ödemeler"
-          value={`${stats.installmentDistribution.multiple}`}
-          description={`${((stats.installmentDistribution.multiple / stats.totalPayments) * 100).toFixed(1)}% oranında`}
+          value={`${stats.installmentDistribution?.multiple || 0}`}
+          description={`${stats.totalPayments > 0 ? ((stats.installmentDistribution?.multiple || 0) / stats.totalPayments * 100).toFixed(1) : 0}% oranında`}
           icon={<Calculator className="h-4 w-4" />}
           trend={{
             value: 8.2,
@@ -345,7 +320,7 @@ export default function CreditCardPaymentsPage() {
         />
         <StatsCard
           title="Ortalama Taksit"
-          value={`${stats.averageInstallmentCount.toFixed(1)}x`}
+          value={`${(stats.averageInstallmentCount || 0).toFixed(1)}x`}
           description="Taksit sayısı"
           icon={<Percent className="h-4 w-4" />}
           trend={{
@@ -356,7 +331,7 @@ export default function CreditCardPaymentsPage() {
         />
         <StatsCard
           title="Faiz Geliri"
-          value={`${stats.totalInterestEarned.toLocaleString('tr-TR')}₺`}
+          value={`${(stats.totalInterestEarned || 0).toLocaleString('tr-TR')}₺`}
           description="Toplam faiz geliri"
           icon={<TrendingUp className="h-4 w-4" />}
           trend={{
@@ -374,9 +349,9 @@ export default function CreditCardPaymentsPage() {
             <CardTitle className="text-sm font-medium text-gray-600">Visa</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.cardTypeDistribution.visa}</div>
+            <div className="text-2xl font-bold">{stats.cardTypeDistribution?.visa || 0}</div>
             <p className="text-xs text-gray-500">
-              {stats.totalPayments > 0 ? ((stats.cardTypeDistribution.visa / stats.totalPayments) * 100).toFixed(1) : 0}%
+              {stats.totalPayments > 0 ? (((stats.cardTypeDistribution?.visa || 0) / stats.totalPayments) * 100).toFixed(1) : 0}%
             </p>
           </CardContent>
         </Card>
@@ -385,9 +360,9 @@ export default function CreditCardPaymentsPage() {
             <CardTitle className="text-sm font-medium text-gray-600">Mastercard</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.cardTypeDistribution.mastercard}</div>
+            <div className="text-2xl font-bold">{stats.cardTypeDistribution?.mastercard || 0}</div>
             <p className="text-xs text-gray-500">
-              {stats.totalPayments > 0 ? ((stats.cardTypeDistribution.mastercard / stats.totalPayments) * 100).toFixed(1) : 0}%
+              {stats.totalPayments > 0 ? (((stats.cardTypeDistribution?.mastercard || 0) / stats.totalPayments) * 100).toFixed(1) : 0}%
             </p>
           </CardContent>
         </Card>
@@ -396,9 +371,9 @@ export default function CreditCardPaymentsPage() {
             <CardTitle className="text-sm font-medium text-gray-600">American Express</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.cardTypeDistribution.amex}</div>
+            <div className="text-2xl font-bold">{stats.cardTypeDistribution?.amex || 0}</div>
             <p className="text-xs text-gray-500">
-              {stats.totalPayments > 0 ? ((stats.cardTypeDistribution.amex / stats.totalPayments) * 100).toFixed(1) : 0}%
+              {stats.totalPayments > 0 ? (((stats.cardTypeDistribution?.amex || 0) / stats.totalPayments) * 100).toFixed(1) : 0}%
             </p>
           </CardContent>
         </Card>
@@ -407,9 +382,9 @@ export default function CreditCardPaymentsPage() {
             <CardTitle className="text-sm font-medium text-gray-600">Discover</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.cardTypeDistribution.discover}</div>
+            <div className="text-2xl font-bold">{stats.cardTypeDistribution?.discover || 0}</div>
             <p className="text-xs text-gray-500">
-              {stats.totalPayments > 0 ? ((stats.cardTypeDistribution.discover / stats.totalPayments) * 100).toFixed(1) : 0}%
+              {stats.totalPayments > 0 ? (((stats.cardTypeDistribution?.discover || 0) / stats.totalPayments) * 100).toFixed(1) : 0}%
             </p>
           </CardContent>
         </Card>
@@ -476,23 +451,23 @@ export default function CreditCardPaymentsPage() {
                         </td>
                         <td className="p-2">
                           <div>
-                            <div className="font-medium">{payment.totalAmount.toLocaleString('tr-TR')}₺</div>
-                            {payment.installmentCount > 1 && (
+                            <div className="font-medium">{(payment.totalAmount || payment.amount).toLocaleString('tr-TR')}₺</div>
+                            {(payment.installmentCount || 1) > 1 && (
                               <div className="text-sm text-gray-500">
-                                {payment.installmentAmount.toFixed(2)}₺ x {payment.installmentCount}
+                                {(payment.installmentAmount || payment.amount).toFixed(2)}₺ x {payment.installmentCount || 1}
                               </div>
                             )}
                           </div>
                         </td>
                         <td className="p-2">
                           <div className="flex items-center gap-2">
-                            <span>{getCardTypeIcon(payment.cardType)}</span>
-                            <span className="text-sm">{payment.cardType}</span>
+                            <span>{getCardTypeIcon(payment.cardType || 'Unknown')}</span>
+                            <span className="text-sm">{payment.cardType || 'Bilinmiyor'}</span>
                           </div>
                         </td>
                         <td className="p-2">
-                          <Badge variant={payment.installmentCount > 1 ? "default" : "secondary"}>
-                            {payment.installmentCount}x
+                          <Badge variant={(payment.installmentCount || 1) > 1 ? "default" : "secondary"}>
+                            {payment.installmentCount || 1}x
                           </Badge>
                         </td>
                         <td className="p-2">
@@ -510,13 +485,11 @@ export default function CreditCardPaymentsPage() {
                         </td>
                         <td className="p-2">
                           <div className="flex items-center gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleEditPayment(payment)}
-                            >
-                              Düzenle
-                            </Button>
+                            <Link href={`/dashboard/payments/credit-card/${payment.id}/edit`}>
+                              <Button size="sm" variant="outline">
+                                Düzenle
+                              </Button>
+                            </Link>
                             <Button
                               size="sm"
                               variant="outline"
@@ -536,16 +509,7 @@ export default function CreditCardPaymentsPage() {
         </TabsContent>
       </Tabs>
 
-      {/* Modal */}
-      <CreditCardPaymentModal
-        isOpen={isPaymentModalOpen}
-        onClose={() => {
-          setIsPaymentModalOpen(false);
-          setSelectedPayment(null);
-        }}
-        onSave={handlePaymentSave}
-        payment={selectedPayment}
-      />
+
     </div>
   );
 } 

@@ -88,44 +88,63 @@ export async function GET(request: NextRequest) {
     });
 
     // Kredi kartı özel istatistikler
-    let creditCardStats = {};
+    let creditCardStats = {
+      averageInstallmentCount: 0,
+      totalInterestEarned: 0,
+      cardTypeDistribution: {
+        visa: 0,
+        mastercard: 0,
+        amex: 0,
+        discover: 0
+      },
+      installmentDistribution: {
+        single: 0,
+        multiple: 0
+      }
+    };
+    
     if (method === 'CREDIT_CARD') {
-      const averageInstallmentCount = await prisma.appointmentPayment.aggregate({
-        _avg: { installmentCount: true },
-        where: baseWhere
-      });
+      try {
+        const averageInstallmentCount = await prisma.appointmentPayment.aggregate({
+          _avg: { installmentCount: true },
+          where: baseWhere
+        });
 
-      const totalInterestEarned = await prisma.appointmentPayment.aggregate({
-        _sum: { interestRate: true },
-        where: baseWhere
-      });
+        const totalInterestEarned = await prisma.appointmentPayment.aggregate({
+          _sum: { interestRate: true },
+          where: baseWhere
+        });
 
-      const cardTypeDistribution = await prisma.appointmentPayment.groupBy({
-        by: ['cardType'],
-        _count: { cardType: true },
-        where: baseWhere
-      });
+        const cardTypeDistribution = await prisma.appointmentPayment.groupBy({
+          by: ['cardType'],
+          _count: { cardType: true },
+          where: baseWhere
+        });
 
-      const installmentDistribution = await prisma.appointmentPayment.groupBy({
-        by: ['installmentCount'],
-        _count: { installmentCount: true },
-        where: baseWhere
-      });
+        const installmentDistribution = await prisma.appointmentPayment.groupBy({
+          by: ['installmentCount'],
+          _count: { installmentCount: true },
+          where: baseWhere
+        });
 
-      creditCardStats = {
-        averageInstallmentCount: averageInstallmentCount._avg.installmentCount || 0,
-        totalInterestEarned: totalInterestEarned._sum.interestRate || 0,
-        cardTypeDistribution: {
-          visa: cardTypeDistribution.find(d => d.cardType === 'Visa')?._count.cardType || 0,
-          mastercard: cardTypeDistribution.find(d => d.cardType === 'Mastercard')?._count.cardType || 0,
-          amex: cardTypeDistribution.find(d => d.cardType === 'American Express')?._count.cardType || 0,
-          discover: cardTypeDistribution.find(d => d.cardType === 'Discover')?._count.cardType || 0
-        },
-        installmentDistribution: {
-          single: installmentDistribution.find(d => d.installmentCount === 1)?._count.installmentCount || 0,
-          multiple: installmentDistribution.filter(d => d.installmentCount > 1).reduce((sum, d) => sum + d._count.installmentCount, 0)
-        }
-      };
+        creditCardStats = {
+          averageInstallmentCount: averageInstallmentCount._avg.installmentCount || 0,
+          totalInterestEarned: totalInterestEarned._sum.interestRate || 0,
+          cardTypeDistribution: {
+            visa: cardTypeDistribution.find(d => d.cardType === 'Visa')?._count.cardType || 0,
+            mastercard: cardTypeDistribution.find(d => d.cardType === 'Mastercard')?._count.cardType || 0,
+            amex: cardTypeDistribution.find(d => d.cardType === 'American Express')?._count.cardType || 0,
+            discover: cardTypeDistribution.find(d => d.cardType === 'Discover')?._count.cardType || 0
+          },
+          installmentDistribution: {
+            single: installmentDistribution.find(d => d.installmentCount === 1)?._count.installmentCount || 0,
+            multiple: installmentDistribution.filter(d => d.installmentCount > 1).reduce((sum, d) => sum + d._count.installmentCount, 0)
+          }
+        };
+      } catch (error) {
+        console.error('Error calculating credit card stats:', error);
+        // Use default values if there's an error
+      }
     }
 
     return NextResponse.json({
